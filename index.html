@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Pelawat & Kehadiran v23.0 (Manual Override Fix)</title>
+    <title>Sistem Pelawat & Kehadiran v24.0 (Secure GPS)</title>
     
     <!-- ====================================================================== -->
     <!--                 RUANGAN EDIT PENGGUNA (mantap)                -->
@@ -31,7 +31,12 @@
         // 7. Jarak Reset Auto-In: Pengguna perlu keluar sejauh ini (meter) untuk aktifkan semula auto-in selepas check-out
         const RADIUS_RESET_AUTO_IN = 300;
 
-        // 8. KONFIGURASI JADUAL BERTUGAS & KATEGORI (PUSAT KAWALAN UTAMA)
+        // 8. KONFIGURASI KESELAMATAN GPS (BARU - ANTI FAKE & GEOFENCE)
+        const WAJIB_DALAM_KAWASAN = true; // True: Wajib dalam zon. False: Boleh override jika luar.
+        const NO_FAKE_GPS = true;         // True: Sekat jika koordinat statik (Fake GPS App).
+        const GPS_SAMPLES_REQUIRED = 5;   // Bilangan sampel untuk verifikasi ketulenan GPS.
+
+        // 9. KONFIGURASI JADUAL BERTUGAS & KATEGORI (PUSAT KAWALAN UTAMA)
         // Ubah masa di sini untuk kawal waktu masuk/keluar bagi setiap jabatan.
         const JADUAL_BERTUGAS = {
             "GURU":       { masuk: "07:45:00 AM", keluar: "01:30:00 PM" },
@@ -118,6 +123,57 @@
             }
         }
 
+        // --- FUNGSI BARU: ANTI FAKE GPS & SAMPLING ---
+        function performAntiFakeGPSCheck(btnElement) {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) { reject("GPS tidak disokong."); return; }
+                
+                let samples = [];
+                let required = (typeof GPS_SAMPLES_REQUIRED !== 'undefined') ? GPS_SAMPLES_REQUIRED : 5;
+                
+                btnElement.innerHTML = `VERIFIKASI GPS (0/${required})...`;
+
+                let watcher = navigator.geolocation.watchPosition(
+                    (pos) => {
+                        let lat = pos.coords.latitude;
+                        let lng = pos.coords.longitude;
+                        samples.push({lat, lng});
+                        
+                        btnElement.innerHTML = `VERIFIKASI GPS (${samples.length}/${required})...`;
+
+                        if (samples.length >= required) {
+                            navigator.geolocation.clearWatch(watcher);
+                            
+                            // 1. Cek Fake GPS (Static Logic)
+                            let first = JSON.stringify(samples[0]);
+                            let isStatic = samples.every(s => JSON.stringify(s) === first);
+                            if (isStatic && typeof NO_FAKE_GPS !== 'undefined' && NO_FAKE_GPS) {
+                                reject("FAKE GPS DIKESAN! Sila tutup aplikasi Fake GPS.");
+                                return;
+                            }
+                            
+                            // 2. Cek Kawasan
+                            let avgLat = samples[samples.length-1].lat; 
+                            let avgLng = samples[samples.length-1].lng;
+                            let dist = calcDist(avgLat, avgLng, SCHOOL_LAT, SCHOOL_LNG);
+                            
+                            if (dist > RADIUS_METER && typeof WAJIB_DALAM_KAWASAN !== 'undefined' && WAJIB_DALAM_KAWASAN) {
+                                reject(`LUAR KAWASAN! (${Math.round(dist)}m). Sila masuk pagar sekolah.`);
+                                return;
+                            }
+                            
+                            resolve({lat: avgLat, lng: avgLng});
+                        }
+                    },
+                    (err) => {
+                        navigator.geolocation.clearWatch(watcher);
+                        reject("Ralat GPS: " + err.message);
+                    },
+                    { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }
+                );
+            });
+        }
+
         async function hantarMasuk(isAuto = false) {
             if(isSubmitting) return; 
 
@@ -127,18 +183,6 @@
                 localStorage.removeItem('ehadir_auto_in_blocked');
             }
 
-            // EDIT SURGICAL: Benarkan manual override untuk GPS check supaya 'Lancar Tanpa Halangan'
-            if(!isInZone) { 
-                if(isAuto) { 
-                    return; // Auto kekal strict
-                }
-                else {
-                    // Manual: Jika GPS lari sikit, benarkan teruskan dengan pengesahan (User Friendly)
-                    let force = confirm("Amaran: GPS mengesan anda di luar kawasan. Teruskan daftar masuk?");
-                    if(!force) return;
-                }
-            }
-            
             let nama, kat;
             if (isAuto) {
                 nama = localStorage.getItem('ehadir_locked_name');
@@ -149,13 +193,37 @@
                 kat = document.getElementById('kategori').value;
             }
 
-            let alasan = "AUTO CHECK-IN (GPS)";
-            let now = new Date();
-
             if (!nama || !kat) { 
                 if(!isAuto) showModernAlert("Data Tidak Lengkap", "Isi Nama dan Kategori.", "error"); 
                 return; 
             }
+
+            let verifiedLat = lastLat;
+            let verifiedLng = lastLng;
+
+            // === MOD MANUAL: JALANKAN CHECK GPS KETAT ===
+            if(!isAuto) {
+                let btn = document.getElementById('btnMainSubmit');
+                btn.disabled = true;
+
+                try {
+                    let gpsData = await performAntiFakeGPSCheck(btn);
+                    verifiedLat = gpsData.lat;
+                    verifiedLng = gpsData.lng;
+                } catch (errMsg) {
+                    showModernAlert("Gagal GPS", errMsg, "error");
+                    btn.disabled = false;
+                    btn.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/128/9402/9402342.png" class="icon-3d-std"> DAFTAR MASUK (MANUAL)`;
+                    return; // Gagal check, stop di sini.
+                }
+            } 
+            else {
+                // === MOD AUTO: LOGIK ASAL (PANTAS) ===
+                if(!isInZone) return; // Auto kekal strict
+            }
+            
+            let alasan = "AUTO CHECK-IN (GPS)";
+            let now = new Date();
 
             isSubmitting = true;
             if(!isAuto) { document.getElementById('btnMainSubmit').disabled = true; document.getElementById('btnMainSubmit').innerHTML = 'SEDANG HANTAR...'; }
@@ -164,7 +232,7 @@
                 let savedAvatar = localStorage.getItem('ehadir_user_avatar') || "";
                 // Generate NEW uniqueID setiap kali masuk untuk elak duplicate reject
                 let uniqueID = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-                const payload = { action: "MASUK", passcode: PASSCODE, nama: nama, kategori: kat, alasan: alasan, lat: lastLat, lng: lastLng, clientTime: now.toISOString(), uuid: uniqueID, avatar: savedAvatar };
+                const payload = { action: "MASUK", passcode: PASSCODE, nama: nama, kategori: kat, alasan: alasan, lat: verifiedLat, lng: verifiedLng, clientTime: now.toISOString(), uuid: uniqueID, avatar: savedAvatar };
                 
                 const result = await sendData(payload);
 
@@ -746,7 +814,7 @@
                     </button>
 
                     <!-- LOCK BUTTON -->
-                    <button id="lockBtn" class="lock-btn" onclick="toggleLockName" title="Kunci Nama">
+                    <button id="lockBtn" class="lock-btn" onclick="toggleLockName()" title="Kunci Nama">
                         <img src="https://cdn-icons-png.flaticon.com/128/2550/2550226.png" class="icon-3d-mini" id="lockIconImg" style="filter:opacity(0.6)">
                     </button>
                 </div>
@@ -782,7 +850,7 @@
                 <button id="btnPelawatSubmit" class="btn btn-pelawat" onclick="hantarPelawat()">
                     <img src="https://cdn-icons-png.flaticon.com/128/9402/9402342.png" class="icon-3d-std"> HANTAR DATA
                 </button>
-                <button class="btn btn-cancel" onclick="cancelPelawat">BATAL</button>
+                <button class="btn btn-cancel" onclick="cancelPelawat()">BATAL</button>
             </div>
 
             <div class="list-header">

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Pelawat & Kehadiran v22.9 (Auto Mode)</title>
+    <title>Sistem Pelawat & Kehadiran v23.0 (Manual Override Fix)</title>
     
     <!-- ====================================================================== -->
     <!--                 RUANGAN EDIT PENGGUNA (mantap)                -->
@@ -63,7 +63,8 @@
                 if (!navigator.onLine) {
                     saveToQueue(data); resolve({ offline: true }); return;
                 }
-                fetch(API_URL, { method: "POST", body: JSON.stringify(data) })
+                // EDIT SURGICAL: Tambah 'nocache' timestamp untuk paksa data baru diterima server & elak sekatan cache
+                fetch(API_URL + "?nocache=" + Date.now(), { method: "POST", body: JSON.stringify(data) })
                 .then(response => response.json()).then(result => { resolve({ offline: false, data: result }); })
                 .catch(error => { saveToQueue(data); resolve({ offline: true }); });
             });
@@ -151,6 +152,7 @@
 
             try {
                 let savedAvatar = localStorage.getItem('ehadir_user_avatar') || "";
+                // Generate NEW uniqueID setiap kali masuk untuk elak duplicate reject
                 let uniqueID = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
                 const payload = { action: "MASUK", passcode: PASSCODE, nama: nama, kategori: kat, alasan: alasan, lat: lastLat, lng: lastLng, clientTime: now.toISOString(), uuid: uniqueID, avatar: savedAvatar };
                 
@@ -178,7 +180,7 @@
                 // EDIT: SIMPAN AVATAR DALAM SESSION
                 localStorage.setItem('ehadir_session', JSON.stringify({nama: nama, kategori: kat, date: now.toISOString().slice(0,10), uuid: uniqueID, avatar: savedAvatar}));
                 
-                // PEMBETULAN: Daftar masuk manual mereset sekatan Auto-In
+                // PEMBETULAN: Daftar masuk manual mereset sekatan Auto-In & Session Lama
                 localStorage.removeItem('ehadir_auto_in_blocked');
                 
                 location.reload();
@@ -194,14 +196,14 @@
             if(isSubmitting) return; 
 
             let session = JSON.parse(localStorage.getItem('ehadir_session'));
-            if (!session || !session.nama) { return; }
+            if (!session || !session.nama) { return; } // Safety check
             
             let alasanValue = isAuto ? "AUTO CHECKOUT (KELUAR KAWASAN)" : "PULANG (MANUAL)";
             let sessionUUID = session.uuid || "";
 
             let proceed = async () => {
                 isSubmitting = true; 
-                if(!isAuto) { document.getElementById('btnKeluar').disabled = true; document.getElementById('btnKeluar').innerText = "PROSES..."; }
+                if(!isAuto) { document.getElementById('btnKeluar').disabled = true; document.getElementById('btnKeluar').innerText = "PROSES RESET..."; }
 
                 try {
                     const payload = { action: "KELUAR", passcode: PASSCODE, nama: session.nama.toUpperCase(), alasan: alasanValue, lat: lastLat, lng: lastLng, clientTime: new Date().toISOString(), uuid: sessionUUID };
@@ -212,9 +214,12 @@
                         showSyncBar("SEMOGA SELAMAT DALAM PERJALANAN ANDA", "#c0392b");
                     }
                     
+                    // EDIT SURGICAL: Reset Total Session supaya boleh masuk balik Manual
                     localStorage.setItem('ehadir_auto_in_blocked', 'true');
                     localStorage.removeItem('ehadir_session');
-                    location.reload();
+                    
+                    // Delay sedikit untuk pastikan storage clear sebelum reload
+                    setTimeout(() => location.reload(), 500);
 
                 } catch (error) {
                     console.error(error);

@@ -63,8 +63,12 @@
                 if (!navigator.onLine) {
                     saveToQueue(data); resolve({ offline: true }); return;
                 }
-                // EDIT SURGICAL: Tambah 'nocache' timestamp untuk paksa data baru diterima server & elak sekatan cache
-                fetch(API_URL + "?nocache=" + Date.now(), { method: "POST", body: JSON.stringify(data) })
+                // EDIT SURGICAL: Tambah 'nocache' unik & paksa 'no-store' supaya browser tidak guna respon lama (Isu Kali Kedua Fail)
+                fetch(API_URL + "?t=" + new Date().getTime(), { 
+                    method: "POST", 
+                    cache: "no-store", // PENTING: Halang caching response sukses terdahulu
+                    body: JSON.stringify(data) 
+                })
                 .then(response => response.json()).then(result => { resolve({ offline: false, data: result }); })
                 .catch(error => { saveToQueue(data); resolve({ offline: true }); });
             });
@@ -161,29 +165,29 @@
                 if (result.offline) {
                     // ALERT REMOVED: Guna modern alert untuk privacy & smooth flow
                     if(!isAuto) showModernAlert("Mod Offline", "Data disimpan dalam telefon.", "info");
+                    // Offline mode diteruskan macam biasa
+                    localStorage.setItem('ehadir_session', JSON.stringify({nama: nama, kategori: kat, date: now.toISOString().slice(0,10), uuid: uniqueID, avatar: savedAvatar}));
+                    localStorage.removeItem('ehadir_auto_in_blocked');
+                    location.reload();
                 } else {
-                    if (result.data && result.data.result === "error") {
-                         if(!isAuto) showModernAlert("Gagal", result.data.msg, "error");
+                    // STRICT CHECK: Pastikan result 'success' dari Google Sheet sebelum kata BERJAYA
+                    if (result.data && result.data.result === "success") {
+                        if(isAuto) showSyncBar("SELAMAT DATANG KE SK SELAMA (K)", "#27ae60");
+                        
+                        // Simpan Session hanya bila server confirm SUCCESS
+                        localStorage.setItem('ehadir_session', JSON.stringify({nama: nama, kategori: kat, date: now.toISOString().slice(0,10), uuid: uniqueID, avatar: savedAvatar}));
+                        localStorage.removeItem('ehadir_auto_in_blocked');
+                        
+                        location.reload();
+                    } else {
+                         // Jika server return error atau unknown status
+                         let msg = (result.data && result.data.msg) ? result.data.msg : "Data gagal masuk ke Google Sheet. Sila cuba lagi.";
+                         if(!isAuto) showModernAlert("Gagal", msg, "error");
                          isSubmitting = false;
                          document.getElementById('btnMainSubmit').disabled = false;
                          document.getElementById('btnMainSubmit').innerHTML = `<img src="https://cdn-icons-png.flaticon.com/128/9402/9402342.png" class="icon-3d-std"> DAFTAR MASUK (MANUAL)`;
-                         return;
                     }
-                    // ALERT REMOVED: Auto-reload memberikan feedback visual yang cukup
-                    // if(!isAuto) alert("👍 Berjaya daftar masuk!"); 
                 }
-                
-                if(isAuto) {
-                    showSyncBar("SELAMAT DATANG KE SK SELAMA (K)", "#27ae60");
-                }
-
-                // EDIT: SIMPAN AVATAR DALAM SESSION
-                localStorage.setItem('ehadir_session', JSON.stringify({nama: nama, kategori: kat, date: now.toISOString().slice(0,10), uuid: uniqueID, avatar: savedAvatar}));
-                
-                // PEMBETULAN: Daftar masuk manual mereset sekatan Auto-In & Session Lama
-                localStorage.removeItem('ehadir_auto_in_blocked');
-                
-                location.reload();
 
             } catch (error) {
                 console.error("Ralat:", error);
@@ -210,27 +214,34 @@
                     
                     const result = await sendData(payload);
                     
-                    if(isAuto) {
-                        showSyncBar("SEMOGA SELAMAT DALAM PERJALANAN ANDA", "#c0392b");
+                    // STRICT CHECK: Sama seperti masuk, pastikan keluar pun success dari server
+                    if (result.offline || (result.data && result.data.result === "success")) {
+                        if(isAuto) {
+                            showSyncBar("SEMOGA SELAMAT DALAM PERJALANAN ANDA", "#c0392b");
+                        }
+                        
+                        // Reset Total Session supaya boleh masuk balik Manual
+                        localStorage.setItem('ehadir_auto_in_blocked', 'true');
+                        localStorage.removeItem('ehadir_session');
+                        
+                        // Delay sedikit untuk pastikan storage clear sebelum reload
+                        setTimeout(() => location.reload(), 500);
+                    } else {
+                        // Handle server failure
+                        throw new Error("Respon server tidak sah: " + JSON.stringify(result.data));
                     }
-                    
-                    // EDIT SURGICAL: Reset Total Session supaya boleh masuk balik Manual
-                    localStorage.setItem('ehadir_auto_in_blocked', 'true');
-                    localStorage.removeItem('ehadir_session');
-                    
-                    // Delay sedikit untuk pastikan storage clear sebelum reload
-                    setTimeout(() => location.reload(), 500);
 
                 } catch (error) {
                     console.error(error);
                     isSubmitting = false;
                     if(isAuto) {
+                        // Jika auto fail, force logout untuk elak loop
                         localStorage.removeItem('ehadir_session');
                         location.reload();
                     } else {
                         document.getElementById('btnKeluar').disabled = false;
                         document.getElementById('btnKeluar').innerHTML = `<img src="https://cdn-icons-png.flaticon.com/128/3580/3580154.png" class="icon-3d-std"> DAFTAR KELUAR (MANUAL)`;
-                        showModernAlert("Ralat", "Gagal daftar keluar. Sila cuba lagi.", "error");
+                        showModernAlert("Ralat", "Gagal daftar keluar. Server mungkin sibuk.", "error");
                     }
                 }
             };
@@ -261,9 +272,15 @@
             document.getElementById('btnPelawatSubmit').innerText = "SEDANG HANTAR...";
             try {
                 const payload = { action: "MASUK", passcode: PASSCODE, kategori: "PELAWAT", nama: namaPelawat, fotoBase64: foto, lat: lastLat, lng: lastLng, clientTime: new Date().toISOString() };
-                await sendData(payload);
-                showModernAlert("Berjaya", "Data pelawat diterima.", "success");
-                setTimeout(() => location.reload(), 1500);
+                let result = await sendData(payload);
+                if(result.offline || (result.data && result.data.result === "success")) {
+                    showModernAlert("Berjaya", "Data pelawat diterima.", "success");
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showModernAlert("Gagal", "Server menolak data.", "error");
+                    isSubmitting = false;
+                    document.getElementById('btnPelawatSubmit').disabled = false;
+                }
             } catch (error) {
                 console.error(error);
                 isSubmitting = false;
@@ -698,7 +715,7 @@
                     </button>
 
                     <!-- LOCK BUTTON -->
-                    <button id="lockBtn" class="lock-btn" onclick="toggleLockName()" title="Kunci Nama">
+                    <button id="lockBtn" class="lock-btn" onclick="toggleLockName" title="Kunci Nama">
                         <img src="https://cdn-icons-png.flaticon.com/128/2550/2550226.png" class="icon-3d-mini" id="lockIconImg" style="filter:opacity(0.6)">
                     </button>
                 </div>

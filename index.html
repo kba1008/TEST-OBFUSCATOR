@@ -127,16 +127,11 @@
                 localStorage.removeItem('ehadir_auto_in_blocked');
             }
 
-            // EDIT SURGICAL: Benarkan manual override untuk GPS check supaya 'Lancar Tanpa Halangan'
+            // EDIT SURGICAL: STRICT FILTER & ANTI-FAKE GPS (TIADA LAGI MANUAL OVERRIDE)
             if(!isInZone) { 
-                if(isAuto) { 
-                    return; // Auto kekal strict
-                }
-                else {
-                    // Manual: Jika GPS lari sikit, benarkan teruskan dengan pengesahan (User Friendly)
-                    let force = confirm("Amaran: GPS mengesan anda di luar kawasan. Teruskan daftar masuk?");
-                    if(!force) return;
-                }
+                if(isAuto) return; // Auto diam jika luar kawasan
+                showModernAlert("Luar Kawasan", "Anda berada di luar zon yang dibenarkan (" + Math.round(currentDist) + "m).", "error");
+                return;
             }
             
             let nama, kat;
@@ -158,7 +153,49 @@
             }
 
             isSubmitting = true;
-            if(!isAuto) { document.getElementById('btnMainSubmit').disabled = true; document.getElementById('btnMainSubmit').innerHTML = 'SEDANG HANTAR...'; }
+            if(!isAuto) { 
+                // STEP: FILTER ANTI-FAKE GPS (SAMPLING)
+                document.getElementById('btnMainSubmit').disabled = true; 
+                document.getElementById('btnMainSubmit').innerHTML = 'MENYEMAK GPS...'; 
+
+                try {
+                    await new Promise((resolve, reject) => {
+                        let samples = [];
+                        let required = 3; 
+                        let w = navigator.geolocation.watchPosition(p => {
+                            samples.push({lat: p.coords.latitude, lng: p.coords.longitude});
+                            document.getElementById('btnMainSubmit').innerHTML = `ANALISIS INTEGRITI (${samples.length}/${required})...`;
+                            
+                            if(samples.length >= required) {
+                                navigator.geolocation.clearWatch(w);
+                                // A. Cek Static (Fake GPS selalunya statik)
+                                let first = JSON.stringify(samples[0]);
+                                let isStatic = samples.every(s => JSON.stringify(s) === first);
+                                // B. Cek Jarak Terkini
+                                let last = samples[samples.length-1];
+                                let d = calcDist(last.lat, last.lng, SCHOOL_LAT, SCHOOL_LNG);
+                                
+                                if(d > RADIUS_METER) reject(`Lokasi tidak sah! Jarak: ${Math.round(d)}m`);
+                                else if(isStatic) reject("GPS Statik Dikesan (Anti-Fake). Sila bergerak sedikit.");
+                                else {
+                                    lastLat = last.lat; lastLng = last.lng; // Update global
+                                    resolve();
+                                }
+                            }
+                        }, err => {
+                            navigator.geolocation.clearWatch(w); reject(err.message);
+                        }, {enableHighAccuracy: true, maximumAge: 0, timeout: 5000});
+                    });
+                } catch(e) {
+                    showModernAlert("Gagal Masuk", e, "error");
+                    isSubmitting = false;
+                    document.getElementById('btnMainSubmit').disabled = false;
+                    document.getElementById('btnMainSubmit').innerHTML = `<img src="https://cdn-icons-png.flaticon.com/128/9402/9402342.png" class="icon-3d-std"> DAFTAR MASUK (MANUAL)`;
+                    return;
+                }
+
+                document.getElementById('btnMainSubmit').innerHTML = 'SEDANG HANTAR...'; 
+            }
 
             try {
                 let savedAvatar = localStorage.getItem('ehadir_user_avatar') || "";

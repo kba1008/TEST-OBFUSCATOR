@@ -212,37 +212,26 @@
                 try {
                     const payload = { action: "KELUAR", passcode: PASSCODE, nama: session.nama.toUpperCase(), alasan: alasanValue, lat: lastLat, lng: lastLng, clientTime: new Date().toISOString(), uuid: sessionUUID };
                     
-                    const result = await sendData(payload);
+                    // EDIT SURGICAL: KELUAR TIDAK PERLU CEK SERVER. Fire & Forget.
+                    await sendData(payload);
                     
-                    // STRICT CHECK: Sama seperti masuk, pastikan keluar pun success dari server
-                    if (result.offline || (result.data && result.data.result === "success")) {
-                        if(isAuto) {
-                            showSyncBar("SEMOGA SELAMAT DALAM PERJALANAN ANDA", "#c0392b");
-                        }
-                        
-                        // Reset Total Session supaya boleh masuk balik Manual
-                        localStorage.setItem('ehadir_auto_in_blocked', 'true');
-                        localStorage.removeItem('ehadir_session');
-                        
-                        // Delay sedikit untuk pastikan storage clear sebelum reload
-                        setTimeout(() => location.reload(), 500);
-                    } else {
-                        // Handle server failure
-                        throw new Error("Respon server tidak sah: " + JSON.stringify(result.data));
+                    // Terus reset local session tanpa menunggu 'success' server.
+                    if(isAuto) {
+                        showSyncBar("SEMOGA SELAMAT DALAM PERJALANAN ANDA", "#c0392b");
                     }
+                    
+                    // Reset Total Session
+                    localStorage.setItem('ehadir_auto_in_blocked', 'true');
+                    localStorage.removeItem('ehadir_session');
+                    
+                    // Delay sedikit untuk pastikan storage clear sebelum reload
+                    setTimeout(() => location.reload(), 500);
 
                 } catch (error) {
+                    // Jika error rangkaian pun, force logout tetap jalan
                     console.error(error);
-                    isSubmitting = false;
-                    if(isAuto) {
-                        // Jika auto fail, force logout untuk elak loop
-                        localStorage.removeItem('ehadir_session');
-                        location.reload();
-                    } else {
-                        document.getElementById('btnKeluar').disabled = false;
-                        document.getElementById('btnKeluar').innerHTML = `<img src="https://cdn-icons-png.flaticon.com/128/3580/3580154.png" class="icon-3d-std"> DAFTAR KELUAR (MANUAL)`;
-                        showModernAlert("Ralat", "Gagal daftar keluar. Server mungkin sibuk.", "error");
-                    }
+                    localStorage.removeItem('ehadir_session');
+                    location.reload();
                 }
             };
 

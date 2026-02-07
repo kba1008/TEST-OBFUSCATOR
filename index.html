@@ -121,6 +121,12 @@
         async function hantarMasuk(isAuto = false) {
             if(isSubmitting) return; 
 
+            // LOGIK BARU: RESET SESSION DAHULU (Permintaan Murid)
+            if(!isAuto) {
+                localStorage.removeItem('ehadir_session');
+                localStorage.removeItem('ehadir_auto_in_blocked');
+            }
+
             // EDIT SURGICAL: Benarkan manual override untuk GPS check supaya 'Lancar Tanpa Halangan'
             if(!isInZone) { 
                 if(isAuto) { 
@@ -170,15 +176,18 @@
                     localStorage.removeItem('ehadir_auto_in_blocked');
                     location.reload();
                 } else {
-                    // STRICT CHECK: Pastikan result 'success' dari Google Sheet sebelum kata BERJAYA
+                    // STRICT CHECK: Double Check Google Sheet (Column E Logic)
                     if (result.data && result.data.result === "success") {
-                        if(isAuto) showSyncBar("SELAMAT DATANG KE SK SELAMA (K)", "#27ae60");
-                        
-                        // Simpan Session hanya bila server confirm SUCCESS
-                        localStorage.setItem('ehadir_session', JSON.stringify({nama: nama, kategori: kat, date: now.toISOString().slice(0,10), uuid: uniqueID, avatar: savedAvatar}));
-                        localStorage.removeItem('ehadir_auto_in_blocked');
-                        
-                        location.reload();
+                        if(isAuto) {
+                            showSyncBar("SELAMAT DATANG KE SK SELAMA (K)", "#27ae60");
+                            localStorage.setItem('ehadir_session', JSON.stringify({nama: nama, kategori: kat, date: now.toISOString().slice(0,10), uuid: uniqueID, avatar: savedAvatar}));
+                            localStorage.removeItem('ehadir_auto_in_blocked');
+                            location.reload();
+                        } else {
+                             // MANUAL MODE: VERIFY DAHULU SEBELUM SUCCESS
+                             document.getElementById('btnMainSubmit').innerHTML = 'SAHKAN DATA (DB)...';
+                             await verifyAndFinalize(nama, kat, uniqueID, savedAvatar);
+                        }
                     } else {
                          // Jika server return error atau unknown status
                          let msg = (result.data && result.data.msg) ? result.data.msg : "Data gagal masuk ke Google Sheet. Sila cuba lagi.";
@@ -194,6 +203,39 @@
                 isSubmitting = false;
                 if(!isAuto) document.getElementById('btnMainSubmit').disabled = false;
             }
+        }
+
+        async function verifyAndFinalize(nama, kat, uuid, avatar, attempt = 1) {
+             if(attempt > 5) {
+                 showModernAlert("Masa Tamat", "Data dihantar tetapi server lambat respon. Sila semak senarai manual.", "info");
+                 isSubmitting = false;
+                 document.getElementById('btnMainSubmit').disabled = false;
+                 document.getElementById('btnMainSubmit').innerHTML = `<img src="https://cdn-icons-png.flaticon.com/128/9402/9402342.png" class="icon-3d-std"> DAFTAR MASUK (MANUAL)`;
+                 return;
+             }
+             
+             await new Promise(r => setTimeout(r, 2000));
+
+             try {
+                 let response = await fetch(API_URL, { method: "POST", body: JSON.stringify({action: "GET_LIST", passcode: PASSCODE}) });
+                 let json = await response.json();
+                 let list = json.data || json;
+                 // Cek jika nama ada DAN masa (Kolum E/jam) wujud
+                 let record = list.find(item => item.nama === nama && item.jam && item.jam !== "");
+                 
+                 if (record) {
+                     showModernAlert("Berjaya", "Data disahkan masuk dalam sistem!", "success");
+                     localStorage.setItem('ehadir_session', JSON.stringify({nama: nama, kategori: kat, date: new Date().toISOString().slice(0,10), uuid: uuid, avatar: avatar}));
+                     localStorage.removeItem('ehadir_auto_in_blocked');
+                     setTimeout(() => location.reload(), 1500);
+                 } else {
+                     document.getElementById('btnMainSubmit').innerHTML = `SAHKAN DATA (${attempt}/5)...`;
+                     await verifyAndFinalize(nama, kat, uuid, avatar, attempt + 1);
+                 }
+             } catch(e) {
+                 console.log("Verify Error", e);
+                 await verifyAndFinalize(nama, kat, uuid, avatar, attempt + 1);
+             }
         }
 
         async function hantarKeluar(isAuto = false) {

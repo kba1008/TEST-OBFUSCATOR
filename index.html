@@ -796,6 +796,11 @@
                 <button id="btnMainSubmit" class="btn" onclick="hantarMasuk(false)">
                     <img src="https://cdn-icons-png.flaticon.com/128/9402/9402342.png" class="icon-3d-std"> DAFTAR MASUK (MANUAL)
                 </button>
+
+                <!-- NEW: Butang Pelawat Muncul Bila Lock -->
+                <button id="btnPelawatLocked" class="btn btn-pelawat" onclick="showPelawatForm()" style="display:none; margin-top:10px;">
+                    <img src="https://cdn-icons-png.flaticon.com/128/3135/3135768.png" class="icon-3d-std"> BANTU DAFTAR PELAWAT
+                </button>
             </div>
 
             <div id="pelawatPanel">
@@ -1028,6 +1033,7 @@
         let btnImg = document.getElementById('lockIconImg');
         let btnLock = document.getElementById('lockBtn');
         let avatarBtn = document.getElementById('avatarBtn'); 
+        let btnPelawatLocked = document.getElementById('btnPelawatLocked'); // ELEMENT BARU
         
         if (!locked || !lockedKat) {
             if(locked || lockedKat) {
@@ -1051,6 +1057,9 @@
             btnImg.src = "https://cdn-icons-png.flaticon.com/128/3064/3064155.png"; 
             btnImg.style.filter = "opacity(1)";
             btnLock.classList.add('btn-yellow');
+            
+            // LOGIK BARU: Tunjuk butang pelawat bila locked
+            if(btnPelawatLocked) btnPelawatLocked.style.display = 'flex';
         } else {
             input.readOnly = false;
             sel.disabled = false;
@@ -1062,6 +1071,9 @@
             btnImg.src = "https://cdn-icons-png.flaticon.com/128/3064/3064197.png"; 
             btnImg.style.filter = "opacity(0.6)";
             btnLock.classList.remove('btn-yellow');
+
+            // LOGIK BARU: Sembunyi butang pelawat bila unlocked
+            if(btnPelawatLocked) btnPelawatLocked.style.display = 'none';
         }
     }
 

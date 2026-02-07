@@ -116,9 +116,16 @@
         async function hantarMasuk(isAuto = false) {
             if(isSubmitting) return; 
 
+            // EDIT SURGICAL: Benarkan manual override untuk GPS check supaya 'Lancar Tanpa Halangan'
             if(!isInZone) { 
-                if(!isAuto) showModernAlert("Luar Kawasan", "Sila masuk ke kawasan sekolah.", "error"); 
-                return; 
+                if(isAuto) { 
+                    return; // Auto kekal strict
+                }
+                else {
+                    // Manual: Jika GPS lari sikit, benarkan teruskan dengan pengesahan (User Friendly)
+                    let force = confirm("Amaran: GPS mengesan anda di luar kawasan. Teruskan daftar masuk?");
+                    if(!force) return;
+                }
             }
             
             let nama, kat;

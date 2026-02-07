@@ -150,7 +150,8 @@
                 const result = await sendData(payload);
 
                 if (result.offline) {
-                    if(!isAuto) alert("Offline: Data disimpan.");
+                    // ALERT REMOVED: Guna modern alert untuk privacy & smooth flow
+                    if(!isAuto) showModernAlert("Mod Offline", "Data disimpan dalam telefon.", "info");
                 } else {
                     if (result.data && result.data.result === "error") {
                          if(!isAuto) showModernAlert("Gagal", result.data.msg, "error");
@@ -159,7 +160,8 @@
                          document.getElementById('btnMainSubmit').innerHTML = `<img src="https://cdn-icons-png.flaticon.com/128/9402/9402342.png" class="icon-3d-std"> DAFTAR MASUK (MANUAL)`;
                          return;
                     }
-                    if(!isAuto) alert("👍 Berjaya daftar masuk!");
+                    // ALERT REMOVED: Auto-reload memberikan feedback visual yang cukup
+                    // if(!isAuto) alert("👍 Berjaya daftar masuk!"); 
                 }
                 
                 if(isAuto) {
@@ -212,7 +214,7 @@
                     } else {
                         document.getElementById('btnKeluar').disabled = false;
                         document.getElementById('btnKeluar').innerHTML = `<img src="https://cdn-icons-png.flaticon.com/128/3580/3580154.png" class="icon-3d-std"> DAFTAR KELUAR (MANUAL)`;
-                        alert("Ralat semasa keluar. Sila cuba lagi.");
+                        showModernAlert("Ralat", "Gagal daftar keluar. Sila cuba lagi.", "error");
                     }
                 }
             };
@@ -244,8 +246,8 @@
             try {
                 const payload = { action: "MASUK", passcode: PASSCODE, kategori: "PELAWAT", nama: namaPelawat, fotoBase64: foto, lat: lastLat, lng: lastLng, clientTime: new Date().toISOString() };
                 await sendData(payload);
-                alert("👍 Data pelawat berjaya dihantar!");
-                location.reload();
+                showModernAlert("Berjaya", "Data pelawat diterima.", "success");
+                setTimeout(() => location.reload(), 1500);
             } catch (error) {
                 console.error(error);
                 isSubmitting = false;
@@ -496,11 +498,32 @@
         .icon-btn { cursor: pointer; font-size: 14px; width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; background: #f8f9fa; border: 1px solid #eee; transition: background 0.2s; }
         .icon-btn:hover { background: #e2e6ea; }
 
-        #scheduleInfo { display: none; background: transparent; padding: 0; margin-bottom: 15px; text-align: center; animation: fadeIn 0.5s; }
+        #scheduleInfo { display: none; background: transparent; padding: 0; margin-bottom: 15px; text-align: center; }
         .schedule-minimal { display: flex; justify-content: center; gap: 10px; align-items: center; }
-        .time-pill { background: #f1f3f5; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 5px; border: 1px solid #e9ecef; }
         
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+        /* UBAH SUAI UI: Time Pill yang lebih moden dan canggih */
+        .time-pill { 
+            background: rgba(255, 255, 255, 0.95); 
+            padding: 10px 18px; 
+            border-radius: 30px; 
+            font-size: 11px; 
+            font-weight: 700; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            border: 1px solid rgba(0,0,0,0.06); 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08); 
+            backdrop-filter: blur(5px);
+            transition: transform 0.2s;
+        }
+        .time-pill:hover { transform: translateY(-2px); }
+        
+        /* Animasi Pop-In untuk visual canggih */
+        .pop-in { animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        @keyframes popIn { 
+            0% { opacity: 0; transform: scale(0.8) translateY(-10px); } 
+            100% { opacity: 1; transform: scale(1) translateY(0); } 
+        }
 
         #imageModal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.9); align-items: center; justify-content: center; }
         .modal-content { margin: auto; display: block; max-width: 90%; max-height: 80%; border-radius: 10px; border: 2px solid white; }
@@ -994,9 +1017,14 @@
         if (kat && jamConfig[kat]) {
             let masuk = cleanTimeDisplay(jamConfig[kat].masuk);
             let keluar = cleanTimeDisplay(jamConfig[kat].keluar);
-            // UPDATE ICON MENGIKUT PERMINTAAN (NEW 3D CLOCKS)
-            infoBox.innerHTML = `<div class="schedule-minimal"><div class="time-pill" style="color:#27ae60; border-color:#d4edda; background:#f0fdf4;"><span><img src="https://cdn-icons-png.flaticon.com/128/3233/3233497.png" class="icon-3d-mini"> ${masuk}</span></div><div class="time-pill" style="color:#c0392b; border-color:#fadbd8; background:#fef2f2;"><span><img src="https://cdn-icons-png.flaticon.com/128/3233/3233513.png" class="icon-3d-mini"> ${keluar}</span></div></div>`;
+            // UPDATE ICON MENGIKUT PERMINTAAN (NEW 3D CLOCKS) + ANIMATION
+            infoBox.innerHTML = `<div class="schedule-minimal"><div class="time-pill" style="color:#27ae60; border-color:#d4edda;"><span><img src="https://cdn-icons-png.flaticon.com/128/3233/3233497.png" class="icon-3d-mini"> ${masuk}</span></div><div class="time-pill" style="color:#c0392b; border-color:#fadbd8;"><span><img src="https://cdn-icons-png.flaticon.com/128/3233/3233513.png" class="icon-3d-mini"> ${keluar}</span></div></div>`;
             infoBox.style.display = "block";
+            
+            // Trigger Re-Animation
+            infoBox.classList.remove('pop-in');
+            void infoBox.offsetWidth; // Force Reflow
+            infoBox.classList.add('pop-in');
         }
     }
 
@@ -1014,13 +1042,13 @@
     function parseTime(t, r) {
         if (!t || t.toString().toUpperCase() === "BEBAS") return null;
         let d = new Date(r); let tStr = t.toString().trim();
-        let p = tStr.match(/(\\d+)[:.](\\d+)(?:[:.](\\d+))?\\s*(AM|PM)/i);
+        let p = tStr.match(/(\d+)[:.](\d+)(?:[:.](\d+))?\s*(AM|PM)/i);
         if(p) {
             let h = parseInt(p[1]), m = parseInt(p[2]), ampm = p[4].toUpperCase();
             if(ampm === "PM" && h < 12) h += 12; if(ampm === "AM" && h === 12) h = 0;
             d.setHours(h, m, 0, 0); return d;
         } 
-        let p2 = tStr.match(/(\\d+)[:.](\\d+)/);
+        let p2 = tStr.match(/(\d+)[:.](\d+)/);
         if(p2) { d.setHours(parseInt(p2[1]), parseInt(p2[2]), 0, 0); return d; }
         return null; 
     }
@@ -1028,7 +1056,7 @@
     function parseTimeLocal(timeStr) {
         if (!timeStr) return null;
         if (timeStr.toString().length > 15) { let tempD = new Date(timeStr); if(!isNaN(tempD.getTime())) { let now = new Date(); now.setHours(tempD.getHours(), tempD.getMinutes(), tempD.getSeconds(), 0); return now; } }
-        let parts = timeStr.match(/(\\d+):(\\d+)(?::(\\d+))?\\s*(AM|PM|am|pm)?/i);
+        let parts = timeStr.match(/(\d+):(\d+)(?::(\d+))?\s*(AM|PM|am|pm)?/i);
         if (!parts) return null;
         let h = parseInt(parts[1]), m = parseInt(parts[2]), s = parts[3] ? parseInt(parts[3]) : 0, ampm = parts[4] ? parts[4].toUpperCase() : null;
         if (ampm === "PM" && h < 12) h += 12; if (ampm === "AM" && h === 12) h = 0;

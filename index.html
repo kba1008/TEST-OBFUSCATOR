@@ -16,17 +16,17 @@
         const PASSCODE = "101010";
           
         // 3. Koordinat Lokasi (Ambil dari Google Maps)
-        const SCHOOL_LAT = 5.227691965160906; 
-        const SCHOOL_LNG = 100.69903377890643; 
+        const SCHOOL_LAT = 5.235704697233325; 
+        const SCHOOL_LNG = 100.68343016760828; 
         
         // 4. Jarak Radius yang dibenarkan (dalam meter)
-        const RADIUS_METER = 30; 
+        const RADIUS_METER = 200; 
 
         // 5. Anti-Spam Check-Check: Berapa minit dalam kawasan baru auto-masuk? (Elak spam)
         const MINIT_ANTI_SPAM_MASUK = 0.0001;
 
         // 6. Auto Checkout Delay: Berapa minit luar kawasan baru auto-keluar? (Smooth)
-        const MINIT_DELAY_KELUAR = 5;
+        const MINIT_DELAY_KELUAR = 10;
 
         // 7. Jarak Reset Auto-In: Pengguna perlu keluar sejauh ini (meter) untuk aktifkan semula auto-in selepas check-out
         const RADIUS_RESET_AUTO_IN = 300;
@@ -94,31 +94,34 @@
         }
 
         function checkAutoStatus(list) {
+            // UPDATED: Double Check Strict (Session vs Server List)
+            let session = JSON.parse(localStorage.getItem('ehadir_session'));
             let locked = localStorage.getItem('ehadir_locked_name');
-            if(!locked) return;
+            let target = (session && session.nama) ? session.nama : locked;
             
-            let userRecord = list.find(item => item.nama === locked);
-            let currentSess = JSON.parse(localStorage.getItem('ehadir_session'));
+            if(!target) return;
+            
+            let userRecord = list.find(item => item.nama === target);
 
-            // LOGIK DOUBLE CHECK: Pastikan butang keluar konsisten dengan DB
+            // LOGIK: Jika data dalam DB bercanggah dengan Session, betulkan Session.
             if (userRecord) {
-                // Nama ADA dalam senarai (BELUM KELUAR) -> Paksa Session Ada
-                if (!currentSess) {
+                // KES A: Nama ADA dalam senarai (Masih Check-In) -> Paksa Session Ada
+                if (!session) {
                      localStorage.setItem('ehadir_session', JSON.stringify({
-                         nama: locked,
+                         nama: target,
                          kategori: userRecord.kategori || "GURU", 
                          date: new Date().toISOString().slice(0,10),
-                         avatar: userRecord.avatar // Kekalkan avatar jika ada
+                         avatar: userRecord.avatar || localStorage.getItem('ehadir_user_avatar')
                      }));
                      location.reload(); 
                 }
             } else {
-                // Nama TIADA dalam senarai (SUDAH KELUAR) -> Paksa Session Tiada
-                // *Kecuali jika ada data offline yang belum sync
+                // KES B: Nama TIADA dalam senarai (Dah Check-Out) -> Paksa Session Tiada
+                // *Kecuali jika ada dalam queue offline (pending)
                 let queue = JSON.parse(localStorage.getItem('ehadir_offline_queue') || "[]");
-                let isPending = queue.some(q => q.nama === locked && q.action === "MASUK");
+                let isPending = queue.some(q => q.nama === target && q.action === "MASUK");
                 
-                if (currentSess && !isPending) {
+                if (session && !isPending) {
                     localStorage.removeItem('ehadir_session');
                     location.reload();
                 }
@@ -1058,7 +1061,8 @@
             if(locked || lockedKat) {
                 localStorage.removeItem('ehadir_locked_name');
                 localStorage.removeItem('ehadir_locked_kat');
-            }ধনLocked = null; 
+            }
+            locked = null; 
             lockedKat = null;
         }
 
@@ -1303,4 +1307,3 @@
 </script>
 </body>
 </html>
-

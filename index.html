@@ -20,7 +20,7 @@
         const SCHOOL_LNG = 100.69903377890643; 
         
         // 4. Jarak Radius yang dibenarkan (dalam meter)
-        const RADIUS_METER = 50; 
+        const RADIUS_METER = 50;  
 
         // 5. Anti-Spam Check-Check: Berapa minit dalam kawasan baru auto-masuk? (Elak spam)
         const MINIT_ANTI_SPAM_MASUK = 1;
@@ -297,23 +297,64 @@
         async function hantarKeluar(isAuto = false) {
             if(isSubmitting) return; 
 
-            // UBAH SUAI SURGICAL: Sokong keluar manual di main screen jika session hilang
             let session = JSON.parse(localStorage.getItem('ehadir_session'));
             let namaVal, katVal, uuidVal;
+
+            // --- SECURITY & INTEGRITY ENHANCEMENT (Pembedahan Tepat) ---
+            // HALANG DAFTAR KELUAR MANUAL TANPA SESI SAH. 
+            // Ini memaksa pengguna mengesahkan identiti melalui DB sebelum dibenarkan keluar.
+            if (!isAuto && !session) {
+                let iName = document.getElementById('nama') ? document.getElementById('nama').value.toUpperCase().trim() : "";
+                if (!iName) { showModernAlert("Tiada Nama", "Sila isi Nama dahulu.", "error"); return; }
+                
+                let btn = document.getElementById('btnKeluarMain');
+                if(btn) btn.innerHTML = "MENYEMAK DATA...";
+                isSubmitting = true;
+
+                try {
+                    let response = await fetch(API_URL, { method: "POST", body: JSON.stringify({action: "GET_LIST", passcode: PASSCODE}) });
+                    let json = await response.json();
+                    let list = json.data || json;
+                    // Hanya cari user yang aktif (wujud dalam senarai server)
+                    let record = list.find(item => item.nama === iName);
+                    
+                    if (record) {
+                        // JIKA REKOD WUJUD -> PULIHKAN SESI (RESTORE)
+                        // Ini membuktikan user memang ada di sekolah, bukan spoofing kosong.
+                        localStorage.setItem('ehadir_session', JSON.stringify({
+                             nama: record.nama,
+                             kategori: record.kategori,
+                             date: new Date().toISOString().slice(0,10),
+                             avatar: record.foto || localStorage.getItem('ehadir_user_avatar') || ""
+                         }));
+                         
+                        showModernAlert("Sesi Dipulihkan", "Rekod kehadiran ditemui. Sila tekan butang <b>DAFTAR KELUAR</b> di papan pemuka sekarang.", "success");
+                        setTimeout(() => location.reload(), 2000);
+                        return; // STOP DI SINI. JANGAN TERUSKAN KELUAR.
+                    } else {
+                        showModernAlert("Gagal", "Tiada rekod masuk aktif untuk nama ini. Sila Daftar Masuk dahulu.", "error");
+                        isSubmitting = false;
+                        if(btn) btn.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/128/3580/3580154.png" class="icon-3d-std"> KELUAR`;
+                        return;
+                    }
+                } catch (e) {
+                    showModernAlert("Ralat", "Gagal menyemak status. Pastikan internet ada.", "error");
+                    isSubmitting = false;
+                    if(btn) btn.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/128/3580/3580154.png" class="icon-3d-std"> KELUAR`;
+                    return;
+                }
+            }
+            // ----------------------------------------------------------------------
 
             if (session && session.nama) {
                 namaVal = session.nama;
                 katVal = session.kategori;
                 uuidVal = session.uuid || "";
             } else {
-                // Fallback: Guna Locked Name atau Input jika session tiada
+                // Fallback (Hanya berlaku jika Auto triggered without full session)
                 let lName = localStorage.getItem('ehadir_locked_name');
                 let lKat = localStorage.getItem('ehadir_locked_kat');
-                let iName = document.getElementById('nama') ? document.getElementById('nama').value.toUpperCase().trim() : "";
-                let iKat = document.getElementById('kategori') ? document.getElementById('kategori').value : "";
-
                 if (lName && lKat) { namaVal = lName; katVal = lKat; }
-                else if (iName && iKat) { namaVal = iName; katVal = iKat; }
                 else {
                     if(!isAuto) showModernAlert("Tiada Maklumat", "Sila isi Nama & Kategori atau KUNCI nama dahulu untuk daftar keluar.", "error");
                     return;
@@ -1329,4 +1370,3 @@
 </script>
 </body>
 </html>
-

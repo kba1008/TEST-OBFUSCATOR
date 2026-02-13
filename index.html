@@ -1,199 +1,137 @@
-// Cikgu AI: Ini adalah otak aplikasi kita. 
-// Kita guna pembolehubah global untuk simpan data sementara.
-let templateImage = null;
-let excelData = [];
-let fieldCoordinates = {}; // Menyimpan posisi { 'Nama': {x: 10, y: 20}, ... }
-let currentFontSize = 24;
-let currentColor = '#000000';
-
-// DOM Elements
-const inputTemplate = document.getElementById('input-template');
-const inputExcel = document.getElementById('input-excel');
-const templatePreview = document.getElementById('template-preview');
-const emptyState = document.getElementById('empty-state');
-const layerText = document.getElementById('layer-text');
-const fieldListDiv = document.getElementById('field-list');
-const printArea = document.getElementById('print-area');
-const btnPrint = document.getElementById('btn-print-main');
-
-// 1. FUNGSI UPLOAD TEMPLATE
-inputTemplate.addEventListener('change', function(e) {
-  const file = e.target.files[0];
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = function(event) {
-      templateImage = event.target.result;
-      templatePreview.src = templateImage;
-      templatePreview.classList.remove('hidden');
-      emptyState.classList.add('hidden');
-      checkReady();
-    };
-    reader.readAsDataURL(file);
-  }
-});
-
-// 2. FUNGSI BACA EXCEL
-inputExcel.addEventListener('change', function(e) {
-  const file = e.target.files[0];
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = function(event) {
-      const data = new Uint8Array(event.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
-      const sheetName = workbook.SheetNames[0];
-      const sheet = workbook.Sheets[sheetName];
-      // Tukar sheet kepada JSON
-      excelData = XLSX.utils.sheet_to_json(sheet);
-
-      if (excelData.length > 0) {
-        generateFields(excelData[0]);
-        checkReady();
-      } else {
-        alert('Excel kosong!');
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SijilGen Pro - Pukal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Library untuk baca Excel -->
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <!-- Font Google -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    /* CSS Khas untuk Cetakan */
+    @media print {
+      @page { size: landscape; margin: 0; }
+      body * {
+        visibility: hidden;
       }
-    };
-    reader.readAsArrayBuffer(file);
-  }
-});
-
-// 3. GENERATE FIELD DARI HEADER EXCEL
-function generateFields(firstRow) {
-  fieldListDiv.innerHTML = '';
-  layerText.innerHTML = '';
-  
-  // Dapatkan kunci (header) dari baris pertama
-  const headers = Object.keys(firstRow);
-  
-  headers.forEach((header, index) => {
-    // A. Update UI Senarai Field (Kiri)
-    const badge = document.createElement('span');
-    badge.className = 'px-2 py-1 bg-blue-600 rounded text-xs text-white';
-    badge.innerText = header;
-    fieldListDiv.appendChild(badge);
-
-    // B. Cipta Elemen Draggable (Kanan/Preview)
-    createDraggableElement(header, index);
-  });
-}
-
-// 4. CIPTA ELEMEN DRAGGABLE
-function createDraggableElement(text, index) {
-  const div = document.createElement('div');
-  div.className = 'draggable-item absolute font-bold';
-  div.style.top = (10 + (index * 5)) + '%'; // Jarakkan sikit setiap satu
-  div.style.left = '10%';
-  div.style.fontSize = currentFontSize + 'px';
-  div.style.color = currentColor;
-  div.innerText = `{${text}}`; // Papar placeholder
-  div.id = `field-${text}`;
-  
-  // Logic Drag n Drop Mouse
-  let isDragging = false;
-  let offsetX, offsetY;
-
-  div.addEventListener('mousedown', (e) => {
-    isDragging = true;
-    // Kira offset cursor dari bucu elemen
-    offsetX = e.clientX - div.getBoundingClientRect().left;
-    offsetY = e.clientY - div.getBoundingClientRect().top;
-    div.style.cursor = 'grabbing';
-  });
-
-  document.addEventListener('mousemove', (e) => {
-    if (!isDragging) return;
-    
-    const containerRect = layerText.getBoundingClientRect();
-    
-    // Kira posisi relative kepada container
-    let x = e.clientX - containerRect.left - offsetX;
-    let y = e.clientY - containerRect.top - offsetY;
-
-    div.style.left = x + 'px';
-    div.style.top = y + 'px';
-    
-    // Simpan koordinat (peratusan supaya responsive bila print)
-    // Cikgu AI: Kita simpan dalam unit 'px' untuk print layout A4 yang fix
-    fieldCoordinates[text] = { left: x, top: y };
-  });
-
-  document.addEventListener('mouseup', () => {
-    if(isDragging) {
-        isDragging = false;
-        div.style.cursor = 'grab';
+      #print-area, #print-area * {
+        visibility: visible;
+      }
+      #print-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+      }
+      .sijil-page {
+        page-break-after: always;
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+      }
     }
-  });
-
-  layerText.appendChild(div);
-  
-  // Initialize coordinate awal
-  fieldCoordinates[text] = {
-      left: layerText.offsetWidth * 0.1,
-      top: layerText.offsetHeight * (0.1 + (index * 0.05))
-  };
-}
-
-// 5. UPDATE STYLE (Font/Color)
-document.getElementById('font-size-control').addEventListener('input', (e) => {
-    currentFontSize = e.target.value;
-    document.querySelectorAll('.draggable-item').forEach(el => {
-        el.style.fontSize = currentFontSize + 'px';
-    });
-});
-
-document.getElementById('color-control').addEventListener('input', (e) => {
-    currentColor = e.target.value;
-    document.querySelectorAll('.draggable-item').forEach(el => {
-        el.style.color = currentColor;
-    });
-});
-
-// 6. CHECK READY UNTUK PRINT
-function checkReady() {
-    if (templateImage && excelData.length > 0) {
-        btnPrint.disabled = false;
-        btnPrint.classList.remove('opacity-50', 'cursor-not-allowed');
+    
+    .draggable-item {
+      cursor: grab;
+      user-select: none;
     }
-}
+    .draggable-item:active {
+      cursor: grabbing;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-white font-['Inter'] min-h-screen flex flex-col">
 
-// 7. LOGIC PRINT (GENERATE PAGES)
-// Cikgu AI: Ini bahagian paling penting. Kita akan loop excelData dan bina page HTML sebenar.
-window.onbeforeprint = function() {
-    printArea.innerHTML = ''; // Kosongkan dulu
+  <!-- HEADER -->
+  <header class="bg-slate-800 border-b border-slate-700 p-4 flex justify-between items-center">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-xl">S</div>
+      <h1 class="text-xl font-bold">SijilGen <span class="text-blue-400">Pro</span></h1>
+    </div>
+    <button onclick="window.print()" disabled id="btn-print-main" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold transition opacity-50 cursor-not-allowed">
+      🖨️ Cetak Semua
+    </button>
+  </header>
 
-    // Loop semua data murid
-    excelData.forEach((row) => {
-        // Cipta wrapper page (A4)
-        const page = document.createElement('div');
-        page.className = 'sijil-page relative bg-white overflow-hidden';
+  <!-- MAIN CONTENT -->
+  <main class="flex-1 flex flex-col lg:flex-row overflow-hidden">
+    
+    <!-- SIDEBAR: KONFIGURASI -->
+    <aside class="w-full lg:w-1/4 bg-slate-800 p-6 overflow-y-auto border-r border-slate-700 z-10">
+      
+      <!-- 1. Upload Template -->
+      <div class="mb-8">
+        <h3 class="text-sm text-slate-400 font-bold uppercase tracking-wider mb-3">1. Upload Template (Gambar)</h3>
+        <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-600 border-dashed rounded-lg cursor-pointer hover:bg-slate-700 transition">
+          <div class="flex flex-col items-center justify-center pt-5 pb-6">
+            <p class="text-sm text-slate-300">Klik untuk upload .JPG/.PNG</p>
+          </div>
+          <input id="input-template" type="file" class="hidden" accept="image/*" />
+        </label>
+      </div>
+
+      <!-- 2. Upload Data -->
+      <div class="mb-8">
+        <h3 class="text-sm text-slate-400 font-bold uppercase tracking-wider mb-3">2. Upload Data (Excel)</h3>
+        <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-600 border-dashed rounded-lg cursor-pointer hover:bg-slate-700 transition">
+           <div class="flex flex-col items-center justify-center pt-5 pb-6">
+            <p class="text-sm text-slate-300">Klik untuk upload .XLSX</p>
+          </div>
+          <input id="input-excel" type="file" class="hidden" accept=".xlsx, .xls, .csv" />
+        </label>
+      </div>
+
+      <!-- 3. Senarai Field -->
+      <div>
+        <h3 class="text-sm text-slate-400 font-bold uppercase tracking-wider mb-3">3. Field Data</h3>
+        <p class="text-xs text-slate-500 mb-2">Senarai ini diambil dari header Excel anda. Drag elemen di sebelah kanan untuk susun.</p>
+        <div id="field-list" class="flex flex-wrap gap-2">
+          <span class="text-slate-500 italic text-sm">Upload Excel dahulu...</span>
+        </div>
+      </div>
+
+      <!-- Settings Font -->
+      <div class="mt-8">
+         <h3 class="text-sm text-slate-400 font-bold uppercase tracking-wider mb-3">Settings Teks</h3>
+         <label class="text-xs">Saiz Font</label>
+         <input type="range" id="font-size-control" min="10" max="100" value="24" class="w-full accent-blue-500">
+         <label class="text-xs mt-2 block">Warna Teks</label>
+         <input type="color" id="color-control" value="#000000" class="w-full h-8 rounded cursor-pointer">
+      </div>
+
+    </aside>
+
+    <!-- EDITOR AREA -->
+    <section class="flex-1 bg-slate-900 p-8 flex items-center justify-center overflow-auto relative">
+      
+      <!-- Canvas Container (A4 Ratio-ish) -->
+      <div id="editor-container" class="relative bg-white shadow-2xl transition-all duration-300" style="width: 297mm; height: 210mm; transform: scale(0.6); transform-origin: top center;">
         
-        // Masukkan Gambar Background
-        const img = document.createElement('img');
-        img.src = templateImage;
-        img.className = 'absolute inset-0 w-full h-full object-cover';
-        page.appendChild(img);
+        <!-- Background Template -->
+        <img id="template-preview" src="" class="w-full h-full object-cover hidden" alt="Template Sijil">
+        
+        <!-- Placeholder Text (Tiada Template) -->
+        <div id="empty-state" class="absolute inset-0 flex items-center justify-center text-slate-400">
+          <p>Sila upload template sijil dahulu</p>
+        </div>
 
-        // Masukkan Data Teks mengikut koordinat yang diset
-        Object.keys(fieldCoordinates).forEach(key => {
-            if (row[key]) { // Jika data wujud dalam row Excel
-                const coords = fieldCoordinates[key];
-                const textSpan = document.createElement('div');
-                textSpan.style.position = 'absolute';
-                textSpan.style.left = coords.left + 'px';
-                textSpan.style.top = coords.top + 'px';
-                textSpan.style.fontSize = currentFontSize + 'px';
-                textSpan.style.color = currentColor;
-                textSpan.style.fontWeight = 'bold';
-                textSpan.style.zIndex = '10';
-                textSpan.innerText = row[key]; // Masukkan data sebenar
-                page.appendChild(textSpan);
-            }
-        });
+        <!-- Layer untuk Draggable Items -->
+        <div id="layer-text" class="absolute inset-0 overflow-hidden">
+          <!-- Item teks akan muncul di sini -->
+        </div>
 
-        printArea.appendChild(page);
-    });
-};
+      </div>
 
-window.onafterprint = function() {
-    // Bersihkan memori jika perlu, atau biar user print lagi
-    console.log('Cetakan selesai');
-};
+    </section>
+
+  </main>
+
+  <!-- HIDDEN PRINT AREA -->
+  <div id="print-area"></div>
+
+  <script src="appScripts.js"></script>
+</body>
+</html>

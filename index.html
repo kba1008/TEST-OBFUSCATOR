@@ -413,7 +413,8 @@
             <div id="mappingSection" class="hidden">
                 <h3>🎯 3. Letakkan Field pada Template</h3>
                 <p style="margin: 10px 0; color: #666;">
-                    <strong>Drag & Drop</strong> header dari bawah ke atas template untuk tentukan kedudukan
+                    <strong>Drag & Drop</strong> header dari bawah ke atas template untuk tentukan kedudukan. <br>
+                    <small>(Anda boleh mengubah kedudukan field setelah diletakkan)</small>
                 </p>
                 
                 <div id="headersContainer"></div>
@@ -431,7 +432,7 @@
             <div class="btn-group">
                 <button class="btn-primary" id="generateBtn">🎨 Jana Preview Sijil</button>
                 <button class="btn-success" id="printBtn">🖨️ Cetak Semua Sijil</button>
-                <button class="btn-secondary" id="downloadPdfBtn">📥 Download PDF</button>
+                <button class="btn-secondary" id="downloadPdfBtn">📥 Download Semua (PDF)</button>
                 <button class="btn-danger" id="clearAllBtn">🗑️ Kosongkan Semua</button>
             </div>
             
@@ -743,16 +744,75 @@
             window.print();
         }
 
-        function downloadAsPDF() {
+        async function downloadAsPDF() {
             if (!certificatesGenerated) {
                 showStatus('Sila jana preview sijil dahulu!', 'error');
                 return;
             }
             
-            showStatus('⚠️ Ciri PDF sedang dalam pembangunan. Sila guna fungsi "Cetak" dan pilih "Save as PDF".', 'info');
+            showStatus('⏳ Sedang menjana PDF...', 'info');
             
-            // Note: Full PDF generation requires html2canvas + jsPDF which is complex
-            // For now, guide user to use browser's Print to PDF feature
+            // UI Delay allow status to show
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const templateImg = document.getElementById('certificateTemplate');
+                const dropZones = document.querySelectorAll('.drop-zone');
+                
+                // 1. Get original image dimensions
+                const imgWidth = templateImg.naturalWidth;
+                const imgHeight = templateImg.naturalHeight;
+                const orientation = imgWidth > imgHeight ? 'l' : 'p';
+                
+                // 2. Calculate Scale (Preview vs Original)
+                const previewRect = document.getElementById('templatePreview').getBoundingClientRect();
+                const scaleX = imgWidth / previewRect.width;
+                const scaleY = imgHeight / previewRect.height;
+                
+                const doc = new jsPDF({ 
+                    orientation: orientation,
+                    unit: 'px',
+                    format: [imgWidth, imgHeight]
+                });
+
+                // 3. Map Fields with Scaled Coordinates
+                const fields = Array.from(dropZones).map(zone => {
+                    const rect = zone.getBoundingClientRect();
+                    const relX = rect.left - previewRect.left;
+                    const relY = rect.top - previewRect.top;
+                    return {
+                        headerIndex: parseInt(zone.dataset.headerIndex),
+                        x: relX * scaleX,
+                        y: relY * scaleY,
+                        // Scale the font size roughly based on screen-to-image ratio (28px base)
+                        fontSize: 28 * scaleX
+                    };
+                });
+
+                // 4. Generate Pages
+                excelData.forEach((row, i) => {
+                    if (i > 0) doc.addPage([imgWidth, imgHeight], orientation);
+                    
+                    doc.addImage(templateDataURL, 'JPEG', 0, 0, imgWidth, imgHeight);
+                    
+                    fields.forEach(field => {
+                        const text = String(row[field.headerIndex] || '');
+                        doc.setFontSize(field.fontSize);
+                        doc.setTextColor(0, 0, 0);
+                        doc.setFont("helvetica", "bold");
+                        // Add small padding offset to match UI look
+                        doc.text(text, field.x + (10 * scaleX), field.y + field.fontSize);
+                    });
+                });
+
+                doc.save('Sijil-Pukal.pdf');
+                showStatus('✅ PDF berjaya dimuat turun!', 'success');
+                
+            } catch (err) {
+                console.error(err);
+                showStatus('Ralat menjana PDF: ' + err.message, 'error');
+            }
         }
 
         // ============================================

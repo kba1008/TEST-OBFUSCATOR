@@ -1,24 +1,32 @@
 {
-  "name": "E-HADIR",
-  "short_name": "E-HADIR",
-  "id": "/ehadir-app/", 
-  "description": "Sistem Kehadiran Digital SK Selama (K)",
-  "start_url": "index.html",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#1e3c72",
-  "orientation": "portrait",
-  "icons": [
-    {
-      "src": "logo.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "logo.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ]
+    "name": "Pencetak Sijil Pukal",
+    "short_name": "SijilPukal",
+    "description": "Aplikasi web untuk mencetak sijil secara pukal dengan muat naik template dan data Excel",
+    "start_url": "/index.html",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#3367d6",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "categories": ["productivity", "education"],
+    "screenshots": [
+        {
+            "src": "screenshot1.png",
+            "sizes": "1280x720",
+            "type": "image/png"
+        }
+    ]
 }

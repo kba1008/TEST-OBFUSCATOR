@@ -1,137 +1,851 @@
 <!DOCTYPE html>
 <html lang="ms">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SijilGen Pro - Pukal</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Library untuk baca Excel -->
-  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-  <!-- Font Google -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-  <style>
-    /* CSS Khas untuk Cetakan */
-    @media print {
-      @page { size: landscape; margin: 0; }
-      body * {
-        visibility: hidden;
-      }
-      #print-area, #print-area * {
-        visibility: visible;
-      }
-      #print-area {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-      }
-      .sijil-page {
-        page-break-after: always;
-        position: relative;
-        width: 100vw;
-        height: 100vh;
-        overflow: hidden;
-      }
-    }
-    
-    .draggable-item {
-      cursor: grab;
-      user-select: none;
-    }
-    .draggable-item:active {
-      cursor: grabbing;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pencetak Sijil Pukal</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#3367d6">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .subtitle {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-title {
+            color: #3367d6;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #3367d6;
+            font-size: 1.5em;
+        }
+
+        .upload-section {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .upload-box {
+            flex: 1;
+            min-width: 250px;
+            padding: 20px;
+            border: 3px dashed #3367d6;
+            border-radius: 10px;
+            text-align: center;
+            background: #f8f9ff;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-box:hover {
+            background: #eef1ff;
+            transform: scale(1.02);
+        }
+
+        .upload-box i {
+            font-size: 3em;
+            color: #3367d6;
+            margin-bottom: 10px;
+        }
+
+        .upload-box p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .upload-box input[type="file"] {
+            display: none;
+        }
+
+        #templatePreviewContainer {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        #templatePreview {
+            max-width: 100%;
+            max-height: 400px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 10px;
+            background: white;
+            position: relative;
+        }
+
+        #certificateTemplate {
+            max-width: 100%;
+            max-height: 350px;
+            display: none;
+        }
+
+        #headersContainer {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+            min-height: 60px;
+        }
+
+        .draggable-header {
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #3367d6 0%, #2c5282 100%);
+            color: white;
+            border-radius: 8px;
+            cursor: move;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+
+        .draggable-header:hover {
+            transform: translateY(-2px);
+        }
+
+        .drop-zone {
+            position: absolute;
+            min-width: 150px;
+            min-height: 40px;
+            background: rgba(255, 255, 0, 0.3);
+            border: 2px dashed #ff6b6b;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            font-weight: bold;
+            cursor: move;
+            z-index: 10;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .drop-zone:hover {
+            background: rgba(255, 255, 0, 0.5);
+        }
+
+        .drop-zone .remove-btn {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #previewSection {
+            margin-top: 30px;
+        }
+
+        .preview-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .certificate-preview {
+            width: 800px;
+            height: 600px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            position: relative;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            page-break-after: always;
+        }
+
+        .preview-field {
+            position: absolute;
+            font-size: 28px;
+            font-weight: bold;
+            color: #000;
+            text-align: center;
+            min-width: 200px;
+            padding: 5px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 5px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        button i {
+            font-size: 1.2em;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3367d6 0%, #2c5282 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(51, 103, 214, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(245, 158, 11, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .status-message {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .status-success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 5px solid #10b981;
+        }
+
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 5px solid #ef4444;
+        }
+
+        .status-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border-left: 5px solid #3367d6;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            
+            .card, header, .upload-section, .btn-group {
+                display: none;
+            }
+            
+            .preview-container {
+                display: block;
+            }
+            
+            .certificate-preview {
+                width: 100% !important;
+                height: auto !important;
+                page-break-after: always;
+                border: none;
+                box-shadow: none;
+            }
+            
+            .preview-field {
+                background: transparent !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .upload-section {
+                flex-direction: column;
+            }
+            
+            .certificate-preview {
+                width: 100%;
+                height: auto;
+                aspect-ratio: 4/3;
+            }
+            
+            button {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+        }
+    </style>
 </head>
-<body class="bg-slate-900 text-white font-['Inter'] min-h-screen flex flex-col">
+<body>
+    <div class="container">
+        <header>
+            <h1>🖨️ Pencetak Sijil Pukal</h1>
+            <p class="subtitle">Muat naik template sijil & senarai peserta untuk cetak pukal</p>
+        </header>
 
-  <!-- HEADER -->
-  <header class="bg-slate-800 border-b border-slate-700 p-4 flex justify-between items-center">
-    <div class="flex items-center gap-3">
-      <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-xl">S</div>
-      <h1 class="text-xl font-bold">SijilGen <span class="text-blue-400">Pro</span></h1>
+        <div class="card">
+            <h2 class="card-title">📁 1. Muat Naik Template Sijil</h2>
+            <div class="upload-section">
+                <div class="upload-box" id="templateDropZone">
+                    <div>🖼️</div>
+                    <p>Klik atau Drag Template Sijil</p>
+                    <p><small>(Format: JPG, PNG, PDF)</small></p>
+                    <input type="file" id="templateUpload" accept="image/*,.pdf">
+                </div>
+            </div>
+            <div id="templatePreviewContainer" class="hidden">
+                <h3>📸 Preview Template:</h3>
+                <div id="templatePreview">
+                    <img id="certificateTemplate" alt="Template Sijil">
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="card-title">📊 2. Muat Naik Senarai Peserta (Excel)</h2>
+            <div class="upload-section">
+                <div class="upload-box" id="excelDropZone">
+                    <div>📋</div>
+                    <p>Klik atau Drag Fail Excel</p>
+                    <p><small>(Format: XLSX, XLS, CSV)</small></p>
+                    <input type="file" id="excelUpload" accept=".xlsx,.xls,.csv">
+                </div>
+            </div>
+            
+            <div id="excelStatus" class="hidden"></div>
+            
+            <div id="mappingSection" class="hidden">
+                <h3>🎯 3. Letakkan Field pada Template</h3>
+                <p style="margin: 10px 0; color: #666;">
+                    <strong>Drag & Drop</strong> header dari bawah ke atas template untuk tentukan kedudukan
+                </p>
+                
+                <div id="headersContainer"></div>
+                
+                <div style="margin-top: 20px;">
+                    <button class="btn-warning" id="resetMappingBtn">
+                        🔄 Reset Semua Kedudukan
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card hidden" id="previewCard">
+            <h2 class="card-title">👀 4. Preview & Cetak</h2>
+            <div class="btn-group">
+                <button class="btn-primary" id="generateBtn">🎨 Jana Preview Sijil</button>
+                <button class="btn-success" id="printBtn">🖨️ Cetak Semua Sijil</button>
+                <button class="btn-secondary" id="downloadPdfBtn">📥 Download PDF</button>
+                <button class="btn-danger" id="clearAllBtn">🗑️ Kosongkan Semua</button>
+            </div>
+            
+            <div id="previewSection">
+                <div class="preview-container" id="previewContainer"></div>
+            </div>
+        </div>
     </div>
-    <button onclick="window.print()" disabled id="btn-print-main" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold transition opacity-50 cursor-not-allowed">
-      🖨️ Cetak Semua
-    </button>
-  </header>
 
-  <!-- MAIN CONTENT -->
-  <main class="flex-1 flex flex-col lg:flex-row overflow-hidden">
+    <!-- SheetJS Library untuk baca Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- jsPDF untuk export PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
-    <!-- SIDEBAR: KONFIGURASI -->
-    <aside class="w-full lg:w-1/4 bg-slate-800 p-6 overflow-y-auto border-r border-slate-700 z-10">
-      
-      <!-- 1. Upload Template -->
-      <div class="mb-8">
-        <h3 class="text-sm text-slate-400 font-bold uppercase tracking-wider mb-3">1. Upload Template (Gambar)</h3>
-        <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-600 border-dashed rounded-lg cursor-pointer hover:bg-slate-700 transition">
-          <div class="flex flex-col items-center justify-center pt-5 pb-6">
-            <p class="text-sm text-slate-300">Klik untuk upload .JPG/.PNG</p>
-          </div>
-          <input id="input-template" type="file" class="hidden" accept="image/*" />
-        </label>
-      </div>
+    <script>
+        // ============================================
+        // GLOBAL VARIABLES
+        // ============================================
+        let templateDataURL = null;
+        let excelData = null;
+        let headers = [];
+        let dropZones = [];
+        let certificatesGenerated = false;
 
-      <!-- 2. Upload Data -->
-      <div class="mb-8">
-        <h3 class="text-sm text-slate-400 font-bold uppercase tracking-wider mb-3">2. Upload Data (Excel)</h3>
-        <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-600 border-dashed rounded-lg cursor-pointer hover:bg-slate-700 transition">
-           <div class="flex flex-col items-center justify-center pt-5 pb-6">
-            <p class="text-sm text-slate-300">Klik untuk upload .XLSX</p>
-          </div>
-          <input id="input-excel" type="file" class="hidden" accept=".xlsx, .xls, .csv" />
-        </label>
-      </div>
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            registerServiceWorker();
+        });
 
-      <!-- 3. Senarai Field -->
-      <div>
-        <h3 class="text-sm text-slate-400 font-bold uppercase tracking-wider mb-3">3. Field Data</h3>
-        <p class="text-xs text-slate-500 mb-2">Senarai ini diambil dari header Excel anda. Drag elemen di sebelah kanan untuk susun.</p>
-        <div id="field-list" class="flex flex-wrap gap-2">
-          <span class="text-slate-500 italic text-sm">Upload Excel dahulu...</span>
-        </div>
-      </div>
+        function setupEventListeners() {
+            // Template upload
+            document.getElementById('templateUpload').addEventListener('change', handleTemplateUpload);
+            document.getElementById('templateDropZone').addEventListener('click', () => document.getElementById('templateUpload').click());
+            
+            // Excel upload
+            document.getElementById('excelUpload').addEventListener('change', handleExcelUpload);
+            document.getElementById('excelDropZone').addEventListener('click', () => document.getElementById('excelUpload').click());
+            
+            // Generate certificates
+            document.getElementById('generateBtn').addEventListener('click', generateCertificates);
+            
+            // Print
+            document.getElementById('printBtn').addEventListener('click', printCertificates);
+            
+            // Download PDF
+            document.getElementById('downloadPdfBtn').addEventListener('click', downloadAsPDF);
+            
+            // Clear all
+            document.getElementById('clearAllBtn').addEventListener('click', clearAll);
+            
+            // Reset mapping
+            document.getElementById('resetMappingBtn').addEventListener('click', resetMapping);
+            
+            // Drag and drop for template
+            setupDragDrop('templateDropZone', handleTemplateUpload);
+            setupDragDrop('excelDropZone', handleExcelUpload);
+        }
 
-      <!-- Settings Font -->
-      <div class="mt-8">
-         <h3 class="text-sm text-slate-400 font-bold uppercase tracking-wider mb-3">Settings Teks</h3>
-         <label class="text-xs">Saiz Font</label>
-         <input type="range" id="font-size-control" min="10" max="100" value="24" class="w-full accent-blue-500">
-         <label class="text-xs mt-2 block">Warna Teks</label>
-         <input type="color" id="color-control" value="#000000" class="w-full h-8 rounded cursor-pointer">
-      </div>
+        // ============================================
+        // TEMPLATE HANDLING
+        // ============================================
+        function handleTemplateUpload(event) {
+            const file = event.target.files?.[0] || event.dataTransfer?.files?.[0];
+            if (!file) return;
 
-    </aside>
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                templateDataURL = e.target.result;
+                document.getElementById('certificateTemplate').src = templateDataURL;
+                document.getElementById('certificateTemplate').style.display = 'block';
+                document.getElementById('templatePreviewContainer').classList.remove('hidden');
+                
+                showStatus('Template berjaya dimuat naik!', 'success');
+                
+                // Reset drop zones if template changes
+                resetMapping();
+            };
+            reader.readAsDataURL(file);
+        }
 
-    <!-- EDITOR AREA -->
-    <section class="flex-1 bg-slate-900 p-8 flex items-center justify-center overflow-auto relative">
-      
-      <!-- Canvas Container (A4 Ratio-ish) -->
-      <div id="editor-container" class="relative bg-white shadow-2xl transition-all duration-300" style="width: 297mm; height: 210mm; transform: scale(0.6); transform-origin: top center;">
-        
-        <!-- Background Template -->
-        <img id="template-preview" src="" class="w-full h-full object-cover hidden" alt="Template Sijil">
-        
-        <!-- Placeholder Text (Tiada Template) -->
-        <div id="empty-state" class="absolute inset-0 flex items-center justify-center text-slate-400">
-          <p>Sila upload template sijil dahulu</p>
-        </div>
+        // ============================================
+        // EXCEL HANDLING
+        // ============================================
+        function handleExcelUpload(event) {
+            const file = event.target.files?.[0] || event.dataTransfer?.files?.[0];
+            if (!file) return;
 
-        <!-- Layer untuk Draggable Items -->
-        <div id="layer-text" class="absolute inset-0 overflow-hidden z-20">
-          <!-- Item teks akan muncul di sini -->
-        </div>
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet, {header: 1});
+                    
+                    if (jsonData.length === 0) {
+                        showStatus('Fail Excel kosong!', 'error');
+                        return;
+                    }
+                    
+                    headers = jsonData[0]; // First row is headers
+                    excelData = jsonData.slice(1); // Rest is data
+                    
+                    document.getElementById('excelStatus').innerHTML = `
+                        <div class="status-success">
+                            ✅ Berjaya muat naik: ${excelData.length} rekod dengan ${headers.length} medan
+                        </div>
+                    `;
+                    document.getElementById('excelStatus').classList.remove('hidden');
+                    
+                    displayHeadersForMapping();
+                    document.getElementById('mappingSection').classList.remove('hidden');
+                    
+                    showStatus(`Berjaya baca ${excelData.length} rekod dari Excel!`, 'success');
+                    
+                } catch (error) {
+                    console.error('Error reading Excel:', error);
+                    showStatus('Ralat membaca fail Excel: ' + error.message, 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
 
-      </div>
+        function displayHeadersForMapping() {
+            const container = document.getElementById('headersContainer');
+            container.innerHTML = '';
+            
+            headers.forEach((header, index) => {
+                const headerElement = document.createElement('div');
+                headerElement.className = 'draggable-header';
+                headerElement.draggable = true;
+                headerElement.dataset.headerIndex = index;
+                headerElement.textContent = header;
+                
+                // Drag start
+                headerElement.addEventListener('dragstart', function(e) {
+                    e.dataTransfer.setData('text/plain', index);
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+                
+                container.appendChild(headerElement);
+            });
+            
+            // Setup drop zones on template preview
+            const templatePreview = document.getElementById('templatePreview');
+            templatePreview.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+            });
+            
+            templatePreview.addEventListener('drop', function(e) {
+                e.preventDefault();
+                
+                const headerIndex = e.dataTransfer.getData('text/plain');
+                if (headerIndex === '') return;
+                
+                // Calculate position relative to template preview
+                const rect = templatePreview.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                createDropZone(parseInt(headerIndex), x, y);
+            });
+        }
 
-    </section>
+        // ============================================
+        // DROP ZONE HANDLING
+        // ============================================
+        function createDropZone(headerIndex, x, y) {
+            const templatePreview = document.getElementById('templatePreview');
+            const templateImg = document.getElementById('certificateTemplate');
+            
+            // Create drop zone
+            const dropZone = document.createElement('div');
+            dropZone.className = 'drop-zone';
+            dropZone.dataset.headerIndex = headerIndex;
+            dropZone.style.left = (x - 75) + 'px'; // Center the drop zone
+            dropZone.style.top = (y - 20) + 'px';
+            dropZone.textContent = headers[headerIndex];
+            
+            // Make it draggable
+            dropZone.addEventListener('mousedown', function(e) {
+                if (e.target === dropZone || e.target.className === 'remove-btn') return;
+                
+                const offsetX = e.clientX - dropZone.getBoundingClientRect().left;
+                const offsetY = e.clientY - dropZone.getBoundingClientRect().top;
+                
+                function onMouseMove(e) {
+                    const rect = templatePreview.getBoundingClientRect();
+                    let newX = e.clientX - rect.left - offsetX;
+                    let newY = e.clientY - rect.top - offsetY;
+                    
+                    // Keep within bounds
+                    newX = Math.max(0, Math.min(newX, rect.width - dropZone.offsetWidth));
+                    newY = Math.max(0, Math.min(newY, rect.height - dropZone.offsetHeight));
+                    
+                    dropZone.style.left = newX + 'px';
+                    dropZone.style.top = newY + 'px';
+                }
+                
+                function onMouseUp() {
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                }
+                
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            });
+            
+            // Remove button
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'remove-btn';
+            removeBtn.innerHTML = '×';
+            removeBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                dropZone.remove();
+            });
+            dropZone.appendChild(removeBtn);
+            
+            templatePreview.appendChild(dropZone);
+            dropZones.push(dropZone);
+        }
 
-  </main>
+        function resetMapping() {
+            const templatePreview = document.getElementById('templatePreview');
+            const dropZones = templatePreview.querySelectorAll('.drop-zone');
+            dropZones.forEach(zone => zone.remove());
+            showStatus('Semua kedudukan telah direset', 'info');
+        }
 
-  <!-- HIDDEN PRINT AREA -->
-  <div id="print-area"></div>
+        // ============================================
+        // CERTIFICATE GENERATION
+        // ============================================
+        function generateCertificates() {
+            if (!templateDataURL) {
+                showStatus('Sila muat naik template sijil dahulu!', 'error');
+                return;
+            }
+            
+            if (!excelData || excelData.length === 0) {
+                showStatus('Sila muat naik fail Excel dahulu!', 'error');
+                return;
+            }
+            
+            const templatePreview = document.getElementById('templatePreview');
+            const dropZones = templatePreview.querySelectorAll('.drop-zone');
+            
+            if (dropZones.length === 0) {
+                showStatus('Sila letakkan field pada template dahulu!', 'error');
+                return;
+            }
+            
+            const previewContainer = document.getElementById('previewContainer');
+            previewContainer.innerHTML = '';
+            
+            // Get positions of all drop zones
+            const fieldPositions = Array.from(dropZones).map(zone => {
+                const rect = zone.getBoundingClientRect();
+                const previewRect = templatePreview.getBoundingClientRect();
+                
+                return {
+                    headerIndex: parseInt(zone.dataset.headerIndex),
+                    x: rect.left - previewRect.left,
+                    y: rect.top - previewRect.top,
+                    width: rect.width,
+                    text: zone.textContent.trim().replace('×', '').trim()
+                };
+            });
+            
+            // Generate certificate for each row
+            excelData.forEach((row, rowIndex) => {
+                const certificate = document.createElement('div');
+                certificate.className = 'certificate-preview';
+                certificate.style.backgroundImage = `url(${templateDataURL})`;
+                
+                // Add all fields
+                fieldPositions.forEach(pos => {
+                    const field = document.createElement('div');
+                    field.className = 'preview-field';
+                    field.style.left = pos.x + 'px';
+                    field.style.top = pos.y + 'px';
+                    field.style.width = pos.width + 'px';
+                    field.textContent = row[pos.headerIndex] || '';
+                    
+                    certificate.appendChild(field);
+                });
+                
+                previewContainer.appendChild(certificate);
+            });
+            
+            document.getElementById('previewCard').classList.remove('hidden');
+            certificatesGenerated = true;
+            
+            showStatus(`Berjaya jana ${excelData.length} sijil!`, 'success');
+        }
 
-  <script src="appScripts.js"></script>
+        // ============================================
+        // PRINT & EXPORT
+        // ============================================
+        function printCertificates() {
+            if (!certificatesGenerated) {
+                showStatus('Sila jana preview sijil dahulu!', 'error');
+                return;
+            }
+            
+            window.print();
+        }
+
+        function downloadAsPDF() {
+            if (!certificatesGenerated) {
+                showStatus('Sila jana preview sijil dahulu!', 'error');
+                return;
+            }
+            
+            showStatus('⚠️ Ciri PDF sedang dalam pembangunan. Sila guna fungsi "Cetak" dan pilih "Save as PDF".', 'info');
+            
+            // Note: Full PDF generation requires html2canvas + jsPDF which is complex
+            // For now, guide user to use browser's Print to PDF feature
+        }
+
+        // ============================================
+        // UTILITY FUNCTIONS
+        // ============================================
+        function clearAll() {
+            // Reset all inputs
+            document.getElementById('templateUpload').value = '';
+            document.getElementById('excelUpload').value = '';
+            
+            // Clear displays
+            document.getElementById('certificateTemplate').src = '';
+            document.getElementById('certificateTemplate').style.display = 'none';
+            document.getElementById('templatePreviewContainer').classList.add('hidden');
+            document.getElementById('excelStatus').classList.add('hidden');
+            document.getElementById('excelStatus').innerHTML = '';
+            document.getElementById('mappingSection').classList.add('hidden');
+            document.getElementById('headersContainer').innerHTML = '';
+            document.getElementById('previewContainer').innerHTML = '';
+            document.getElementById('previewCard').classList.add('hidden');
+            
+            // Reset variables
+            templateDataURL = null;
+            excelData = null;
+            headers = [];
+            dropZones = [];
+            certificatesGenerated = false;
+            
+            // Remove all drop zones
+            resetMapping();
+            
+            showStatus('Semua telah dikosongkan!', 'info');
+        }
+
+        function showStatus(message, type) {
+            // Create or update status message
+            let statusDiv = document.getElementById('globalStatus');
+            if (!statusDiv) {
+                statusDiv = document.createElement('div');
+                statusDiv.id = 'globalStatus';
+                statusDiv.style.position = 'fixed';
+                statusDiv.style.top = '20px';
+                statusDiv.style.right = '20px';
+                statusDiv.style.zIndex = '1000';
+                document.body.appendChild(statusDiv);
+            }
+            
+            statusDiv.className = `status-message status-${type}`;
+            statusDiv.textContent = message;
+            
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        function setupDragDrop(elementId, callback) {
+            const element = document.getElementById(elementId);
+            
+            element.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                element.style.borderColor = '#10b981';
+                element.style.backgroundColor = '#f0fdf4';
+            });
+            
+            element.addEventListener('dragleave', function() {
+                element.style.borderColor = '#3367d6';
+                element.style.backgroundColor = '';
+            });
+            
+            element.addEventListener('drop', function(e) {
+                e.preventDefault();
+                element.style.borderColor = '#3367d6';
+                element.style.backgroundColor = '';
+                
+                if (e.dataTransfer.files.length > 0) {
+                    const event = { dataTransfer: e.dataTransfer };
+                    callback(event);
+                }
+            });
+        }
+
+        function registerServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registered:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('ServiceWorker registration failed:', error);
+                    });
+            }
+        }
+    </script>
 </body>
 </html>

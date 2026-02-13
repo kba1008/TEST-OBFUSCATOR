@@ -1,62 +1,58 @@
-// sw.js - Versi Ultra-Offline v45 (Sync Ready)
-const CACHE_NAME = 'ehadir-v45';
-const DB_NAME = 'E-Hadir-Offline-DB';
-const STORE_NAME = 'attendance_queue';
-
-// Pastikan SEMUA fail (CSS/JS) didaftarkan di sini supaya app tak 'pecah' masa offline
-const assetsToCache = [
-  './',
-  './index.html',
-  './manifest.json',
-  './logo.png',
-  // './style.css', // Tambah jika ada
-  // './script.js'  // Tambah jika ada
+const CACHE_NAME = 'sijil-pukal-v1';
+const urlsToCache = [
+    '/',
+    '/index.html',
+    '/manifest.json'
 ];
 
-// Install: Simpan aset 'seketul' dalam telefon
-self.addEventListener('install', (e) => {
-  self.skipWaiting();
-  e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(assetsToCache))
-  );
+// Install event
+self.addEventListener('install', event => {
+    console.log('Service Worker installing...');
+    event.waitUntil(
+        caches.open(CACHE_NAME)
+            .then(cache => {
+                console.log('Opened cache');
+                return cache.addAll(urlsToCache);
+            })
+    );
+    self.skipWaiting();
 });
 
-// Fetch: Strategi Cache-First untuk aset agar laju
-self.addEventListener('fetch', (event) => {
-  const { request } = event;
-
-  if (request.method === 'POST') {
-    event.respondWith(
-      fetch(request.clone()).catch(async () => {
-        // Jika POST gagal (offline), kita return JSON offline
-        // Data sebenar disimpan di localStorage client-side (index.html)
-        return new Response(JSON.stringify({ offline: true }), {
-          headers: { 'Content-Type': 'application/json' }
-        });
-      })
+// Activate event
+self.addEventListener('activate', event => {
+    console.log('Service Worker activating...');
+    event.waitUntil(
+        caches.keys().then(cacheNames => {
+            return Promise.all(
+                cacheNames.map(cacheName => {
+                    if (cacheName !== CACHE_NAME) {
+                        console.log('Deleting old cache:', cacheName);
+                        return caches.delete(cacheName);
+                    }
+                })
+            );
+        })
     );
-    return;
-  }
-
-  // Navigasi sentiasa ke index.html jika offline
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request).catch(() => caches.match('./index.html'))
-    );
-    return;
-  }
-
-  event.respondWith(
-    caches.match(request).then((res) => res || fetch(request))
-  );
+    return self.clients.claim();
 });
 
-// Background Sync (Hanya Android/Chrome sokong penuh buat masa ini)
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'sync-attendance') {
-    console.log("Background Sync Triggered!");
-    // Nota: SW tidak boleh akses localStorage. 
-    // Logik sync sebenar diuruskan oleh window.addEventListener('online') di index.html
-    // Event ini hanya untuk 'wake up' browser jika perlu.
-  }
+// Fetch event
+self.addEventListener('fetch', event => {
+    event.respondWith(
+        caches.match(event.request)
+            .then(response => {
+                // Return cached response if found
+                if (response) {
+                    return response;
+                }
+                // Otherwise fetch from network
+                return fetch(event.request);
+            })
+            .catch(() => {
+                // Fallback for navigation requests
+                if (event.request.mode === 'navigate') {
+                    return caches.match('/');
+                }
+            })
+    );
 });

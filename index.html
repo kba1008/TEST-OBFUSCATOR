@@ -149,14 +149,14 @@
 
         .drop-zone {
             position: absolute;
-            min-width: 100px;
-            padding: 5px 10px;
+            min-width: auto; /* Cikgu AI: Tukar dari 100px ke auto supaya kotak ikut saiz teks */
+            padding: 5px; /* Cikgu AI: Kurangkan padding supaya lebih tepat */
             background: rgba(255, 255, 0, 0.4);
             border: 2px dashed #ff6b6b;
             border-radius: 5px;
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start; /* Cikgu AI: Tukar ke start supaya align kiri */
             color: #000;
             font-weight: bold;
             cursor: pointer;
@@ -420,7 +420,7 @@
         <header>
             <h1>🖨️ Pencetak Sijil Pukal</h1>
             <p class="subtitle">Muat naik template sijil & senarai peserta untuk cetak pukal</p>
-            <p style="margin-top: 10px; font-size: 0.9em; opacity: 0.8; font-weight: bold;">Versi: V1.0 pro</p>
+            <p style="margin-top: 10px; font-size: 0.9em; opacity: 0.8; font-weight: bold;">Versi: V1.1 (Koordinat Diperbaiki)</p>
         </header>
 
         <div class="card">
@@ -844,11 +844,13 @@
             const mapHeight = templatePreview.offsetHeight;
             
             // Map field positions as PERCENTAGES to avoid position jumping
+            // Cikgu AI Edit: Ditambah offset (7px) untuk padding(5)+border(2) agar text tak 'lari' bila dijana
+            const offsetCorrection = 7;
             const fieldConfigs = Array.from(dropZones).map(zone => {
                 return {
                     headerIndex: parseInt(zone.dataset.headerIndex),
-                    leftPct: (zone.offsetLeft / mapWidth) * 100,
-                    topPct: (zone.offsetTop / mapHeight) * 100,
+                    leftPct: ((zone.offsetLeft + offsetCorrection) / mapWidth) * 100,
+                    topPct: ((zone.offsetTop + offsetCorrection) / mapHeight) * 100,
                     fontSize: parseInt(zone.dataset.fontSize),
                     color: zone.dataset.color,
                     fontFamily: zone.dataset.fontFamily
@@ -876,12 +878,6 @@
                     field.style.top = config.topPct + '%';
                     
                     // Apply Styles
-                    // Scale font size based on preview width vs map width approx ratio
-                    // But since we use same CSS px, we need a scale factor if sizes differ wildly
-                    // For simplicity in HTML preview, we trust px relative to the image size if responsive
-                    // To be safe, we let standard CSS scale handle position, but Font Size is fixed in px.
-                    // If the preview is larger than mapping area, font looks smaller. 
-                    // Let's rely on standard px unless user adjusts.
                     field.style.fontSize = config.fontSize + 'px';
                     field.style.color = config.color;
                     field.style.fontFamily = config.fontFamily;
@@ -941,10 +937,12 @@
                 });
 
                 // 3. Map Fields with Scaled Coordinates
+                // Cikgu AI Edit: Offset correction added here too
+                const offsetCorrection = 7;
                 const fields = Array.from(dropZones).map(zone => {
                     // Calculate relative position in Percentage
-                    const leftPct = zone.offsetLeft / mapRect.width;
-                    const topPct = zone.offsetTop / mapRect.height;
+                    const leftPct = (zone.offsetLeft + offsetCorrection) / mapRect.width;
+                    const topPct = (zone.offsetTop + offsetCorrection) / mapRect.height;
                     
                     // Calculate Scale Factor for Font
                     // Ratio: PDF Width / Mapping Width
@@ -1084,7 +1082,7 @@
                     .catch(error => {
                         console.log('ServiceWorker registration failed:', error);
                     });
-            }
+            } সদ্য
         }
     </script>
 </body>

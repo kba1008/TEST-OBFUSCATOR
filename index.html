@@ -419,9 +419,12 @@
                 
                 <div id="headersContainer"></div>
                 
-                <div style="margin-top: 20px;">
+                <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
                     <button class="btn-warning" id="resetMappingBtn">
                         🔄 Reset Semua Kedudukan
+                    </button>
+                    <button class="btn-primary" id="generateBtnMain">
+                        🎨 Jana Preview Sijil
                     </button>
                 </div>
             </div>
@@ -474,8 +477,11 @@
             document.getElementById('excelUpload').addEventListener('change', handleExcelUpload);
             document.getElementById('excelDropZone').addEventListener('click', () => document.getElementById('excelUpload').click());
             
-            // Generate certificates
+            // Generate certificates (Original)
             document.getElementById('generateBtn').addEventListener('click', generateCertificates);
+            
+            // Generate certificates (New Button in Mapping Section)
+            document.getElementById('generateBtnMain').addEventListener('click', generateCertificates);
             
             // Print
             document.getElementById('printBtn').addEventListener('click', printCertificates);
@@ -618,7 +624,9 @@
             
             // Make it draggable
             dropZone.addEventListener('mousedown', function(e) {
-                if (e.target === dropZone || e.target.className === 'remove-btn') return;
+                // Fix: Only return if specifically clicking the remove button
+                // This allows dragging when clicking on the box body
+                if (e.target.className === 'remove-btn') return;
                 
                 const offsetX = e.clientX - dropZone.getBoundingClientRect().left;
                 const offsetY = e.clientY - dropZone.getBoundingClientRect().top;

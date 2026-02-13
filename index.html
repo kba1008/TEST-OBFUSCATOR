@@ -156,7 +156,11 @@
             border-radius: 5px;
             display: flex;
             align-items: center;
-            justify-content: flex-start; /* Cikgu AI: Tukar ke start supaya align kiri */
+            /* Cikgu AI: CENTER UPDATE START */
+            justify-content: center; 
+            text-align: center;
+            transform: translate(-50%, 0);
+            /* Cikgu AI: CENTER UPDATE END */
             color: #000;
             font-weight: bold;
             cursor: pointer;
@@ -262,7 +266,10 @@
             position: absolute;
             line-height: normal;
             white-space: nowrap;
-            transform: translate(0, 0); /* Origin point */
+            /* Cikgu AI: CENTER UPDATE START */
+            transform: translate(-50%, 0); 
+            text-align: center;
+            /* Cikgu AI: CENTER UPDATE END */
         }
 
         .btn-group {
@@ -420,7 +427,7 @@
         <header>
             <h1>🖨️ Pencetak Sijil Pukal</h1>
             <p class="subtitle">Muat naik template sijil & senarai peserta untuk cetak pukal</p>
-            <p style="margin-top: 10px; font-size: 0.9em; opacity: 0.8; font-weight: bold;">Versi: V1.1 (Koordinat Diperbaiki)</p>
+            <p style="margin-top: 10px; font-size: 0.9em; opacity: 0.8; font-weight: bold;">Versi: V1.2 (Auto-Center & 100 Fonts)</p>
         </header>
 
         <div class="card">
@@ -484,6 +491,100 @@
                                 <option value="'Georgia', serif">Georgia</option>
                                 <option value="'Verdana', sans-serif">Verdana</option>
                                 <option value="cursive">Tulisan Tangan (Cursive)</option>
+                                <option value="'Helvetica', sans-serif">Helvetica</option>
+                                <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+                                <option value="'Arial Black', sans-serif">Arial Black</option>
+                                <option value="'Impact', sans-serif">Impact</option>
+                                <option value="'Tahoma', sans-serif">Tahoma</option>
+                                <option value="'Geneva', sans-serif">Geneva</option>
+                                <option value="'Century Gothic', sans-serif">Century Gothic</option>
+                                <option value="'Lucida Grande', sans-serif">Lucida Grande</option>
+                                <option value="'Optima', sans-serif">Optima</option>
+                                <option value="'Avant Garde', sans-serif">Avant Garde</option>
+                                <option value="'Roboto', sans-serif">Roboto</option>
+                                <option value="'Open Sans', sans-serif">Open Sans</option>
+                                <option value="'Lato', sans-serif">Lato</option>
+                                <option value="'Montserrat', sans-serif">Montserrat</option>
+                                <option value="'Oswald', sans-serif">Oswald</option>
+                                <option value="'Raleway', sans-serif">Raleway</option>
+                                <option value="'Merriweather', serif">Merriweather</option>
+                                <option value="'Noto Sans', sans-serif">Noto Sans</option>
+                                <option value="'Poppins', sans-serif">Poppins</option>
+                                <option value="'Ubuntu', sans-serif">Ubuntu</option>
+                                <option value="'Playfair Display', serif">Playfair Display</option>
+                                <option value="'Roboto Condensed', sans-serif">Roboto Condensed</option>
+                                <option value="'Roboto Slab', serif">Roboto Slab</option>
+                                <option value="'Lora', serif">Lora</option>
+                                <option value="'PT Sans', sans-serif">PT Sans</option>
+                                <option value="'PT Serif', serif">PT Serif</option>
+                                <option value="'Droid Sans', sans-serif">Droid Sans</option>
+                                <option value="'Droid Serif', serif">Droid Serif</option>
+                                <option value="'Source Sans Pro', sans-serif">Source Sans Pro</option>
+                                <option value="'Nunito', sans-serif">Nunito</option>
+                                <option value="'Titillium Web', sans-serif">Titillium Web</option>
+                                <option value="'Muli', sans-serif">Muli</option>
+                                <option value="'Arvo', serif">Arvo</option>
+                                <option value="'Fjalla One', sans-serif">Fjalla One</option>
+                                <option value="'Josefin Sans', sans-serif">Josefin Sans</option>
+                                <option value="'Abril Fatface', cursive">Abril Fatface</option>
+                                <option value="'Ubuntu Condensed', sans-serif">Ubuntu Condensed</option>
+                                <option value="'Archivo Narrow', sans-serif">Archivo Narrow</option>
+                                <option value="'Yanone Kaffeesatz', sans-serif">Yanone Kaffeesatz</option>
+                                <option value="'Exo', sans-serif">Exo</option>
+                                <option value="'Bitter', serif">Bitter</option>
+                                <option value="'Pacifico', cursive">Pacifico</option>
+                                <option value="'Dancing Script', cursive">Dancing Script</option>
+                                <option value="'Shadows Into Light', cursive">Shadows Into Light</option>
+                                <option value="'Lobster', cursive">Lobster</option>
+                                <option value="'Indie Flower', cursive">Indie Flower</option>
+                                <option value="'Anton', sans-serif">Anton</option>
+                                <option value="'Oxygen', sans-serif">Oxygen</option>
+                                <option value="'Questrial', sans-serif">Questrial</option>
+                                <option value="'Signika', sans-serif">Signika</option>
+                                <option value="'Varela Round', sans-serif">Varela Round</option>
+                                <option value="'Maven Pro', sans-serif">Maven Pro</option>
+                                <option value="'Cuprum', sans-serif">Cuprum</option>
+                                <option value="'Alegreya', serif">Alegreya</option>
+                                <option value="'Francois One', sans-serif">Francois One</option>
+                                <option value="'Rokkitt', serif">Rokkitt</option>
+                                <option value="'Pathway Gothic One', sans-serif">Pathway Gothic One</option>
+                                <option value="'Cantarell', sans-serif">Cantarell</option>
+                                <option value="'Cardo', serif">Cardo</option>
+                                <option value="'Vollkorn', serif">Vollkorn</option>
+                                <option value="'Ruda', sans-serif">Ruda</option>
+                                <option value="'Old Standard TT', serif">Old Standard TT</option>
+                                <option value="'Crimson Text', serif">Crimson Text</option>
+                                <option value="'Volkhov', serif">Volkhov</option>
+                                <option value="'Play', sans-serif">Play</option>
+                                <option value="'Philosopher', sans-serif">Philosopher</option>
+                                <option value="'Didact Gothic', sans-serif">Didact Gothic</option>
+                                <option value="'Jura', sans-serif">Jura</option>
+                                <option value="'Sintony', sans-serif">Sintony</option>
+                                <option value="'Cabin', sans-serif">Cabin</option>
+                                <option value="'Quicksand', sans-serif">Quicksand</option>
+                                <option value="'Inconsolata', monospace">Inconsolata</option>
+                                <option value="'Coda', cursive">Coda</option>
+                                <option value="'Share Tech Mono', monospace">Share Tech Mono</option>
+                                <option value="'Anonymous Pro', monospace">Anonymous Pro</option>
+                                <option value="'Oxygen Mono', monospace">Oxygen Mono</option>
+                                <option value="'VT323', monospace">VT323</option>
+                                <option value="'Abel', sans-serif">Abel</option>
+                                <option value="'Satisfy', cursive">Satisfy</option>
+                                <option value="'Cookie', cursive">Cookie</option>
+                                <option value="'Great Vibes', cursive">Great Vibes</option>
+                                <option value="'Kaushan Script', cursive">Kaushan Script</option>
+                                <option value="'Sofia', cursive">Sofia</option>
+                                <option value="'Sacramento', cursive">Sacramento</option>
+                                <option value="'Amatic SC', cursive">Amatic SC</option>
+                                <option value="'Cinzel', serif">Cinzel</option>
+                                <option value="'Righteous', cursive">Righteous</option>
+                                <option value="'Fredoka One', cursive">Fredoka One</option>
+                                <option value="'Bangers', cursive">Bangers</option>
+                                <option value="'Luckiest Guy', cursive">Luckiest Guy</option>
+                                <option value="'Comic Sans MS', cursive">Comic Sans MS</option>
+                                <option value="'Palatino Linotype', serif">Palatino Linotype</option>
+                                <option value="'Book Antiqua', serif">Book Antiqua</option>
+                                <option value="'Franklin Gothic Medium', sans-serif">Franklin Gothic Medium</option>
                             </select>
                         </div>
                     </div>
@@ -882,6 +983,8 @@
                     field.style.color = config.color;
                     field.style.fontFamily = config.fontFamily;
                     field.style.fontWeight = 'bold';
+                    // Cikgu AI: Apply center transform
+                    field.style.transform = 'translate(-50%, 0)';
                     
                     field.textContent = row[config.headerIndex] || '';
                     
@@ -981,10 +1084,8 @@
                         else if (field.fontFamily.includes('Courier')) doc.setFont("courier", "bold");
                         else doc.setFont("helvetica", "bold");
                         
-                        // Add text (Offset Y slightly because PDF text origin is bottom-left of text usually, but jsPDF varies)
-                        // For jsPDF, x,y is usually baseline or top-left depending on baseline setting. Default is baseline.
-                        // UI drag is Top-Left. We add fontSize to Y to approximate baseline.
-                        doc.text(text, field.x, field.y + (field.fontSize * 0.8));
+                        // Add text with CENTER Alignment
+                        doc.text(text, field.x, field.y + (field.fontSize * 0.8), { align: "center" });
                     });
                 });
 
@@ -1082,7 +1183,7 @@
                     .catch(error => {
                         console.log('ServiceWorker registration failed:', error);
                     });
-            } সদ্য
+            }
         }
     </script>
 </body>

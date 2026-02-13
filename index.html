@@ -3,21 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pencetak Sijil Pukal</title>
+    <title>Pencetak Sijil Pukal Pro</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#3367d6">
+    <meta name="theme-color" content="#2563eb">
+    <!-- Cikgu AI: Menambah font 'Inter' untuk gaya korporat moden -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary: #64748b;
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', sans-serif;
         }
 
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-color: var(--bg-body);
+            color: var(--text-main);
             min-height: 100vh;
-            padding: 20px;
+            padding: 40px 20px;
         }
 
         .container {
@@ -25,41 +39,50 @@
             margin: 0 auto;
         }
 
+        /* Corporate Header Design */
         header {
             text-align: center;
-            color: white;
+            background: var(--bg-card);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
             margin-bottom: 30px;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
         }
 
         h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            color: var(--primary-dark);
+            font-size: 2em;
+            font-weight: 800;
+            margin-bottom: 8px;
+            letter-spacing: -0.025em;
         }
 
         .subtitle {
+            color: var(--text-muted);
             font-size: 1.1em;
-            opacity: 0.9;
         }
 
+        /* Card Styling - Clean & Minimal */
         .card {
-            background: white;
-            border-radius: 15px;
+            background: var(--bg-card);
+            border-radius: 12px;
             padding: 30px;
-            margin-bottom: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 1px solid var(--border);
         }
 
         .card-title {
-            color: #3367d6;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 3px solid #3367d6;
-            font-size: 1.5em;
+            color: var(--text-main);
+            margin-bottom: 24px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border);
+            font-size: 1.25em;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .upload-section {
@@ -72,29 +95,31 @@
         .upload-box {
             flex: 1;
             min-width: 250px;
-            padding: 20px;
-            border: 3px dashed #3367d6;
-            border-radius: 10px;
+            padding: 40px 20px;
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
             text-align: center;
-            background: #f8f9ff;
+            background: #f8fafc;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.2s ease;
         }
 
         .upload-box:hover {
-            background: #eef1ff;
-            transform: scale(1.02);
+            border-color: var(--primary);
+            background: #eff6ff;
         }
 
         .upload-box i {
-            font-size: 3em;
-            color: #3367d6;
-            margin-bottom: 10px;
+            font-size: 2.5em;
+            color: var(--primary);
+            margin-bottom: 15px;
+            display: block;
         }
 
         .upload-box p {
-            color: #666;
-            font-size: 1.1em;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin: 5px 0;
         }
 
         .upload-box input[type="file"] {
@@ -105,22 +130,23 @@
             margin-top: 20px;
             text-align: center;
             overflow-x: auto;
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 8px;
         }
 
         #templatePreview {
-            /* Edit: Ensure wrapper fits image exactly for accurate coordinates */
             display: inline-block;
             position: relative;
             max-width: 100%;
-            border: 2px solid #ddd;
-            border-radius: 10px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
             background: white;
-            line-height: 0; /* Remove extra space */
+            line-height: 0;
         }
 
         #certificateTemplate {
             max-width: 100%;
-            max-height: 500px;
+            max-height: 600px;
             display: none;
         }
 
@@ -129,108 +155,175 @@
             flex-wrap: wrap;
             gap: 10px;
             margin-top: 20px;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid var(--border);
             min-height: 60px;
         }
 
         .draggable-header {
-            padding: 12px 20px;
-            background: linear-gradient(135deg, #3367d6 0%, #2c5282 100%);
-            color: white;
-            border-radius: 8px;
+            padding: 8px 16px;
+            background: white;
+            color: var(--text-main);
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
             cursor: move;
-            font-weight: bold;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s;
+            font-weight: 600;
+            font-size: 0.9em;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            transition: all 0.2s;
         }
 
         .draggable-header:hover {
-            transform: translateY(-2px);
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
         }
 
         .drop-zone {
             position: absolute;
-            min-width: auto; /* Cikgu AI: Tukar dari 100px ke auto supaya kotak ikut saiz teks */
-            padding: 5px; /* Cikgu AI: Kurangkan padding supaya lebih tepat */
-            background: rgba(255, 255, 0, 0.4);
-            border: 2px dashed #ff6b6b;
-            border-radius: 5px;
+            min-width: auto;
+            padding: 4px 8px;
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px dashed var(--primary);
+            border-radius: 4px;
             display: flex;
             align-items: center;
-            /* Cikgu AI: CENTER UPDATE START */
-            justify-content: center; 
+            justify-content: center;
             text-align: center;
             transform: translate(-50%, 0);
-            /* Cikgu AI: CENTER UPDATE END */
             color: #000;
             font-weight: bold;
             cursor: pointer;
             z-index: 10;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
             white-space: nowrap;
             line-height: 1.2;
             user-select: none;
+            transition: background 0.2s;
         }
 
         .drop-zone:hover, .drop-zone.selected-zone {
-            background: rgba(255, 255, 0, 0.7);
-            border-color: #d97706;
+            background: rgba(37, 99, 235, 0.1);
+            border-color: var(--primary-dark);
             z-index: 20;
-            box-shadow: 0 0 15px rgba(217, 119, 6, 0.5);
         }
 
         .drop-zone .remove-btn {
             position: absolute;
-            top: -10px;
-            right: -10px;
-            background: #ff6b6b;
+            top: -8px;
+            right: -8px;
+            background: #ef4444;
             color: white;
             border: none;
             border-radius: 50%;
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             cursor: pointer;
-            font-weight: bold;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
-            line-height: 1;
+            font-size: 10px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
 
         #styleEditor {
-            background: #f0f9ff;
-            border: 2px solid #3367d6;
+            background: #f8fafc;
+            border: 1px solid var(--border);
             border-radius: 8px;
-            padding: 15px;
-            margin-top: 20px;
-            margin-bottom: 20px;
+            padding: 20px;
+            margin: 20px 0;
         }
 
         .style-controls {
             display: flex;
             flex-wrap: wrap;
-            gap: 15px;
+            gap: 20px;
             align-items: center;
         }
 
         .style-group {
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 6px;
         }
         
         .style-group label {
-            font-size: 0.9em;
-            font-weight: bold;
-            color: #444;
+            font-size: 0.85em;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         .style-input {
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 0.95em;
+            background: white;
         }
 
+        .style-input:focus {
+            outline: 2px solid var(--primary);
+            border-color: transparent;
+        }
+
+        /* Button Refinement */
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover { background: var(--primary-dark); }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+        .btn-success:hover { background: #059669; }
+
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+        }
+        .btn-warning:hover { background: #d97706; }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        .btn-danger:hover { background: #dc2626; }
+
+        .btn-secondary {
+            background: #fff;
+            color: var(--text-main);
+            border: 1px solid #cbd5e1;
+        }
+        .btn-secondary:hover { background: #f1f5f9; }
+
+        /* Preview Section */
         #previewSection {
             margin-top: 30px;
         }
@@ -244,14 +337,13 @@
         }
 
         .certificate-preview {
-            /* Auto size based on content/image ratio now */
             width: 100%;
             max-width: 800px;
             position: relative;
-            border: 2px solid #ddd;
-            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             page-break-after: always;
             line-height: 0;
         }
@@ -266,83 +358,8 @@
             position: absolute;
             line-height: normal;
             white-space: nowrap;
-            /* Cikgu AI: CENTER UPDATE START */
-            transform: translate(-50%, 0); 
+            transform: translate(-50%, 0);
             text-align: center;
-            /* Cikgu AI: CENTER UPDATE END */
-        }
-
-        .btn-group {
-            display: flex;
-            gap: 15px;
-            margin-top: 20px;
-            flex-wrap: wrap;
-        }
-
-        button {
-            padding: 15px 30px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1.1em;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        button i {
-            font-size: 1.2em;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #3367d6 0%, #2c5282 100%);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(51, 103, 214, 0.4);
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-        }
-
-        .btn-success:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
-        }
-
-        .btn-warning {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            color: white;
-        }
-
-        .btn-warning:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(245, 158, 11, 0.4);
-        }
-
-        .btn-danger {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            color: white;
-        }
-
-        .btn-danger:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(239, 68, 68, 0.4);
-        }
-
-        .btn-secondary {
-            background: #6b7280;
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background: #4b5563;
         }
 
         .hidden {
@@ -350,28 +367,31 @@
         }
 
         .status-message {
-            padding: 15px;
+            padding: 12px 16px;
             margin: 15px 0;
-            border-radius: 8px;
-            font-weight: bold;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.95em;
+            display: flex;
+            align-items: center;
         }
 
         .status-success {
-            background: #d1fae5;
-            color: #065f46;
-            border-left: 5px solid #10b981;
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
         }
 
         .status-error {
             background: #fee2e2;
             color: #991b1b;
-            border-left: 5px solid #ef4444;
+            border: 1px solid #fecaca;
         }
 
         .status-info {
             background: #dbeafe;
             color: #1e40af;
-            border-left: 5px solid #3367d6;
+            border: 1px solid #bfdbfe;
         }
 
         @media print {
@@ -406,16 +426,13 @@
             .upload-section {
                 flex-direction: column;
             }
-            
             .certificate-preview {
                 width: 100%;
             }
-            
             button {
                 width: 100%;
                 justify-content: center;
             }
-            
             .btn-group {
                 flex-direction: column;
             }
@@ -425,23 +442,23 @@
 <body>
     <div class="container">
         <header>
-            <h1>🖨️ Pencetak Sijil Pukal</h1>
-            <p class="subtitle">Muat naik template sijil & senarai peserta untuk cetak pukal</p>
-            <p style="margin-top: 10px; font-size: 0.9em; opacity: 0.8; font-weight: bold;">Versi: V1.2 (Auto-Center & 100 Fonts)</p>
+            <h1>🖨️ Pencetak Sijil Pukal Pro</h1>
+            <p class="subtitle">Solusi Profesional untuk Penjanaan Sijil Pukal & Data Excel</p>
+            <p style="margin-top: 10px; font-size: 0.85em; color: var(--text-muted); font-weight: 600; background: #f1f5f9; padding: 4px 12px; border-radius: 20px; display: inline-block;">Versi Enterprise 2.0</p>
         </header>
 
         <div class="card">
-            <h2 class="card-title">📁 1. Muat Naik Template Sijil</h2>
+            <h2 class="card-title"><span>📁</span> 1. Muat Naik Template Sijil</h2>
             <div class="upload-section">
                 <div class="upload-box" id="templateDropZone">
-                    <div>🖼️</div>
-                    <p>Klik atau Drag Template Sijil</p>
-                    <p><small>(Format: JPG, PNG, PDF)</small></p>
+                    <i style="font-style: normal; font-size: 2em;">🖼️</i>
+                    <p>Klik atau Seret Template Sijil Di Sini</p>
+                    <p style="font-size: 0.85em; opacity: 0.7;">(Sokongan: JPG, PNG, PDF)</p>
                     <input type="file" id="templateUpload" accept="image/*,.pdf">
                 </div>
             </div>
             <div id="templatePreviewContainer" class="hidden">
-                <h3>📸 Preview Template:</h3>
+                <h3 style="margin-bottom: 15px; color: var(--text-main);">📸 Paparan Template:</h3>
                 <div id="templatePreview">
                     <img id="certificateTemplate" alt="Template Sijil">
                 </div>
@@ -449,12 +466,12 @@
         </div>
 
         <div class="card">
-            <h2 class="card-title">📊 2. Muat Naik Senarai Peserta (Excel)</h2>
+            <h2 class="card-title"><span>📊</span> 2. Muat Naik Pangkalan Data (Excel)</h2>
             <div class="upload-section">
                 <div class="upload-box" id="excelDropZone">
-                    <div>📋</div>
-                    <p>Klik atau Drag Fail Excel</p>
-                    <p><small>(Format: XLSX, XLS, CSV)</small></p>
+                    <i style="font-style: normal; font-size: 2em;">📋</i>
+                    <p>Klik atau Seret Fail Excel Di Sini</p>
+                    <p style="font-size: 0.85em; opacity: 0.7;">(Sokongan: XLSX, XLS, CSV)</p>
                     <input type="file" id="excelUpload" accept=".xlsx,.xls,.csv">
                 </div>
             </div>
@@ -462,29 +479,29 @@
             <div id="excelStatus" class="hidden"></div>
             
             <div id="mappingSection" class="hidden">
-                <h3>🎯 3. Letakkan Field pada Template</h3>
-                <p style="margin: 10px 0; color: #666;">
-                    <strong>Drag & Drop</strong> header ke atas template. <strong>Klik field</strong> di atas template untuk ubah saiz & warna.
+                <h3 style="font-size: 1.1em; color: var(--primary-dark); margin-top: 20px;">🎯 3. Pemetaan Medan Data</h3>
+                <p style="margin: 10px 0; color: var(--text-muted); font-size: 0.95em;">
+                    Sila <strong>heret (drag)</strong> label di bawah ke atas template sijil. Klik pada label di atas template untuk mengubah tetapan font.
                 </p>
                 
                 <div id="headersContainer"></div>
 
-                <!-- NEW: Style Editor -->
+                <!-- Style Editor -->
                 <div id="styleEditor" class="hidden">
-                    <h4 style="margin-bottom: 10px; color: #3367d6;">✨ Tetapan Field: <span id="editingFieldName">-</span></h4>
+                    <h4 style="margin-bottom: 15px; color: var(--primary); display: flex; align-items: center; gap: 8px;">✨ Tetapan Font: <span id="editingFieldName" style="font-weight: 800; color: var(--text-main);">-</span></h4>
                     <div class="style-controls">
                         <div class="style-group">
-                            <label>Saiz Font (px)</label>
+                            <label>Saiz (px)</label>
                             <input type="number" id="editFontSize" class="style-input" value="20" min="8" max="200">
                         </div>
                         <div class="style-group">
-                            <label>Warna Teks</label>
-                            <input type="color" id="editColor" class="style-input" value="#000000" style="height: 38px; width: 60px;">
+                            <label>Warna</label>
+                            <input type="color" id="editColor" class="style-input" value="#000000" style="height: 38px; width: 60px; padding: 2px;">
                         </div>
                         <div class="style-group">
-                            <label>Jenis Font</label>
+                            <label>Tipografi</label>
                             <select id="editFontFamily" class="style-input">
-                                <option value="'Segoe UI', sans-serif">Segoe UI (Default)</option>
+                                <option value="'Segoe UI', sans-serif">Segoe UI (Standard)</option>
                                 <option value="'Times New Roman', serif">Times New Roman</option>
                                 <option value="'Arial', sans-serif">Arial</option>
                                 <option value="'Courier New', monospace">Courier New</option>
@@ -592,22 +609,22 @@
                 
                 <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
                     <button class="btn-warning" id="resetMappingBtn">
-                        🔄 Reset Semua Kedudukan
+                        🔄 Reset Kedudukan
                     </button>
                     <button class="btn-primary" id="generateBtnMain">
-                        🎨 Jana Preview Sijil
+                        🎨 Jana Preview
                     </button>
                 </div>
             </div>
         </div>
 
         <div class="card hidden" id="previewCard">
-            <h2 class="card-title">👀 4. Preview & Cetak</h2>
+            <h2 class="card-title"><span>👀</span> 4. Hasil & Cetakan</h2>
             <div class="btn-group">
-                <button class="btn-primary" id="generateBtn">🎨 Jana Preview Sijil</button>
-                <button class="btn-success" id="printBtn">🖨️ Cetak Semua Sijil</button>
-                <button class="btn-secondary" id="downloadPdfBtn">📥 Download Semua (PDF)</button>
-                <button class="btn-danger" id="clearAllBtn">🗑️ Kosongkan Semua</button>
+                <button class="btn-primary" id="generateBtn">🎨 Jana Semula</button>
+                <button class="btn-success" id="printBtn">🖨️ Cetak Semua</button>
+                <button class="btn-secondary" id="downloadPdfBtn">📥 Muat Turun PDF</button>
+                <button class="btn-danger" id="clearAllBtn">🗑️ Padam Semua</button>
             </div>
             
             <div id="previewSection">

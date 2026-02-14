@@ -204,10 +204,32 @@
             transition: background 0.2s;
         }
 
+        /* Cikgu AI: Style Khas untuk Selected Zone dengan Garisan Grid */
         .drop-zone:hover, .drop-zone.selected-zone {
-            background: rgba(37, 99, 235, 0.1);
-            border-color: var(--primary-dark);
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid #ef4444;
             z-index: 20;
+            /* Grid Lines Visual (Crosshair) */
+            background-image: 
+                linear-gradient(to right, transparent 49%, rgba(255,0,0,0.4) 50%, transparent 51%),
+                linear-gradient(to bottom, transparent 49%, rgba(255,0,0,0.4) 50%, transparent 51%);
+            background-size: 100% 100%;
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.5);
+        }
+
+        /* Helper label for guidelines */
+        .drop-zone.selected-zone::after {
+            content: '✛ Pusat';
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            color: #ef4444;
+            background: white;
+            padding: 1px 4px;
+            border-radius: 4px;
+            pointer-events: none;
         }
 
         .drop-zone .remove-btn {
@@ -444,7 +466,7 @@
         <header>
             <h1>🖨️ Pencetak Sijil Pukal Pro</h1>
             <p class="subtitle">Solusi Profesional untuk Penjanaan Sijil Pukal & Data Excel</p>
-            <p style="margin-top: 10px; font-size: 0.85em; color: var(--text-muted); font-weight: 600; background: #f1f5f9; padding: 4px 12px; border-radius: 20px; display: inline-block;">Versi Enterprise 2.10</p>
+            <p style="margin-top: 10px; font-size: 0.85em; color: var(--text-muted); font-weight: 600; background: #f1f5f9; padding: 4px 12px; border-radius: 20px; display: inline-block;">Versi Enterprise 2.0</p>
         </header>
 
         <div class="card">
@@ -481,7 +503,8 @@
             <div id="mappingSection" class="hidden">
                 <h3 style="font-size: 1.1em; color: var(--primary-dark); margin-top: 20px;">🎯 3. Pemetaan Medan Data</h3>
                 <p style="margin: 10px 0; color: var(--text-muted); font-size: 0.95em;">
-                    Sila <strong>heret (drag)</strong> label di bawah ke atas template sijil. Klik pada label di atas template untuk mengubah tetapan font.
+                    Sila <strong>heret (drag)</strong> label di bawah ke atas template sijil. <br> 
+                    <span style="color: var(--primary); font-weight: 600;">ℹ️ Tip Pro:</span> Klik pada medan untuk aktifkan <strong>garisan grid</strong> dan gunakan <strong>Arrow Keys</strong> di keyboard untuk ketepatan pixel.
                 </p>
                 
                 <div id="headersContainer"></div>
@@ -688,6 +711,9 @@
             // Drag and drop for template
             setupDragDrop('templateDropZone', handleTemplateUpload);
             setupDragDrop('excelDropZone', handleExcelUpload);
+            
+            // Cikgu AI: Sokongan Keyboard untuk pergerakan field
+            document.addEventListener('keydown', handleKeyboardMove);
         }
 
         function setupStyleEditorListeners() {
@@ -711,6 +737,35 @@
             fontSizeInput.addEventListener('input', updateStyle);
             colorInput.addEventListener('input', updateStyle);
             fontFamilyInput.addEventListener('change', updateStyle);
+        }
+        
+        // Cikgu AI: Fungsi Pergerakan Keyboard (Mouse & Arrow Keys)
+        function handleKeyboardMove(e) {
+            if (!selectedDropZone) return;
+            
+            // Jangan ganggu jika user sedang menaip input nilai
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+
+            // Hanya respon pada Arrow Keys
+            if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+
+            e.preventDefault(); // Elak scroll page
+
+            let x = parseInt(selectedDropZone.style.left || 0);
+            let y = parseInt(selectedDropZone.style.top || 0);
+            
+            // Shift = Gerak Laju (10px), Biasa = Gerak Tepat (1px)
+            const step = e.shiftKey ? 10 : 1;
+
+            switch(e.key) {
+                case 'ArrowLeft': x -= step; break;
+                case 'ArrowRight': x += step; break;
+                case 'ArrowUp': y -= step; break;
+                case 'ArrowDown': y += step; break;
+            }
+
+            selectedDropZone.style.left = x + 'px';
+            selectedDropZone.style.top = y + 'px';
         }
 
         // ============================================
@@ -1186,4 +1241,3 @@
     </script>
 </body>
 </html>
-

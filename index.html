@@ -223,12 +223,16 @@
       position: absolute;
       cursor: move;
       user-select: none;
-      padding: 8px 16px;
+      padding: 4px;
       background: rgba(99, 102, 241, 0.2);
       border: 2px dashed rgba(139, 92, 246, 0.8);
       border-radius: 8px;
       transition: all 0.2s ease;
-      white-space: nowrap;
+      white-space: normal;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
     
     .text-field:hover {
@@ -1030,7 +1034,7 @@
              </optgroup>
            </select>
          </div>
-         <div><label class="block text-gray-400 text-sm mb-2">Saiz Font (px)</label> <input type="number" id="fieldFontSize" class="input-3d" value="24" min="8" max="200" onchange="updateSelectedField()">
+         <div><label class="block text-gray-400 text-sm mb-2">Saiz Font Maksima (px)</label> <input type="number" id="fieldFontSize" class="input-3d" value="60" min="8" max="200" onchange="updateSelectedField()">
          </div>
          <div><label class="block text-gray-400 text-sm mb-2">Warna</label>
           <div class="flex gap-2"><input type="color" id="fieldColor" class="color-input" value="#000000" onchange="updateSelectedField()"> <input type="text" id="fieldColorText" class="input-3d flex-1" value="#000000" onchange="document.getElementById('fieldColor').value = this.value; updateSelectedField()">
@@ -1044,9 +1048,13 @@
          </div>
          <div><label class="block text-gray-400 text-sm mb-2">Kedudukan Y (%)</label> <input type="number" id="fieldPosY" class="input-3d" value="50" min="0" max="100" step="0.1" onchange="updateSelectedFieldPosition()">
          </div>
+         <div><label class="block text-gray-400 text-sm mb-2">Lebar Kotak (%)</label> <input type="number" id="fieldWidth" class="input-3d" value="40" min="1" max="100" step="0.1" onchange="updateSelectedFieldPosition()">
+         </div>
+         <div><label class="block text-gray-400 text-sm mb-2">Tinggi Kotak (%)</label> <input type="number" id="fieldHeight" class="input-3d" value="15" min="1" max="100" step="0.1" onchange="updateSelectedFieldPosition()">
+         </div>
         </div>
         <div class="mt-4 p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
-         <p class="text-blue-500 text-xs font-semibold">💡 Tip: Seret medan di atas sijil untuk ubah kedudukan, atau masukkan nilai tepat di sini.</p>
+         <p class="text-blue-500 text-xs font-semibold">💡 Tip: Seret medan di atas sijil untuk ubah kedudukan, seret bucu untuk ubah saiz kotak, atau masukkan nilai tepat di sini.</p>
         </div>
        </div>
       </div><!-- Data Tab -->
@@ -1601,12 +1609,14 @@
         id: fieldId,
         dataSource: appState.headers[0] || '',
         font: 'Arial',
-        fontSize: 24,
+        fontSize: 60,
         fontWeight: '700',
-        color: '#ec4899',
+        color: '#000000',
         textAlign: 'center',
         x: 50,
-        y: 50
+        y: 50,
+        width: 40,
+        height: 15
       };
       
       appState.fields.push(newField);
@@ -1621,10 +1631,10 @@
     function renderField(field) {
       const canvas = document.getElementById('certificateCanvas');
       
-      const existingEl = document.getElementById(field.id);
-      if (existingEl) existingEl.remove();
+      let fieldEl = document.getElementById(field.id);
+      if (fieldEl) fieldEl.remove();
       
-      const fieldEl = document.createElement('div');
+      fieldEl = document.createElement('div');
       fieldEl.id = field.id;
       fieldEl.className = 'text-field';
       fieldEl.innerHTML = `
@@ -1633,11 +1643,24 @@
         <div class="resize-handle" onmousedown="startResize(event, '${field.id}')"></div>
       `;
       
-      applyFieldStyles(fieldEl, field);
+      const textEl = fieldEl.querySelector('.field-text');
+      textEl.style.fontFamily = `'${field.font}', sans-serif`;
+      textEl.style.fontWeight = field.fontWeight;
+      textEl.style.color = field.color;
+      textEl.style.textAlign = field.textAlign;
+      textEl.style.width = '100%';
+      textEl.style.wordWrap = 'break-word';
+      textEl.style.lineHeight = '1.2';
       
       fieldEl.style.left = field.x + '%';
       fieldEl.style.top = field.y + '%';
+      fieldEl.style.width = field.width + '%';
+      fieldEl.style.height = field.height + '%';
       fieldEl.style.transform = 'translate(-50%, -50%)';
+      
+      if(field.textAlign === 'left') fieldEl.style.alignItems = 'flex-start';
+      else if(field.textAlign === 'right') fieldEl.style.alignItems = 'flex-end';
+      else fieldEl.style.alignItems = 'center';
       
       fieldEl.addEventListener('mousedown', (e) => {
         if (!e.target.classList.contains('resize-handle')) {
@@ -1651,16 +1674,19 @@
       });
       
       canvas.appendChild(fieldEl);
+      
+      setTimeout(() => {
+        let size = field.fontSize;
+        textEl.style.fontSize = size + 'px';
+        while ((fieldEl.scrollHeight > fieldEl.clientHeight || fieldEl.scrollWidth > fieldEl.clientWidth) && size > 6) {
+          size--;
+          textEl.style.fontSize = size + 'px';
+        }
+      }, 0);
     }
     
     function applyFieldStyles(el, field) {
-      const textEl = el.querySelector('.field-text');
-      textEl.style.fontFamily = `'${field.font}', sans-serif`;
-      textEl.style.fontSize = field.fontSize + 'px';
-      textEl.style.fontWeight = field.fontWeight;
-      textEl.style.color = field.color;
-      textEl.style.textAlign = field.textAlign;
-      textEl.style.display = 'block';
+      // Obsolete. Kept to avoid undefined errors if accidentally called elsewhere.
     }
     
     function getSampleText(dataSource) {
@@ -1691,13 +1717,15 @@
     function populateFieldEditor(field) {
       document.getElementById('fieldDataSource').value = field.dataSource;
       document.getElementById('fieldFont').value = field.font;
-      document.getElementById('fieldFontSize').value = field.fontSize;
+      document.getElementById('fieldFontSize').value = field.fontSize || 60;
       document.getElementById('fieldFontWeight').value = field.fontWeight;
       document.getElementById('fieldColor').value = field.color;
       document.getElementById('fieldColorText').value = field.color;
       document.getElementById('fieldTextAlign').value = field.textAlign;
       document.getElementById('fieldPosX').value = field.x.toFixed(1);
       document.getElementById('fieldPosY').value = field.y.toFixed(1);
+      document.getElementById('fieldWidth').value = field.width.toFixed(1);
+      document.getElementById('fieldHeight').value = field.height.toFixed(1);
     }
     
     function updateSelectedField() {
@@ -1708,7 +1736,7 @@
       
       field.dataSource = document.getElementById('fieldDataSource').value;
       field.font = document.getElementById('fieldFont').value;
-      field.fontSize = parseInt(document.getElementById('fieldFontSize').value) || 24;
+      field.fontSize = parseInt(document.getElementById('fieldFontSize').value) || 60;
       field.fontWeight = document.getElementById('fieldFontWeight').value;
       field.color = document.getElementById('fieldColor').value;
       field.textAlign = document.getElementById('fieldTextAlign').value;
@@ -1728,6 +1756,8 @@
       
       field.x = parseFloat(document.getElementById('fieldPosX').value) || 50;
       field.y = parseFloat(document.getElementById('fieldPosY').value) || 50;
+      field.width = parseFloat(document.getElementById('fieldWidth').value) || 40;
+      field.height = parseFloat(document.getElementById('fieldHeight').value) || 15;
       
       renderField(field);
       selectField(field.id);
@@ -1811,7 +1841,7 @@
     }
     
     // ==================== RESIZE ====================
-    let resizeState = { isResizing: false, fieldId: null, startX: 0, startFontSize: 0 };
+    let resizeState = { isResizing: false, fieldId: null, startX: 0, startY: 0, startWidth: 0, startHeight: 0 };
     
     function startResize(e, fieldId) {
       e.preventDefault();
@@ -1820,9 +1850,11 @@
       resizeState.isResizing = true;
       resizeState.fieldId = fieldId;
       resizeState.startX = e.clientX;
+      resizeState.startY = e.clientY;
       
       const field = appState.fields.find(f => f.id === fieldId);
-      resizeState.startFontSize = field.fontSize;
+      resizeState.startWidth = field.width;
+      resizeState.startHeight = field.height;
       
       document.addEventListener('mousemove', onResize);
       document.addEventListener('mouseup', stopResize);
@@ -1831,16 +1863,22 @@
     function onResize(e) {
       if (!resizeState.isResizing) return;
       
-      const deltaX = e.clientX - resizeState.startX;
-      const newSize = Math.max(8, Math.min(200, resizeState.startFontSize + deltaX / 2));
+      const img = document.getElementById('certificateImage');
+      const zoom = appState.zoom || 1;
+      
+      const deltaX = (e.clientX - resizeState.startX) / (img.offsetWidth * zoom) * 100;
+      const deltaY = (e.clientY - resizeState.startY) / (img.offsetHeight * zoom) * 100;
       
       const field = appState.fields.find(f => f.id === resizeState.fieldId);
       if (field) {
-        field.fontSize = Math.round(newSize);
+        field.width = Math.max(5, resizeState.startWidth + deltaX * 2);
+        field.height = Math.max(5, resizeState.startHeight + deltaY * 2);
+        
         renderField(field);
         
         if (appState.selectedFieldId === field.id) {
-          document.getElementById('fieldFontSize').value = field.fontSize;
+          document.getElementById('fieldWidth').value = field.width.toFixed(1);
+          document.getElementById('fieldHeight').value = field.height.toFixed(1);
         }
       }
     }
@@ -2144,6 +2182,64 @@
       radio.addEventListener('change', updatePDFCount);
     });
     
+    function renderTextOnCanvas(ctx, text, field, cvs) {
+        let maxFontSize = field.fontSize || 60;
+        let minFontSize = 6;
+        let fontSize = maxFontSize;
+        
+        let x = (field.x / 100) * cvs.width;
+        let y = (field.y / 100) * cvs.height;
+        let w = (field.width / 100) * cvs.width;
+        let h = (field.height / 100) * cvs.height;
+        
+        let lines = [];
+        let lineHeight = 1.2;
+        
+        while (fontSize >= minFontSize) {
+            ctx.font = `${field.fontWeight} ${fontSize}px '${field.font}'`;
+            let words = text.split(/\s+/);
+            lines = [];
+            let currentLine = words[0] || "";
+            
+            for (let i = 1; i < words.length; i++) {
+                let word = words[i];
+                let width = ctx.measureText(currentLine + " " + word).width;
+                if (width <= w) {
+                    currentLine += " " + word;
+                } else {
+                    lines.push(currentLine);
+                    currentLine = word;
+                }
+            }
+            if(currentLine) lines.push(currentLine);
+            
+            let totalHeight = lines.length * (fontSize * lineHeight);
+            let longestWidth = Math.max(...lines.map(l => ctx.measureText(l).width));
+            
+            if (totalHeight <= h && longestWidth <= w) {
+                break;
+            }
+            fontSize -= 1;
+        }
+        
+        ctx.font = `${field.fontWeight} ${fontSize}px '${field.font}'`;
+        ctx.fillStyle = field.color;
+        ctx.textAlign = field.textAlign;
+        ctx.textBaseline = 'middle';
+        
+        let totalTextHeight = lines.length * (fontSize * lineHeight);
+        let startY = y - (totalTextHeight / 2) + (fontSize * lineHeight / 2);
+        
+        for (let i = 0; i < lines.length; i++) {
+            let lineY = startY + (i * (fontSize * lineHeight));
+            let drawX = x; 
+            if (field.textAlign === 'left') drawX = x - w/2;
+            if (field.textAlign === 'right') drawX = x + w/2;
+            
+            ctx.fillText(lines[i], drawX, lineY);
+        }
+    }
+
     // ==================== PDF GENERATION ====================
     async function generatePDFs() {
       const { jsPDF } = window.jspdf;
@@ -2205,16 +2301,7 @@
             const colIndex = appState.headers.indexOf(field.dataSource);
             const text = colIndex !== -1 ? String(appState.excelData[idx][colIndex] || '') : '';
             if (!text) return;
-            
-            ctx.font = `${field.fontWeight} ${field.fontSize}px '${field.font}'`;
-            ctx.fillStyle = field.color;
-            ctx.textAlign = field.textAlign;
-            ctx.textBaseline = 'middle';
-            
-            const x = (field.x / 100) * cvs.width;
-            const y = (field.y / 100) * cvs.height;
-            
-            ctx.fillText(text, x, y);
+            renderTextOnCanvas(ctx, text, field, cvs);
           });
           
           return cvs.toDataURL('image/png'); // Menggunakan PNG untuk mengekalkan kualiti asal (lossless)
@@ -2432,16 +2519,7 @@
       appState.fields.forEach(field => {
         const colIndex = appState.headers.indexOf(field.dataSource);
         const text = colIndex !== -1 ? String(appState.excelData[idx][colIndex] || '') : '';
-        
-        ctx.font = `${field.fontWeight} ${field.fontSize}px '${field.font}'`;
-        ctx.fillStyle = field.color;
-        ctx.textAlign = field.textAlign;
-        ctx.textBaseline = 'middle';
-        
-        const x = (field.x / 100) * canvas.width;
-        const y = (field.y / 100) * canvas.height;
-        
-        ctx.fillText(text, x, y);
+        renderTextOnCanvas(ctx, text, field, canvas);
       });
       
       const previewImg = document.getElementById('finalPreviewImage');

@@ -2502,14 +2502,16 @@
       }
       
       try {
-        const handle = await window.showDirectoryPicker();
+        const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
         appState.saveFolder = handle;
         appState.savePath = handle.name;
         document.getElementById('selectedPath').textContent = '📂 ' + handle.name;
-        showToast('Folder pintu masuk berjaya dipilih!');
+        showToast('Folder berjaya dipilih!');
       } catch (err) {
         if (err.name !== 'AbortError') {
           console.error('Directory picker error:', err);
+          showToast('Ralat folder. Sila buat folder baru terlebih dahulu.', 'error');
+          alert('PENTING:\n\nBrowser menghalang anda memilih folder utama sistem (seperti terus di "Downloads" atau "Desktop") atas faktor keselamatan.\n\nSila BUAT SATU FOLDER BARU (contoh: "Sijil Saya") di dalam folder anda, dan pilih folder baru tersebut.');
         }
       }
     }
@@ -2530,6 +2532,11 @@
       }
       
       try {
+        if ((await appState.saveFolder.queryPermission({ mode: 'readwrite' })) !== 'granted') {
+           const perm = await appState.saveFolder.requestPermission({ mode: 'readwrite' });
+           if (perm !== 'granted') throw new Error('Tiada kebenaran menulis');
+        }
+        
         const file = await appState.saveFolder.getFileHandle(filename, { create: true });
         const writable = await file.createWritable();
         await writable.write(blob);

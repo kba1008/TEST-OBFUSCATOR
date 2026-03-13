@@ -814,7 +814,7 @@
    </div><!-- Main Content -->
    <div class="relative z-10 p-6 h-full overflow-auto scrollbar-custom"><!-- Header -->
     <div class="header-3d">
-     <h1 class="title-3d" id="appTitle">Certificate Generator Pro</h1>
+     <h1 class="title-3d" id="appTitle">Certificate Generator ProS</h1>
      <p class="subtitle-3d">Sistem Cetakan Sijil Bulk Berkuasa AI</p>
     </div><!-- Step Indicator -->
     <div class="step-indicator">
@@ -1121,14 +1121,12 @@
           </div>
          </div><!-- Save Location Selection -->
          <div class="mb-6 p-4 bg-blue-500/10 rounded-lg border border-blue-500/30">
-          <label class="block text-gray-300 text-sm font-medium mb-3">📁 Pilih Lokasi Simpan:</label>
+          <label class="block text-gray-300 text-sm font-medium mb-3">📁 Lokasi Simpanan:</label>
           <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
            <div class="flex-1 bg-gray-800 rounded-lg p-3 border border-gray-700 flex items-center gap-2">
             <svg class="w-5 h-5 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
-            </svg><span class="text-gray-300 text-sm" id="selectedPath">Muat turun (Default)</span>
-           </div><button class="btn-3d px-6 py-2 whitespace-nowrap" onclick="selectSaveFolder()">
-            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-            </svg> Pilih Folder </button>
+            </svg><span class="text-gray-300 text-sm" id="selectedPath">Disimpan secara automatik ke folder "Downloads" peranti anda</span>
+           </div>
           </div>
          </div><!-- Group Selection for PDF -->
          <div class="mb-6" id="groupSelectionSection" style="display: none;"><label class="block text-gray-400 text-sm mb-3">Pilih kumpulan untuk dijana:</label>
@@ -1197,7 +1195,7 @@
     
     // ==================== DEFAULT CONFIG ====================
     const defaultConfig = {
-      app_title: 'Certificate Generator Pro',
+      app_title: 'Sijil Generator Pro',
       primary_color: '#0ea5e9',
       secondary_color: '#10b981',
       accent_color: '#3b82f6',
@@ -2495,64 +2493,20 @@
     }
     
     // ==================== SAVE FOLDER SELECTION ====================
-    async function selectSaveFolder() {
-      if (!window.showDirectoryPicker) {
-        showToast('Browser anda tidak menyokong pemilihan folder. Menggunakan muat turun default.', 'error');
-        return;
-      }
-      
-      try {
-        const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
-        appState.saveFolder = handle;
-        appState.savePath = handle.name;
-        document.getElementById('selectedPath').textContent = '📂 ' + handle.name;
-        showToast('Folder berjaya dipilih!');
-      } catch (err) {
-        if (err.name !== 'AbortError') {
-          console.error('Directory picker error:', err);
-          showToast('Ralat folder. Sila buat folder baru terlebih dahulu.', 'error');
-          alert('PENTING:\n\nBrowser menghalang anda memilih folder utama sistem (seperti terus di "Downloads" atau "Desktop") atas faktor keselamatan.\n\nSila BUAT SATU FOLDER BARU (contoh: "Sijil Saya") di dalam folder anda, dan pilih folder baru tersebut.');
-        }
-      }
-    }
+    // Dibuang bagi mengelakkan ralat 'System File' pada pelayar web
     
     // ==================== ENHANCED DOWNLOAD HANDLER ====================
     async function saveFileToSelectedFolder(filename, blob) {
-      if (!appState.saveFolder) {
-        // Fallback to regular download
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        return;
-      }
-      
-      try {
-        if ((await appState.saveFolder.queryPermission({ mode: 'readwrite' })) !== 'granted') {
-           const perm = await appState.saveFolder.requestPermission({ mode: 'readwrite' });
-           if (perm !== 'granted') throw new Error('Tiada kebenaran menulis');
-        }
-        
-        const file = await appState.saveFolder.getFileHandle(filename, { create: true });
-        const writable = await file.createWritable();
-        await writable.write(blob);
-        await writable.close();
-      } catch (err) {
-        console.error('Save to folder error:', err);
-        // Fallback to download
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }
+      // Terus menggunakan kaedah standard muat turun bagi mengelakkan 
+      // ralat sekuriti 'System File' ketika memilih folder manual
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 100);
     }
 
     async function previewFinalCertificate() {

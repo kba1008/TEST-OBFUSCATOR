@@ -8,7 +8,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="/_sdk/element_sdk.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&amp;family=Montserrat:wght@300;400;500;600;700&amp;family=Dancing+Script:wght@400;700&amp;family=Roboto:wght@300;400;500;700&amp;family=Open+Sans:wght@300;400;600;700&amp;family=Lato:wght@300;400;700&amp;family=Poppins:wght@300;400;500;600;700&amp;family=Raleway:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&amp;family=Montserrat:wght@300;400;500;600;700&amp;family=Dancing+Script:wght@400;700&amp;family=Roboto:wght@300;400;500;700&amp;family=Open+Sans:wght@300;400;600;700&amp;family=Lato:wght@300;400;700&amp;family=Poppins:wght@300;400;500;600;700&amp;family=Raleway:wght@300;400;500;600;700&amp;family=Tangerine:wght@400;700&amp;family=Great+Vibes&amp;family=Cinzel:wght@400;700&amp;family=Oswald:wght@400;700&amp;family=Pacifico&amp;display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
     
@@ -795,7 +795,7 @@
         </div>
        </div><!-- Certificate Preview Area -->
        <div class="glass-card p-6"><!-- Toggle Background Display -->
-        <div class="mb-4 flex items-center justify-between p-3 bg-purple-500/10 rounded-lg border border-purple-500/30"><label class="flex items-center gap-3 cursor-pointer"> <input type="checkbox" id="showBackgroundToggle" checked class="w-4 h-4 accent-purple-500"> <span class="text-white text-sm">Tunjuk gambar latar belakang</span> </label> <span class="text-gray-400 text-xs">PDF: <span id="pdfBgStatus">Ada latar</span></span>
+        <div class="mb-4 flex items-center justify-between p-3 bg-purple-500/10 rounded-lg border border-purple-500/30"><label class="flex items-center gap-3 cursor-pointer"> <input type="checkbox" id="showBackgroundToggle" checked class="w-4 h-4 accent-purple-500"> <span class="text-white text-sm">Tunjuk gambar latar belakang (Untick untuk latar putih)</span> </label> <span class="text-gray-400 text-xs">PDF: <span id="pdfBgStatus">Ada latar</span></span>
         </div>
         <div class="preview-container overflow-auto scrollbar-custom" style="max-height: 700px;" id="previewContainer">
          <div id="emptyPreview" class="flex flex-col items-center justify-center py-20 text-center">
@@ -825,7 +825,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
          <div><label class="block text-gray-400 text-sm mb-2">Sumber Data (Lajur Excel)</label> <select id="fieldDataSource" class="select-3d" onchange="updateSelectedField()"> <option value="">-- Pilih Lajur --</option> </select>
          </div>
-         <div><label class="block text-gray-400 text-sm mb-2">Font</label> <select id="fieldFont" class="select-3d" onchange="updateSelectedField()"> <option value="Poppins">Poppins</option> <option value="Playfair Display">Playfair Display</option> <option value="Montserrat">Montserrat</option> <option value="Dancing Script">Dancing Script</option> <option value="Roboto">Roboto</option> <option value="Open Sans">Open Sans</option> <option value="Lato">Lato</option> <option value="Raleway">Raleway</option> </select>
+         <div><label class="block text-gray-400 text-sm mb-2">Font</label> <select id="fieldFont" class="select-3d" onchange="updateSelectedField()"> <option value="Poppins">Poppins</option> <option value="Playfair Display">Playfair Display</option> <option value="Montserrat">Montserrat</option> <option value="Dancing Script">Dancing Script</option> <option value="Roboto">Roboto</option> <option value="Open Sans">Open Sans</option> <option value="Lato">Lato</option> <option value="Raleway">Raleway</option> <option value="Tangerine">Tangerine</option> <option value="Great Vibes">Great Vibes</option> <option value="Cinzel">Cinzel</option> <option value="Oswald">Oswald</option> <option value="Pacifico">Pacifico</option> </select>
          </div>
          <div><label class="block text-gray-400 text-sm mb-2">Saiz Font (px)</label> <input type="number" id="fieldFontSize" class="input-3d" value="24" min="8" max="200" onchange="updateSelectedField()">
          </div>
@@ -927,9 +927,24 @@
          <div class="mb-6"><label class="block text-gray-400 text-sm mb-3">Pilihan Output:</label>
           <div class="space-y-3"><label class="flex items-center gap-3 cursor-pointer"> <input type="radio" name="outputMode" value="single" checked class="w-4 h-4 accent-purple-500"> <span class="text-white">Satu fail PDF (semua sijil)</span> </label> <label class="flex items-center gap-3 cursor-pointer"> <input type="radio" name="outputMode" value="byGroup" class="w-4 h-4 accent-purple-500"> <span class="text-white">Berasingan mengikut kumpulan</span> </label> <label class="flex items-center gap-3 cursor-pointer"> <input type="radio" name="outputMode" value="individual" class="w-4 h-4 accent-purple-500"> <span class="text-white">Satu PDF setiap sijil</span> </label>
           </div>
-         </div><!-- Generate Button --> <button class="btn-3d btn-accent w-full py-4 text-lg" onclick="generatePDFs()" id="generateBtn">
-          <svg class="w-6 h-6 inline mr-2" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-          </svg> Jana &amp; Muat Turun PDF </button> <!-- Progress -->
+         </div><!-- Preview Before Generation -->
+         <div class="mb-6">
+          <button class="btn-3d w-full py-3 text-md" style="background: linear-gradient(135deg, #0ea5e9, #38bdf8); box-shadow: 0 6px 0 #0369a1, 0 10px 20px rgba(14, 165, 233, 0.4);" onclick="previewFinalCertificate()">
+           <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg> Preview Rupa Sijil </button>
+          <div id="finalPreviewContainer" class="hidden mt-4 p-4 glass-card text-center">
+           <h4 class="text-white text-sm font-medium mb-3">Preview Hasil Akhir Sijil:</h4>
+           <img id="finalPreviewImage" class="max-w-full h-auto rounded border border-gray-600 mx-auto" src="">
+          </div>
+         </div>
+
+         <!-- Generate Button & Reset --> 
+         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <button class="btn-3d btn-accent w-full py-4 text-lg" onclick="generatePDFs()" id="generateBtn">
+           <svg class="w-6 h-6 inline mr-2" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+           </svg> Jana &amp; Muat Turun PDF </button>
+          <button class="btn-3d w-full py-4 text-lg" style="background: linear-gradient(135deg, #ef4444, #f87171); box-shadow: 0 6px 0 #b91c1c, 0 10px 20px rgba(239, 68, 68, 0.4);" onclick="resetProject()">
+           <svg class="w-6 h-6 inline mr-2" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg> Reset Manual </button>
+         </div> <!-- Progress -->
          <div id="generateProgress" class="mt-6 hidden">
           <div class="flex items-center justify-between mb-2"><span class="text-gray-400 text-sm">Menjana sijil...</span> <span class="text-white font-medium" id="progressText">0%</span>
           </div>
@@ -1034,6 +1049,41 @@
         appState.showBackground = e.target.checked;
         updateBackgroundVisibility();
         updatePDFBackgroundStatus();
+      });
+
+      // Keyboard arrow keys for moving field
+      document.addEventListener('keydown', (e) => {
+        if (appState.selectedFieldId) {
+          if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+          
+          const field = appState.fields.find(f => f.id === appState.selectedFieldId);
+          if (!field) return;
+
+          let moved = false;
+          const step = e.shiftKey ? 1 : 0.2;
+
+          switch(e.key) {
+            case 'ArrowUp': field.y -= step; moved = true; break;
+            case 'ArrowDown': field.y += step; moved = true; break;
+            case 'ArrowLeft': field.x -= step; moved = true; break;
+            case 'ArrowRight': field.x += step; moved = true; break;
+          }
+
+          if (moved) {
+            e.preventDefault();
+            field.x = Math.max(0, Math.min(100, field.x));
+            field.y = Math.max(0, Math.min(100, field.y));
+            
+            const fieldEl = document.getElementById(field.id);
+            fieldEl.style.left = field.x + '%';
+            fieldEl.style.top = field.y + '%';
+            
+            if (appState.selectedFieldId === field.id) {
+              document.getElementById('fieldPosX').value = field.x.toFixed(1);
+              document.getElementById('fieldPosY').value = field.y.toFixed(1);
+            }
+          }
+        }
       });
     });
     
@@ -1174,10 +1224,13 @@
     
     function updateBackgroundVisibility() {
       const img = document.getElementById('certificateImage');
+      const canvas = document.getElementById('certificateCanvas');
       if (appState.showBackground) {
-        img.style.display = 'block';
+        img.style.visibility = 'visible';
+        canvas.style.backgroundColor = 'transparent';
       } else {
-        img.style.display = 'none';
+        img.style.visibility = 'hidden';
+        canvas.style.backgroundColor = '#ffffff';
       }
     }
     
@@ -1821,6 +1874,8 @@
             
             // Clear and setup canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
             
             // Only draw background if enabled
             if (appState.showBackground) {
@@ -1832,7 +1887,7 @@
               const colIndex = appState.headers.indexOf(field.dataSource);
               const text = colIndex !== -1 ? String(appState.excelData[idx][colIndex] || '') : '';
               
-              ctx.font = `${field.fontWeight} ${field.fontSize}px ${field.font}`;
+              ctx.font = `${field.fontWeight} ${field.fontSize}px '${field.font}'`;
               ctx.fillStyle = field.color;
               ctx.textAlign = field.textAlign;
               ctx.textBaseline = 'middle';
@@ -1881,6 +1936,8 @@
               if (i > 0) pdf.addPage();
               
               ctx.clearRect(0, 0, canvas.width, canvas.height);
+              ctx.fillStyle = '#ffffff';
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
               
               if (appState.showBackground) {
                 ctx.drawImage(img, 0, 0);
@@ -1890,7 +1947,7 @@
                 const colIndex = appState.headers.indexOf(field.dataSource);
                 const text = colIndex !== -1 ? String(appState.excelData[idx][colIndex] || '') : '';
                 
-                ctx.font = `${field.fontWeight} ${field.fontSize}px ${field.font}`;
+                ctx.font = `${field.fontWeight} ${field.fontSize}px '${field.font}'`;
                 ctx.fillStyle = field.color;
                 ctx.textAlign = field.textAlign;
                 ctx.textBaseline = 'middle';
@@ -1927,6 +1984,8 @@
             const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
             
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
             
             if (appState.showBackground) {
               ctx.drawImage(img, 0, 0);
@@ -1943,7 +2002,7 @@
                 fileName = text.replace(/[^a-zA-Z0-9]/g, '_');
               }
               
-              ctx.font = `${field.fontWeight} ${field.fontSize}px ${field.font}`;
+              ctx.font = `${field.fontWeight} ${field.fontSize}px '${field.font}'`;
               ctx.fillStyle = field.color;
               ctx.textAlign = field.textAlign;
               ctx.textBaseline = 'middle';
@@ -2049,6 +2108,61 @@
         URL.revokeObjectURL(url);
       }
     }
+
+    async function previewFinalCertificate() {
+      if (appState.excelData.length === 0 || !appState.certificateImage) {
+        showToast('Sila muat naik sijil dan data dahulu!', 'error');
+        return;
+      }
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      const img = new Image();
+      await new Promise((resolve) => {
+        img.onload = resolve;
+        img.src = appState.certificateImage;
+      });
+      
+      canvas.width = img.width;
+      canvas.height = img.height;
+      
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      if (appState.showBackground) {
+        ctx.drawImage(img, 0, 0);
+      }
+      
+      const idx = 0; // first record
+      
+      appState.fields.forEach(field => {
+        const colIndex = appState.headers.indexOf(field.dataSource);
+        const text = colIndex !== -1 ? String(appState.excelData[idx][colIndex] || '') : '';
+        
+        ctx.font = `${field.fontWeight} ${field.fontSize}px '${field.font}'`;
+        ctx.fillStyle = field.color;
+        ctx.textAlign = field.textAlign;
+        ctx.textBaseline = 'middle';
+        
+        const x = (field.x / 100) * canvas.width;
+        const y = (field.y / 100) * canvas.height;
+        
+        ctx.fillText(text, x, y);
+      });
+      
+      const previewImg = document.getElementById('finalPreviewImage');
+      previewImg.src = canvas.toDataURL('image/jpeg', 0.8);
+      document.getElementById('finalPreviewContainer').classList.remove('hidden');
+      
+      showToast('Preview berjaya dijana!');
+    }
+
+    function resetProject() {
+      if(confirm('Adakah anda pasti untuk reset semua tetapan projek ini?')) {
+        location.reload();
+      }
+    }
   </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9db68c0dc7f53a5f',t:'MTc3MzM1NzgxMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9db6eea620eada55',t:'MTc3MzM2MTg0OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

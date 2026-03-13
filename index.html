@@ -873,6 +873,14 @@
            <button class="btn-3d text-sm py-2 px-4" style="background: linear-gradient(135deg, #10b981, #34d399); box-shadow: 0 4px 0 #059669;" onclick="importGoogleSheet()">Import</button>
          </div>
        </div>
+       <!-- NEW: Clipboard Integration -->
+       <div class="mt-4 pt-4 border-t border-green-500/30">
+         <label class="block text-gray-400 text-sm mb-2">Atau Tampal Data (Copy/Paste dari Excel):</label>
+         <div class="flex gap-2">
+           <textarea id="clipboardInput" class="input-3d flex-1 text-sm py-2 px-3 h-10 min-h-[40px] resize-y" placeholder="Tampal (Ctrl+V) data di sini..."></textarea>
+           <button class="btn-3d text-sm py-2 px-4" style="background: linear-gradient(135deg, #10b981, #34d399); box-shadow: 0 4px 0 #059669;" onclick="importClipboardData()">Proses</button>
+         </div>
+       </div>
        <div id="excelInfo" class="mt-4 hidden">
         <div class="flex items-center gap-3 p-3 bg-green-500/20 rounded-lg border border-green-500/40 mb-3">
          <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -1489,6 +1497,44 @@
       } catch (err) {
         console.error(err);
         showToast('Ralat memuat data. Pastikan Sheet diset "Anyone with the link can view".', 'error');
+      }
+    }
+
+    function importClipboardData() {
+      const text = document.getElementById('clipboardInput').value.trim();
+      if (!text) {
+        showToast('Sila tampal data terlebih dahulu', 'error');
+        return;
+      }
+      try {
+        const workbook = XLSX.read(text, { type: 'string' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        
+        if (jsonData.length < 2) {
+          showToast('Tiada data atau format tidak sah!', 'error');
+          return;
+        }
+        
+        appState.headers = jsonData[0].map(h => String(h || '').trim());
+        appState.excelData = jsonData.slice(1).filter(row => row.some(cell => cell !== null && cell !== undefined && cell !== ''));
+        
+        document.getElementById('excelFileName').textContent = "Data Clipboard";
+        document.getElementById('excelInfo').classList.remove('hidden');
+        document.getElementById('totalRows').textContent = appState.excelData.length;
+        
+        updateGroupColumnSelect();
+        updateFieldDataSourceOptions();
+        updateDataTable();
+        updateSteps();
+        updateGenerateReadiness();
+        
+        showToast(`${appState.excelData.length} rekod berjaya diimport!`);
+        document.getElementById('clipboardInput').value = '';
+      } catch (err) {
+        console.error(err);
+        showToast('Ralat memproses data clipboard.', 'error');
       }
     }
     
@@ -2171,7 +2217,7 @@
             ctx.fillText(text, x, y);
           });
           
-          return cvs.toDataURL('image/jpeg', 0.95);
+          return cvs.toDataURL('image/png'); // Menggunakan PNG untuk mengekalkan kualiti asal (lossless)
         };
         
         // Determine PDF orientation
@@ -2189,7 +2235,7 @@
             if (i > 0) pdf.addPage();
             
             const imgData = drawCertificateToCanvas(idx);
-            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
             
             // Update progress
             const progress = ((i + 1) / rowsToProcess.length) * 100;
@@ -2225,7 +2271,7 @@
               if (i > 0) pdf.addPage();
               
               const imgData = drawCertificateToCanvas(idx);
-              pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+              pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
               
               totalProcessed++;
               const progress = (totalProcessed / rowsToProcess.length) * 100;
@@ -2261,7 +2307,7 @@
             });
             
             const imgData = drawCertificateToCanvas(idx);
-            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
             
             const pdfBlob = pdf.output('blob');
             await saveFileToSelectedFolder(`${fileName}.pdf`, pdfBlob);
@@ -2399,7 +2445,7 @@
       });
       
       const previewImg = document.getElementById('finalPreviewImage');
-      previewImg.src = canvas.toDataURL('image/jpeg', 0.8);
+      previewImg.src = canvas.toDataURL('image/png');
       document.getElementById('finalPreviewContainer').classList.remove('hidden');
       
       showToast('Preview berjaya dijana!');

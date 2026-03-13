@@ -228,7 +228,7 @@
       border: 2px dashed rgba(139, 92, 246, 0.8);
       border-radius: 8px;
       transition: all 0.2s ease;
-      white-space: normal;
+      white-space: pre-wrap;
       overflow: hidden;
       display: flex;
       flex-direction: column;
@@ -1283,7 +1283,7 @@
           }
 
           if (moved) {
-            e.preventDefault();
+            e.preventDefault;
             field.x = Math.max(0, Math.min(100, field.x));
             field.y = Math.max(0, Math.min(100, field.y));
             
@@ -1649,6 +1649,7 @@
       textEl.style.color = field.color;
       textEl.style.textAlign = field.textAlign;
       textEl.style.width = '100%';
+      textEl.style.whiteSpace = 'pre-wrap';
       textEl.style.wordWrap = 'break-word';
       textEl.style.lineHeight = '1.2';
       
@@ -1676,12 +1677,7 @@
       canvas.appendChild(fieldEl);
       
       setTimeout(() => {
-        let size = field.fontSize;
-        textEl.style.fontSize = size + 'px';
-        while ((fieldEl.scrollHeight > fieldEl.clientHeight || fieldEl.scrollWidth > fieldEl.clientWidth) && size > 6) {
-          size--;
-          textEl.style.fontSize = size + 'px';
-        }
+        textEl.style.fontSize = field.fontSize + 'px';
       }, 0);
     }
     
@@ -2183,26 +2179,33 @@
     });
     
     function renderTextOnCanvas(ctx, text, field, cvs) {
-        let maxFontSize = field.fontSize || 60;
-        let minFontSize = 6;
-        let fontSize = maxFontSize;
+        let fontSize = field.fontSize || 60;
         
         let x = (field.x / 100) * cvs.width;
         let y = (field.y / 100) * cvs.height;
         let w = (field.width / 100) * cvs.width;
-        let h = (field.height / 100) * cvs.height;
+        
+        ctx.font = `${field.fontWeight} ${fontSize}px '${field.font}'`;
+        ctx.fillStyle = field.color;
+        ctx.textAlign = field.textAlign;
+        ctx.textBaseline = 'middle';
         
         let lines = [];
         let lineHeight = 1.2;
         
-        while (fontSize >= minFontSize) {
-            ctx.font = `${field.fontWeight} ${fontSize}px '${field.font}'`;
-            let words = text.split(/\s+/);
-            lines = [];
+        let explicitLines = text.split(/\r?\n/);
+        
+        for (let i = 0; i < explicitLines.length; i++) {
+            let eLine = explicitLines[i];
+            if (eLine === "") {
+                lines.push("");
+                continue;
+            }
+            let words = eLine.split(' ');
             let currentLine = words[0] || "";
             
-            for (let i = 1; i < words.length; i++) {
-                let word = words[i];
+            for (let j = 1; j < words.length; j++) {
+                let word = words[j];
                 let width = ctx.measureText(currentLine + " " + word).width;
                 if (width <= w) {
                     currentLine += " " + word;
@@ -2212,20 +2215,7 @@
                 }
             }
             if(currentLine) lines.push(currentLine);
-            
-            let totalHeight = lines.length * (fontSize * lineHeight);
-            let longestWidth = Math.max(...lines.map(l => ctx.measureText(l).width));
-            
-            if (totalHeight <= h && longestWidth <= w) {
-                break;
-            }
-            fontSize -= 1;
         }
-        
-        ctx.font = `${field.fontWeight} ${fontSize}px '${field.font}'`;
-        ctx.fillStyle = field.color;
-        ctx.textAlign = field.textAlign;
-        ctx.textBaseline = 'middle';
         
         let totalTextHeight = lines.length * (fontSize * lineHeight);
         let startY = y - (totalTextHeight / 2) + (fontSize * lineHeight / 2);

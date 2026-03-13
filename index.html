@@ -7,6 +7,7 @@
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="/_sdk/element_sdk.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&amp;family=Open+Sans:wght@300;400;600;700&amp;family=Lato:wght@300;400;700&amp;family=Montserrat:wght@300;400;500;600;700&amp;family=Oswald:wght@400;700&amp;family=Source+Sans+Pro:wght@300;400;600;700&amp;family=Raleway:wght@300;400;500;600;700&amp;family=PT+Sans:wght@400;700&amp;family=Merriweather:wght@300;400;700&amp;family=Noto+Sans:wght@400;700&amp;family=Nunito:wght@300;400;600;700&amp;family=Prompt:wght@300;400;500;700&amp;family=Work+Sans:wght@300;400;600&amp;family=Ubuntu:wght@300;400;500;700&amp;family=Muli:wght@300;400;600&amp;family=Playfair+Display:wght@400;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;family=Rubik:wght@300;400;500&amp;family=Lora:wght@400;500;600&amp;family=Mukta:wght@300;400;500&amp;family=Fira+Sans:wght@300;400;500&amp;family=Nunito+Sans:wght@300;400;600&amp;family=Quicksand:wght@300;400;500;600&amp;family=Karla:wght@400;500&amp;family=Barlow:wght@400;500&amp;family=Titillium+Web:wght@300;400;600&amp;family=Inconsolata:wght@400;500&amp;family=Heebo:wght@300;400;500&amp;family=Oxygen:wght@300;400;700&amp;family=Dosis:wght@300;400;500&amp;family=Poppins:wght@300;400;500;600;700&amp;family=Anton&amp;family=Cairo:wght@300;400;600&amp;family=Josefin+Sans:wght@300;400;600&amp;family=Signika:wght@300;400;600&amp;family=Arimo:wght@400;500;600&amp;family=Libre+Baskerville:wght@400;700&amp;family=Abel&amp;family=Pacifico&amp;family=Dancing+Script:wght@400;700&amp;family=Shadows+Into+Light&amp;family=Exo+2:wght@300;400;500&amp;family=Tajawal:wght@300;400;500&amp;family=Varela+Round&amp;family=Fjalla+One&amp;family=Hind:wght@300;400;500&amp;family=Bitter:wght@400;500&amp;family=Asap:wght@400;500&amp;family=Teko:wght@300;400;500&amp;family=Caveat:wght@400;500;600&amp;display=swap" rel="stylesheet">
   <style>
@@ -1370,6 +1371,10 @@
     }
     
     function handleExcelUpload(file) {
+      if (!window.XLSX) {
+        showToast('Pustaka Excel belum sedia. Sila tunggu sebentar...', 'error');
+        return;
+      }
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
@@ -2217,6 +2222,10 @@
 
     // ==================== PDF GENERATION ====================
     async function generatePDFs() {
+      if (!window.jspdf) {
+        showToast('Pustaka PDF belum bersedia. Sila muat semula halaman.', 'error');
+        return;
+      }
       const { jsPDF } = window.jspdf;
       
       const btn = document.getElementById('generateBtn');
@@ -2252,8 +2261,9 @@
         
         // Get original image for Native 4K drawing into PDF
         const img = new Image();
-        await new Promise((resolve) => {
+        await new Promise((resolve, reject) => {
           img.onload = resolve;
+          img.onerror = () => reject(new Error('Gagal memuatkan gambar sijil.'));
           img.src = appState.certificateImage;
         });
         
@@ -2287,6 +2297,16 @@
         const pdfWidth = orientation === 'l' ? 297 : 210;
         const pdfHeight = orientation === 'l' ? 210 : 297;
         
+        // Zip implementation fallback for multiple files without folder API
+        let zip = null;
+        if (!appState.saveFolder && (mode === 'byGroup' || mode === 'individual')) {
+            if (window.JSZip) {
+                zip = new JSZip();
+            } else {
+                showToast('Amaran: Pelayar ini mungkin menghalang muat turun fail yang banyak. Sila benarkan tetapan (Allow multiple downloads).', 'error');
+            }
+        }
+
         if (mode === 'single') {
           // Single PDF with all certificates
           const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
@@ -2310,7 +2330,6 @@
           
           const pdfBlob = pdf.output('blob');
           await saveFileToSelectedFolder('sijil_semua.pdf', pdfBlob);
-          showToast(`${rowsToProcess.length} sijil berjaya dijana!`);
           
         } else if (mode === 'byGroup') {
           // Separate PDF per group
@@ -2346,10 +2365,12 @@
             
             const pdfBlob = pdf.output('blob');
             const safeFileName = groupName.replace(/[^a-zA-Z0-9]/g, '_');
-            await saveFileToSelectedFolder(`sijil_${safeFileName}.pdf`, pdfBlob);
+            if (zip) {
+                zip.file(`sijil_${safeFileName}.pdf`, pdfBlob);
+            } else {
+                await saveFileToSelectedFolder(`sijil_${safeFileName}.pdf`, pdfBlob);
+            }
           }
-          
-          showToast(`${groups.length} fail PDF berjaya dijana!`);
           
         } else if (mode === 'individual') {
           // Individual PDF per certificate
@@ -2372,7 +2393,11 @@
             pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
             
             const pdfBlob = pdf.output('blob');
-            await saveFileToSelectedFolder(`${fileName}.pdf`, pdfBlob);
+            if (zip) {
+                zip.file(`${fileName}.pdf`, pdfBlob);
+            } else {
+                await saveFileToSelectedFolder(`${fileName}.pdf`, pdfBlob);
+            }
             
             const progress = ((i + 1) / rowsToProcess.length) * 100;
             progressFill.style.width = progress + '%';
@@ -2381,8 +2406,25 @@
             
             await new Promise(r => setTimeout(r, 50));
           }
-          
-          showToast(`${rowsToProcess.length} fail PDF berjaya dijana!`);
+        }
+
+        // Finalizing response
+        if (zip) {
+            progressDetail.textContent = 'Membungkus fail ke dalam format ZIP... Sila tunggu.';
+            const zipBlob = await zip.generateAsync({ type: 'blob' });
+            const url = URL.createObjectURL(zipBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Sijil_Bulk_Semua.zip';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 500);
+            showToast('Fail ZIP berjaya dimuat turun!');
+        } else {
+            showToast('Proses penjanaan sijil telah berjaya!');
         }
         
       } catch (error) {
@@ -2395,7 +2437,7 @@
         setTimeout(() => {
           progressDiv.classList.add('hidden');
           progressFill.style.width = '0%';
-        }, 2000);
+        }, 3000);
       }
     }
     
@@ -2413,7 +2455,7 @@
     // ==================== SAVE FOLDER SELECTION ====================
     async function selectSaveFolder() {
       if (!window.showDirectoryPicker) {
-        showToast('Browser anda tidak menyokong pemilihan folder. Menggunakan muat turun default.', 'error');
+        showToast('Pelayar ini tidak menyokong tetapan folder automatik. Sijil akan disimpan di dalam folder Downloads (Default).', 'error');
         return;
       }
       
@@ -2422,7 +2464,7 @@
         appState.saveFolder = handle;
         appState.savePath = handle.name;
         document.getElementById('selectedPath').textContent = '📂 ' + handle.name;
-        showToast('Folder pintu masuk berjaya dipilih!');
+        showToast('Folder tempat simpanan berjaya ditetapkan!');
       } catch (err) {
         if (err.name !== 'AbortError') {
           console.error('Directory picker error:', err);
@@ -2440,8 +2482,10 @@
         a.download = filename;
         document.body.appendChild(a);
         a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 500);
         return;
       }
       
@@ -2459,49 +2503,65 @@
         a.download = filename;
         document.body.appendChild(a);
         a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 500);
       }
     }
 
     async function previewFinalCertificate() {
-      if (appState.excelData.length === 0 || !appState.certificateImage) {
-        showToast('Sila muat naik sijil dan data dahulu!', 'error');
-        return;
-      }
+      try {
+        if (appState.excelData.length === 0 || !appState.certificateImage) {
+          showToast('Sila muat naik sijil dan data dahulu!', 'error');
+          return;
+        }
 
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      
-      const img = new Image();
-      await new Promise((resolve) => {
-        img.onload = resolve;
-        img.src = appState.certificateImage;
-      });
-      
-      canvas.width = img.width;
-      canvas.height = img.height;
-      
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      if (appState.showBackground) {
-        ctx.drawImage(img, 0, 0);
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        const img = new Image();
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = () => reject(new Error('Gagal memuatkan gambar sijil.'));
+          img.src = appState.certificateImage;
+        });
+        
+        canvas.width = img.width;
+        canvas.height = img.height;
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        if (appState.showBackground) {
+          ctx.drawImage(img, 0, 0);
+        }
+        
+        // Default to first index, or first item of selected group
+        let previewIdx = 0;
+        if (Object.keys(appState.groups).length > 0 && appState.selectedGroups.size > 0) {
+          const firstGroup = Array.from(appState.selectedGroups)[0];
+          if(appState.groups[firstGroup] && appState.groups[firstGroup].length > 0) {
+              previewIdx = appState.groups[firstGroup][0];
+          }
+        }
+        
+        appState.fields.forEach(field => {
+          const colIndex = appState.headers.indexOf(field.dataSource);
+          const text = colIndex !== -1 ? String(appState.excelData[previewIdx][colIndex] || '') : '';
+          renderTextOnCanvas(ctx, text, field, canvas);
+        });
+        
+        const previewImg = document.getElementById('finalPreviewImage');
+        previewImg.src = canvas.toDataURL('image/png');
+        document.getElementById('finalPreviewContainer').classList.remove('hidden');
+        document.getElementById('finalPreviewContainer').scrollIntoView({ behavior: 'smooth' });
+        
+        showToast('Preview berjaya dijana!');
+      } catch (err) {
+        console.error('Preview error:', err);
+        showToast('Ralat semasa menjana preview!', 'error');
       }
-      
-      const idx = 0; // first record
-      
-      appState.fields.forEach(field => {
-        const colIndex = appState.headers.indexOf(field.dataSource);
-        const text = colIndex !== -1 ? String(appState.excelData[idx][colIndex] || '') : '';
-        renderTextOnCanvas(ctx, text, field, canvas);
-      });
-      
-      const previewImg = document.getElementById('finalPreviewImage');
-      previewImg.src = canvas.toDataURL('image/png');
-      document.getElementById('finalPreviewContainer').classList.remove('hidden');
-      
-      showToast('Preview berjaya dijana!');
     }
 
     function shareToSocial() {

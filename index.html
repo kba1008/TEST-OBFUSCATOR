@@ -746,6 +746,14 @@
         </svg>
         <p class="text-white font-medium">Seret &amp; Lepas atau</p><button class="btn-3d mt-3 text-sm" style="background: linear-gradient(135deg, #10b981, #34d399); box-shadow: 0 6px 0 #059669, 0 10px 20px rgba(16, 185, 129, 0.4);" onclick="document.getElementById('excelInput').click()"> Pilih Fail Excel </button>
        </div>
+       <!-- NEW: Google Sheets Integration -->
+       <div class="mt-6 pt-4 border-t border-green-500/30">
+         <label class="block text-gray-400 text-sm mb-2">Atau Import dari Google Sheets (Link View):</label>
+         <div class="flex gap-2">
+           <input type="text" id="gsheetUrlInput" class="input-3d flex-1 text-sm py-2 px-3" placeholder="https://docs.google.com/spreadsheets/d/.../edit">
+           <button class="btn-3d text-sm py-2 px-4" style="background: linear-gradient(135deg, #10b981, #34d399); box-shadow: 0 4px 0 #059669;" onclick="importGoogleSheet()">Import</button>
+         </div>
+       </div>
        <div id="excelInfo" class="mt-4 hidden">
         <div class="flex items-center gap-3 p-3 bg-green-500/20 rounded-lg border border-green-500/40 mb-3">
          <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -825,7 +833,24 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
          <div><label class="block text-gray-400 text-sm mb-2">Sumber Data (Lajur Excel)</label> <select id="fieldDataSource" class="select-3d" onchange="updateSelectedField()"> <option value="">-- Pilih Lajur --</option> </select>
          </div>
-         <div><label class="block text-gray-400 text-sm mb-2">Font</label> <select id="fieldFont" class="select-3d" onchange="updateSelectedField()"> <option value="Poppins">Poppins</option> <option value="Playfair Display">Playfair Display</option> <option value="Montserrat">Montserrat</option> <option value="Dancing Script">Dancing Script</option> <option value="Roboto">Roboto</option> <option value="Open Sans">Open Sans</option> <option value="Lato">Lato</option> <option value="Raleway">Raleway</option> <option value="Tangerine">Tangerine</option> <option value="Great Vibes">Great Vibes</option> <option value="Cinzel">Cinzel</option> <option value="Oswald">Oswald</option> <option value="Pacifico">Pacifico</option> </select>
+         <div><label class="block text-gray-400 text-sm mb-2">Font</label> 
+           <select id="fieldFont" class="select-3d" onchange="updateSelectedField()">
+             <optgroup label="Microsoft Office Standard (Editable PDF)">
+               <option value="Arial">Arial</option> 
+               <option value="Times New Roman">Times New Roman</option> 
+               <option value="Calibri">Calibri</option>
+               <option value="Cambria">Cambria</option>
+               <option value="Tahoma">Tahoma</option>
+               <option value="Verdana">Verdana</option>
+               <option value="Courier New">Courier New</option>
+               <option value="Trebuchet MS">Trebuchet MS</option>
+             </optgroup>
+             <optgroup label="Custom Fonts (Image Render)">
+               <option value="Poppins">Poppins</option> 
+               <option value="Playfair Display">Playfair Display</option> 
+               <option value="Dancing Script">Dancing Script</option> 
+             </optgroup>
+           </select>
          </div>
          <div><label class="block text-gray-400 text-sm mb-2">Saiz Font (px)</label> <input type="number" id="fieldFontSize" class="input-3d" value="24" min="8" max="200" onchange="updateSelectedField()">
          </div>
@@ -1205,6 +1230,56 @@
       };
       reader.readAsArrayBuffer(file);
     }
+
+    async function importGoogleSheet() {
+      const url = document.getElementById('gsheetUrlInput').value;
+      if (!url) {
+        showToast('Sila masukkan URL Google Sheets', 'error');
+        return;
+      }
+      const match = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+      if (!match) {
+        showToast('Format URL tidak sah. Pastikan copy link penuh.', 'error');
+        return;
+      }
+      const sheetId = match[1];
+      const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
+      
+      showToast('Sedang memuat turun data...');
+      try {
+        const response = await fetch(csvUrl);
+        if (!response.ok) throw new Error('Network error');
+        const csvText = await response.text();
+        
+        const workbook = XLSX.read(csvText, { type: 'string' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        
+        if (jsonData.length < 2) {
+          showToast('Tiada data atau format tidak sah!', 'error');
+          return;
+        }
+        
+        appState.headers = jsonData[0].map(h => String(h || '').trim());
+        appState.excelData = jsonData.slice(1).filter(row => row.some(cell => cell !== null && cell !== undefined && cell !== ''));
+        
+        document.getElementById('excelFileName').textContent = "Google Sheets Data";
+        document.getElementById('excelInfo').classList.remove('hidden');
+        document.getElementById('totalRows').textContent = appState.excelData.length;
+        
+        updateGroupColumnSelect();
+        updateFieldDataSourceOptions();
+        updateDataTable();
+        updateSteps();
+        updateGenerateReadiness();
+        
+        showToast(`${appState.excelData.length} rekod berjaya diimport!`);
+      } catch (err) {
+        console.error(err);
+        showToast('Ralat memuat data. Pastikan Sheet diset "Anyone with the link can view".', 'error');
+      }
+    }
     
     // ==================== CERTIFICATE DISPLAY ====================
     function displayCertificate() {
@@ -1267,7 +1342,7 @@
       const newField = {
         id: fieldId,
         dataSource: appState.headers[0] || '',
-        font: 'Poppins',
+        font: 'Arial',
         fontSize: 24,
         fontWeight: '700',
         color: '#000000',
@@ -1845,18 +1920,12 @@
           return;
         }
         
-        // Create canvas for rendering
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        
+        // Get original image for Native 4K drawing into PDF
         const img = new Image();
         await new Promise((resolve) => {
           img.onload = resolve;
           img.src = appState.certificateImage;
         });
-        
-        canvas.width = img.width;
-        canvas.height = img.height;
         
         // Determine PDF orientation
         const orientation = img.width > img.height ? 'l' : 'p';
@@ -1872,35 +1941,37 @@
             
             if (i > 0) pdf.addPage();
             
-            // Clear and setup canvas
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Only draw background if enabled
+            // DRAW NATIVE 4K BACKGROUND
             if (appState.showBackground) {
-              ctx.drawImage(img, 0, 0);
+              const isPng = appState.certificateImage.substring(0, 20).toLowerCase().includes('png');
+              pdf.addImage(appState.certificateImage, isPng ? 'PNG' : 'JPEG', 0, 0, pdfWidth, pdfHeight);
             }
             
-            // Draw text fields
+            // EMBED EDITABLE TEXT FOR FIELDS
             appState.fields.forEach(field => {
               const colIndex = appState.headers.indexOf(field.dataSource);
               const text = colIndex !== -1 ? String(appState.excelData[idx][colIndex] || '') : '';
+              if (!text) return;
               
-              ctx.font = `${field.fontWeight} ${field.fontSize}px '${field.font}'`;
-              ctx.fillStyle = field.color;
-              ctx.textAlign = field.textAlign;
-              ctx.textBaseline = 'middle';
+              let jsFont = 'helvetica';
+              if (['Times New Roman', 'Cambria', 'Playfair Display', 'Great Vibes'].includes(field.font)) jsFont = 'times';
+              else if (['Courier New'].includes(field.font)) jsFont = 'courier';
               
-              const x = (field.x / 100) * canvas.width;
-              const y = (field.y / 100) * canvas.height;
+              let jsStyle = 'normal';
+              if (field.fontWeight >= '600' || field.fontWeight === 'bold') jsStyle = 'bold';
               
-              ctx.fillText(text, x, y);
+              pdf.setFont(jsFont, jsStyle);
+              
+              // Scale accurately for matching preview to print
+              const ptSize = field.fontSize * (pdfHeight / img.height) * 2.83465 * 1.333;
+              pdf.setFontSize(ptSize);
+              pdf.setTextColor(field.color);
+              
+              const pdfX = (field.x / 100) * pdfWidth;
+              const pdfY = (field.y / 100) * pdfHeight;
+              
+              pdf.text(text, pdfX, pdfY, { align: field.textAlign, baseline: 'middle' });
             });
-            
-            // Add to PDF
-            const imgData = canvas.toDataURL('image/jpeg', 0.95);
-            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
             
             // Update progress
             const progress = ((i + 1) / rowsToProcess.length) * 100;
@@ -1935,31 +2006,34 @@
               
               if (i > 0) pdf.addPage();
               
-              ctx.clearRect(0, 0, canvas.width, canvas.height);
-              ctx.fillStyle = '#ffffff';
-              ctx.fillRect(0, 0, canvas.width, canvas.height);
-              
               if (appState.showBackground) {
-                ctx.drawImage(img, 0, 0);
+                const isPng = appState.certificateImage.substring(0, 20).toLowerCase().includes('png');
+                pdf.addImage(appState.certificateImage, isPng ? 'PNG' : 'JPEG', 0, 0, pdfWidth, pdfHeight);
               }
               
               appState.fields.forEach(field => {
                 const colIndex = appState.headers.indexOf(field.dataSource);
                 const text = colIndex !== -1 ? String(appState.excelData[idx][colIndex] || '') : '';
+                if (!text) return;
                 
-                ctx.font = `${field.fontWeight} ${field.fontSize}px '${field.font}'`;
-                ctx.fillStyle = field.color;
-                ctx.textAlign = field.textAlign;
-                ctx.textBaseline = 'middle';
+                let jsFont = 'helvetica';
+                if (['Times New Roman', 'Cambria', 'Playfair Display', 'Great Vibes'].includes(field.font)) jsFont = 'times';
+                else if (['Courier New'].includes(field.font)) jsFont = 'courier';
                 
-                const x = (field.x / 100) * canvas.width;
-                const y = (field.y / 100) * canvas.height;
+                let jsStyle = 'normal';
+                if (field.fontWeight >= '600' || field.fontWeight === 'bold') jsStyle = 'bold';
                 
-                ctx.fillText(text, x, y);
+                pdf.setFont(jsFont, jsStyle);
+                
+                const ptSize = field.fontSize * (pdfHeight / img.height) * 2.83465 * 1.333;
+                pdf.setFontSize(ptSize);
+                pdf.setTextColor(field.color);
+                
+                const pdfX = (field.x / 100) * pdfWidth;
+                const pdfY = (field.y / 100) * pdfHeight;
+                
+                pdf.text(text, pdfX, pdfY, { align: field.textAlign, baseline: 'middle' });
               });
-              
-              const imgData = canvas.toDataURL('image/jpeg', 0.95);
-              pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
               
               totalProcessed++;
               const progress = (totalProcessed / rowsToProcess.length) * 100;
@@ -1983,12 +2057,9 @@
             const { idx } = rowsToProcess[i];
             const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
             
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
             if (appState.showBackground) {
-              ctx.drawImage(img, 0, 0);
+              const isPng = appState.certificateImage.substring(0, 20).toLowerCase().includes('png');
+              pdf.addImage(appState.certificateImage, isPng ? 'PNG' : 'JPEG', 0, 0, pdfWidth, pdfHeight);
             }
             
             let fileName = `sijil_${i + 1}`;
@@ -2002,19 +2073,26 @@
                 fileName = text.replace(/[^a-zA-Z0-9]/g, '_');
               }
               
-              ctx.font = `${field.fontWeight} ${field.fontSize}px '${field.font}'`;
-              ctx.fillStyle = field.color;
-              ctx.textAlign = field.textAlign;
-              ctx.textBaseline = 'middle';
+              if (!text) return;
               
-              const x = (field.x / 100) * canvas.width;
-              const y = (field.y / 100) * canvas.height;
+              let jsFont = 'helvetica';
+              if (['Times New Roman', 'Cambria', 'Playfair Display', 'Great Vibes'].includes(field.font)) jsFont = 'times';
+              else if (['Courier New'].includes(field.font)) jsFont = 'courier';
               
-              ctx.fillText(text, x, y);
+              let jsStyle = 'normal';
+              if (field.fontWeight >= '600' || field.fontWeight === 'bold') jsStyle = 'bold';
+              
+              pdf.setFont(jsFont, jsStyle);
+              
+              const ptSize = field.fontSize * (pdfHeight / img.height) * 2.83465 * 1.333;
+              pdf.setFontSize(ptSize);
+              pdf.setTextColor(field.color);
+              
+              const pdfX = (field.x / 100) * pdfWidth;
+              const pdfY = (field.y / 100) * pdfHeight;
+              
+              pdf.text(text, pdfX, pdfY, { align: field.textAlign, baseline: 'middle' });
             });
-            
-            const imgData = canvas.toDataURL('image/jpeg', 0.95);
-            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
             
             const pdfBlob = pdf.output('blob');
             await saveFileToSelectedFolder(`${fileName}.pdf`, pdfBlob);

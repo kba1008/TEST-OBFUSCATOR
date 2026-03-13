@@ -1044,6 +1044,8 @@
          </div>
          <div><label class="block text-gray-400 text-sm mb-2">Text Align</label> <select id="fieldTextAlign" class="select-3d" onchange="updateSelectedField()"> <option value="left">Kiri</option> <option value="center" selected>Tengah</option> <option value="right">Kanan</option> </select>
          </div>
+         <div><label class="block text-gray-400 text-sm mb-2">Vertical Align</label> <select id="fieldVerticalAlign" class="select-3d" onchange="updateSelectedField()"> <option value="top">Atas</option> <option value="middle" selected>Tengah</option> <option value="bottom">Bawah</option> </select>
+         </div>
          <div><label class="block text-gray-400 text-sm mb-2">Kedudukan X (%)</label> <input type="number" id="fieldPosX" class="input-3d" value="50" min="0" max="100" step="0.1" onchange="updateSelectedFieldPosition()">
          </div>
          <div><label class="block text-gray-400 text-sm mb-2">Kedudukan Y (%)</label> <input type="number" id="fieldPosY" class="input-3d" value="50" min="0" max="100" step="0.1" onchange="updateSelectedFieldPosition()">
@@ -1441,7 +1443,7 @@
           
           document.getElementById('excelFileName').textContent = file.name;
           document.getElementById('excelInfo').classList.remove('hidden');
-          document.getElementById('totalRows').textContent = appState.excelData.length;
+          document.getElementById('totalRows').textContent = appState.excelData;
           
           updateGroupColumnSelect();
           updateFieldDataSourceOptions();
@@ -1613,6 +1615,7 @@
         fontWeight: '700',
         color: '#000000',
         textAlign: 'center',
+        textBaseline: 'middle',
         x: 50,
         y: 50,
         width: 40,
@@ -1662,6 +1665,10 @@
       if(field.textAlign === 'left') fieldEl.style.alignItems = 'flex-start';
       else if(field.textAlign === 'right') fieldEl.style.alignItems = 'flex-end';
       else fieldEl.style.alignItems = 'center';
+      
+      if(field.textBaseline === 'top') fieldEl.style.justifyContent = 'flex-start';
+      else if(field.textBaseline === 'bottom') fieldEl.style.justifyContent = 'flex-end';
+      else fieldEl.style.justifyContent = 'center';
       
       fieldEl.addEventListener('mousedown', (e) => {
         if (!e.target.classList.contains('resize-handle')) {
@@ -1718,6 +1725,7 @@
       document.getElementById('fieldColor').value = field.color;
       document.getElementById('fieldColorText').value = field.color;
       document.getElementById('fieldTextAlign').value = field.textAlign;
+      if (document.getElementById('fieldVerticalAlign')) document.getElementById('fieldVerticalAlign').value = field.textBaseline || 'middle';
       document.getElementById('fieldPosX').value = field.x.toFixed(1);
       document.getElementById('fieldPosY').value = field.y.toFixed(1);
       document.getElementById('fieldWidth').value = field.width.toFixed(1);
@@ -1736,6 +1744,7 @@
       field.fontWeight = document.getElementById('fieldFontWeight').value;
       field.color = document.getElementById('fieldColor').value;
       field.textAlign = document.getElementById('fieldTextAlign').value;
+      if (document.getElementById('fieldVerticalAlign')) field.textBaseline = document.getElementById('fieldVerticalAlign').value;
       
       document.getElementById('fieldColorText').value = field.color;
       
@@ -2184,6 +2193,7 @@
         let x = (field.x / 100) * cvs.width;
         let y = (field.y / 100) * cvs.height;
         let w = (field.width / 100) * cvs.width;
+        let h = (field.height / 100) * cvs.height;
         
         ctx.font = `${field.fontWeight} ${fontSize}px '${field.font}'`;
         ctx.fillStyle = field.color;
@@ -2218,7 +2228,16 @@
         }
         
         let totalTextHeight = lines.length * (fontSize * lineHeight);
-        let startY = y - (totalTextHeight / 2) + (fontSize * lineHeight / 2);
+        let startY;
+        let baseline = field.textBaseline || 'middle';
+        
+        if (baseline === 'top') {
+            startY = (y - h/2) + (fontSize * lineHeight / 2);
+        } else if (baseline === 'bottom') {
+            startY = (y + h/2) - totalTextHeight + (fontSize * lineHeight / 2);
+        } else {
+            startY = y - (totalTextHeight / 2) + (fontSize * lineHeight / 2);
+        }
         
         for (let i = 0; i < lines.length; i++) {
             let lineY = startY + (i * (fontSize * lineHeight));

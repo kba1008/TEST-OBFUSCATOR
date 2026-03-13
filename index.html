@@ -7,7 +7,6 @@
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="/_sdk/element_sdk.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&amp;family=Open+Sans:wght@300;400;600;700&amp;family=Lato:wght@300;400;700&amp;family=Montserrat:wght@300;400;500;600;700&amp;family=Oswald:wght@400;700&amp;family=Source+Sans+Pro:wght@300;400;600;700&amp;family=Raleway:wght@300;400;500;600;700&amp;family=PT+Sans:wght@400;700&amp;family=Merriweather:wght@300;400;700&amp;family=Noto+Sans:wght@400;700&amp;family=Nunito:wght@300;400;600;700&amp;family=Prompt:wght@300;400;500;700&amp;family=Work+Sans:wght@300;400;600&amp;family=Ubuntu:wght@300;400;500;700&amp;family=Muli:wght@300;400;600&amp;family=Playfair+Display:wght@400;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;family=Rubik:wght@300;400;500&amp;family=Lora:wght@400;500;600&amp;family=Mukta:wght@300;400;500&amp;family=Fira+Sans:wght@300;400;500&amp;family=Nunito+Sans:wght@300;400;600&amp;family=Quicksand:wght@300;400;500;600&amp;family=Karla:wght@400;500&amp;family=Barlow:wght@400;500&amp;family=Titillium+Web:wght@300;400;600&amp;family=Inconsolata:wght@400;500&amp;family=Heebo:wght@300;400;500&amp;family=Oxygen:wght@300;400;700&amp;family=Dosis:wght@300;400;500&amp;family=Poppins:wght@300;400;500;600;700&amp;family=Anton&amp;family=Cairo:wght@300;400;600&amp;family=Josefin+Sans:wght@300;400;600&amp;family=Signika:wght@300;400;600&amp;family=Arimo:wght@400;500;600&amp;family=Libre+Baskerville:wght@400;700&amp;family=Abel&amp;family=Pacifico&amp;family=Dancing+Script:wght@400;700&amp;family=Shadows+Into+Light&amp;family=Exo+2:wght@300;400;500&amp;family=Tajawal:wght@300;400;500&amp;family=Varela+Round&amp;family=Fjalla+One&amp;family=Hind:wght@300;400;500&amp;family=Bitter:wght@400;500&amp;family=Asap:wght@400;500&amp;family=Teko:wght@300;400;500&amp;family=Caveat:wght@400;500;600&amp;display=swap" rel="stylesheet">
   <style>
@@ -487,6 +486,26 @@
       50% { transform: translateY(-10px) rotateX(2deg); }
     }
     
+    .title-3d {
+      font-family: 'Playfair Display', serif;
+      font-size: 48px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #fff 0%, #a78bfa 50%, #f472b6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      letter-spacing: 2px;
+    }
+    
+    .subtitle-3d {
+      font-size: 16px;
+      color: rgba(255, 255, 255, 0.7);
+      margin-top: 10px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+    }
+    
     .icon-3d {
       display: inline-flex;
       align-items: center;
@@ -502,6 +521,43 @@
     
     .icon-3d:hover {
       transform: rotateY(15deg) rotateX(15deg);
+    }
+    
+    .data-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+    
+    .data-table th {
+      background: rgba(99, 102, 241, 0.3);
+      padding: 12px 16px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: rgba(255, 255, 255, 0.9);
+      border-bottom: 2px solid rgba(139, 92, 246, 0.5);
+    }
+    
+    .data-table th:first-child {
+      border-radius: 10px 0 0 0;
+    }
+    
+    .data-table th:last-child {
+      border-radius: 0 10px 0 0;
+    }
+    
+    .data-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.8);
+    }
+    
+    .data-table tr:hover td {
+      background: rgba(99, 102, 241, 0.1);
     }
     
     .field-config-item {
@@ -627,127 +683,124 @@
       border: 1px solid rgba(245, 158, 11, 0.4);
     }
 
-    /* ===== LIGHT 3D THEME OVERRIDES (WHITE & GREEN) ===== */
+    /* ===== LIGHT 3D THEME OVERRIDES ===== */
     :root {
-      --primary: #22c55e;
-      --secondary: #4ade80;
-      --accent: #16a34a;
-      --dark: #ffffff;
-      --light: #f0fdf4;
+      --primary: #ec4899;
+      --secondary: #8b5cf6;
+      --accent: #0ea5e9;
+      --dark: #f6f8fd;
+      --light: #ffffff;
     }
     body {
-      background: #f0fdf4 !important;
-      color: #000000 !important;
+      background: linear-gradient(135deg, #f6f8fd 0%, #f1f5f9 50%, #e2e8f0 100%) !important;
+      color: #1e293b !important;
     }
     .glass-card {
-      background: #ffffff !important;
-      backdrop-filter: none !important;
-      border: 1px solid #bbf7d0 !important;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05) !important;
+      background: rgba(255, 255, 255, 0.7) !important;
+      backdrop-filter: blur(16px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.9) !important;
+      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 1) !important;
     }
-    .text-white { color: #000000 !important; }
-    .text-gray-400 { color: #374151 !important; }
-    .text-gray-300 { color: #4b5563 !important; }
-    .text-gray-500 { color: #4b5563 !important; }
-    .bg-gray-800 { background-color: #ffffff !important; border-color: #bbf7d0 !important; }
+    .text-white { color: #4338ca !important; } /* Cheerful vibrant indigo */
+    .text-gray-400 { color: #64748b !important; }
+    .text-gray-300 { color: #475569 !important; }
+    .text-gray-500 { color: #64748b !important; }
+    .bg-gray-800 { background-color: #ffffff !important; border-color: #cbd5e1 !important; }
     
+    /* Ensure Buttons and badges remain white text over vibrant gradient backgrounds */
     .btn-3d, .btn-3d *, .step-number, .toast, .group-badge, .group-count, .field-label {
       color: #ffffff !important;
     }
     
     /* Input Fields */
     .input-3d, .select-3d {
-      background: #ffffff !important;
-      border: 1px solid #bbf7d0 !important;
-      color: #000000 !important;
-      box-shadow: none !important;
+      background: rgba(255, 255, 255, 0.9) !important;
+      border: 1px solid #cbd5e1 !important;
+      color: #1e293b !important;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.05) !important;
     }
     .input-3d:focus, .select-3d:focus {
-      border-color: #22c55e !important;
-      box-shadow: 0 0 10px rgba(34, 197, 94, 0.2) !important;
+      border-color: #ec4899 !important;
+      box-shadow: 0 0 15px rgba(236, 72, 153, 0.3) !important;
     }
-    .select-3d option { background: #ffffff !important; color: #000000 !important; }
+    .select-3d option { background: #ffffff !important; color: #1e293b !important; }
     
     /* Custom SVG colors */
-    .text-purple-400 { color: #22c55e !important; }
-    .text-green-400 { color: #16a34a !important; }
-    .text-pink-400 { color: #22c55e !important; }
-    .text-cyan-400 { color: #16a34a !important; }
+    .text-purple-400 { color: #8b5cf6 !important; }
+    .text-green-400 { color: #10b981 !important; }
+    .text-pink-400 { color: #ec4899 !important; }
+    .text-cyan-400 { color: #0ea5e9 !important; }
     .text-red-400 { color: #ef4444 !important; }
-    .border-purple-500\/30 { border-color: #bbf7d0 !important; }
-    .border-green-500\/30 { border-color: #bbf7d0 !important; }
-    .border-pink-500\/30 { border-color: #bbf7d0 !important; }
-    .bg-purple-500\/10 { background-color: #f0fdf4 !important; }
-    .bg-purple-500\/20 { background-color: #f0fdf4 !important; }
-    .bg-green-500\/20 { background-color: #f0fdf4 !important; }
-    .bg-pink-500\/20 { background-color: #f0fdf4 !important; }
-    .bg-cyan-500\/20 { background-color: #f0fdf4 !important; }
-    .bg-blue-500\/10 { background-color: #f0fdf4 !important; }
-    .border-blue-500\/30 { border-color: #bbf7d0 !important; }
+    .border-purple-500\/30 { border-color: rgba(139, 92, 246, 0.3) !important; }
+    .border-green-500\/30 { border-color: rgba(16, 185, 129, 0.3) !important; }
+    .border-pink-500\/30 { border-color: rgba(236, 72, 153, 0.3) !important; }
+    .bg-purple-500\/10 { background-color: rgba(139, 92, 246, 0.1) !important; }
+    .bg-purple-500\/20 { background-color: rgba(139, 92, 246, 0.2) !important; }
+    .bg-green-500\/20 { background-color: rgba(16, 185, 129, 0.2) !important; }
+    .bg-pink-500\/20 { background-color: rgba(236, 72, 153, 0.2) !important; }
+    .bg-cyan-500\/20 { background-color: rgba(14, 165, 233, 0.2) !important; }
+    .bg-blue-500\/10 { background-color: rgba(59, 130, 246, 0.1) !important; }
+    .border-blue-500\/30 { border-color: rgba(59, 130, 246, 0.3) !important; }
     
     /* Table */
-    .data-table th { background: #dcfce7 !important; color: #000000 !important; border-bottom: 2px solid #bbf7d0 !important; }
-    .data-table td { border-bottom: 1px solid #f0fdf4 !important; color: #000000 !important; }
-    .data-table tr:hover td { background: #f0fdf4 !important; }
+    .data-table th { background: #f1f5f9 !important; color: #334155 !important; border-bottom: 2px solid #cbd5e1 !important; }
+    .data-table td { border-bottom: 1px solid #e2e8f0 !important; color: #475569 !important; }
+    .data-table tr:hover td { background: #f8fafc !important; }
     
     /* Steps */
-    .step.active span.text-sm { color: #16a34a !important; font-weight: 600; }
-    .step.completed span.text-sm { color: #22c55e !important; }
-    .step-number { background: #ffffff !important; border-color: #bbf7d0 !important; color: #374151 !important; }
-    .step.active .step-number { background: #22c55e !important; border-color: #16a34a !important; color: #fff !important; box-shadow: 0 0 15px rgba(34, 197, 94, 0.4) !important; }
-    .step.completed .step-number { background: #16a34a !important; border-color: #15803d !important; color: #fff !important; }
-    .step-connector { background: #bbf7d0 !important; }
+    .step.active span.text-sm { color: #ec4899 !important; font-weight: 600; }
+    .step.completed span.text-sm { color: #10b981 !important; }
+    .step-number { background: #ffffff !important; border-color: #cbd5e1 !important; color: #94a3b8 !important; }
+    .step.active .step-number { background: linear-gradient(135deg, #ec4899, #8b5cf6) !important; border-color: #d8b4fe !important; color: #fff !important; box-shadow: 0 0 15px rgba(236, 72, 153, 0.4) !important; }
+    .step.completed .step-number { background: linear-gradient(135deg, #10b981, #34d399) !important; border-color: #6ee7b7 !important; color: #fff !important; }
+    .step-connector { background: #cbd5e1 !important; }
     
     /* 3D Title */
     .title-3d {
-      background: none !important;
-      -webkit-text-fill-color: #000000 !important;
-      color: #000000 !important;
-      text-shadow: none !important;
+      background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 50%, #0ea5e9 100%) !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
     }
-    .subtitle-3d { color: #16a34a !important; font-weight: 600; }
+    .subtitle-3d { color: #475569 !important; font-weight: 600; }
     
     /* Control panels */
     .control-panel, .tab-container { background: rgba(0, 0, 0, 0.05) !important; }
-    .upload-zone { background: #f0fdf4 !important; border: 2px dashed #bbf7d0 !important; }
-    .upload-zone:hover { border-color: #22c55e !important; background: #dcfce7 !important; }
+    .upload-zone { background: rgba(255,255,255,0.6) !important; border: 2px dashed #cbd5e1 !important; }
+    .upload-zone:hover { border-color: #ec4899 !important; background: rgba(236,72,153,0.05) !important; }
     
     /* Draggable Canvas & Floating */
+    @keyframes floatCert {
+      0%, 100% { transform: translateY(0px) rotateX(2deg) rotateY(-1deg); }
+      50% { transform: translateY(-15px) rotateX(4deg) rotateY(1deg); }
+    }
     #certificateFloater {
-      animation: none !important;
-      transform-style: flat !important;
-      filter: drop-shadow(0 10px 20px rgba(0,0,0,0.1)) !important;
+      filter: drop-shadow(0 30px 40px rgba(0,0,0,0.15));
     }
     .btn-3d {
-      background: #22c55e !important;
-      box-shadow: 0 4px 0 #16a34a !important;
-      color: #ffffff !important;
+      background: linear-gradient(135deg, #ec4899, #8b5cf6) !important;
+      box-shadow: 0 6px 0 #be185d, 0 10px 20px rgba(236, 72, 153, 0.4) !important;
     }
     .btn-3d:hover {
-      background: #16a34a !important;
-      box-shadow: 0 4px 0 #15803d !important;
-      transform: translateY(-2px);
+      box-shadow: 0 8px 0 #be185d, 0 15px 30px rgba(236, 72, 153, 0.5) !important;
     }
     .btn-3d:active {
-      transform: translateY(2px);
-      box-shadow: 0 0 0 #15803d !important;
+      box-shadow: 0 2px 0 #be185d, 0 5px 10px rgba(236, 72, 153, 0.3) !important;
     }
     .btn-accent {
-      background: #22c55e !important;
-      box-shadow: 0 4px 0 #16a34a !important;
+      background: linear-gradient(135deg, #0ea5e9, #10b981) !important;
+      box-shadow: 0 6px 0 #0284c7, 0 10px 20px rgba(14, 165, 233, 0.4) !important;
     }
     .btn-accent:hover {
-      background: #16a34a !important;
-      box-shadow: 0 4px 0 #15803d !important;
+      box-shadow: 0 8px 0 #0284c7, 0 15px 30px rgba(14, 165, 233, 0.5) !important;
     }
     .btn-accent:active {
-      box-shadow: 0 0 0 #15803d !important;
+      box-shadow: 0 2px 0 #0284c7, 0 5px 10px rgba(14, 165, 233, 0.3) !important;
     }
     
     /* Floating background shapes */
-    .shape-1 { background: #dcfce7 !important; opacity: 0.5 !important; }
-    .shape-2 { background: #dcfce7 !important; opacity: 0.5 !important; }
-    .shape-3 { background: #dcfce7 !important; opacity: 0.5 !important; }
+    .shape-1 { background: linear-gradient(45deg, #fbcfe8, #f3e8ff); }
+    .shape-2 { background: linear-gradient(45deg, #e0f2fe, #ccfbf1); }
+    .shape-3 { background: linear-gradient(45deg, #fef08a, #fed7aa); }
   </style>
   <style>body { box-sizing: border-box; }</style>
   <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
@@ -814,14 +867,14 @@
        <div class="upload-zone p-8 text-center" id="excelDropZone"><input type="file" id="excelInput" accept=".xlsx,.xls,.csv" class="hidden">
         <svg class="w-12 h-12 mx-auto text-green-400 mb-3" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
         </svg>
-        <p class="text-white font-medium">Seret &amp; Lepas atau</p><button class="btn-3d mt-3 text-sm" onclick="document.getElementById('excelInput').click()"> Pilih Fail Excel </button>
+        <p class="text-white font-medium">Seret &amp; Lepas atau</p><button class="btn-3d mt-3 text-sm" style="background: linear-gradient(135deg, #10b981, #34d399); box-shadow: 0 6px 0 #059669, 0 10px 20px rgba(16, 185, 129, 0.4);" onclick="document.getElementById('excelInput').click()"> Pilih Fail Excel </button>
        </div>
        <!-- NEW: Google Sheets Integration -->
        <div class="mt-6 pt-4 border-t border-green-500/30">
          <label class="block text-gray-400 text-sm mb-2">Atau Import dari Google Sheets (Link View):</label>
          <div class="flex gap-2">
            <input type="text" id="gsheetUrlInput" class="input-3d flex-1 text-sm py-2 px-3" placeholder="https://docs.google.com/spreadsheets/d/.../edit">
-           <button class="btn-3d text-sm py-2 px-4" onclick="importGoogleSheet()">Import</button>
+           <button class="btn-3d text-sm py-2 px-4" style="background: linear-gradient(135deg, #10b981, #34d399); box-shadow: 0 4px 0 #059669;" onclick="importGoogleSheet()">Import</button>
          </div>
        </div>
        <!-- NEW: Clipboard Integration -->
@@ -829,7 +882,7 @@
          <label class="block text-gray-400 text-sm mb-2">Atau Tampal Data (Copy/Paste dari Excel):</label>
          <div class="flex gap-2">
            <textarea id="clipboardInput" class="input-3d flex-1 text-sm py-2 px-3 h-10 min-h-[40px] resize-y" placeholder="Tampal (Ctrl+V) data di sini..."></textarea>
-           <button class="btn-3d text-sm py-2 px-4" onclick="importClipboardData()">Proses</button>
+           <button class="btn-3d text-sm py-2 px-4" style="background: linear-gradient(135deg, #10b981, #34d399); box-shadow: 0 4px 0 #059669;" onclick="importClipboardData()">Proses</button>
          </div>
        </div>
        <div id="excelInfo" class="mt-4 hidden">
@@ -891,7 +944,7 @@
           <p class="text-slate-400 text-sm">Muat naik gambar sijil untuk mula mereka bentuk</p>
          </div>
          <div id="certificateMover" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); cursor: grab; display: none; z-index: 10;">
-          <div id="certificateFloater">
+          <div id="certificateFloater" style="transform-style: preserve-3d; animation: floatCert 6s ease-in-out infinite;">
            <div id="certificateCanvas" class="certificate-canvas" style="position: relative; display: inline-block; max-width: none; transform-origin: top left;"><img id="certificateImage" class="certificate-image" src="" alt="Certificate Template" style="display: block; max-width: none; height: auto;"> <!-- Text fields will be added here dynamically -->
            </div>
           </div>
@@ -989,9 +1042,7 @@
          </div>
          <div><label class="block text-gray-400 text-sm mb-2">Font Weight</label> <select id="fieldFontWeight" class="select-3d" onchange="updateSelectedField()"> <option value="300">Light (300)</option> <option value="400">Regular (400)</option> <option value="500">Medium (500)</option> <option value="600">Semi Bold (600)</option> <option value="700" selected>Bold (700)</option> </select>
          </div>
-         <div><label class="block text-gray-400 text-sm mb-2">Text Align (Melintang)</label> <select id="fieldTextAlign" class="select-3d" onchange="updateSelectedField()"> <option value="left">Kiri</option> <option value="center" selected>Tengah</option> <option value="right">Kanan</option> </select>
-         </div>
-         <div><label class="block text-gray-400 text-sm mb-2">Text Align (Menegak)</label> <select id="fieldTextBaseline" class="select-3d" onchange="updateSelectedField()"> <option value="top">Atas</option> <option value="middle" selected>Tengah</option> <option value="bottom">Bawah</option> </select>
+         <div><label class="block text-gray-400 text-sm mb-2">Text Align</label> <select id="fieldTextAlign" class="select-3d" onchange="updateSelectedField()"> <option value="left">Kiri</option> <option value="center" selected>Tengah</option> <option value="right">Kanan</option> </select>
          </div>
          <div><label class="block text-gray-400 text-sm mb-2">Kedudukan X (%)</label> <input type="number" id="fieldPosX" class="input-3d" value="50" min="0" max="100" step="0.1" onchange="updateSelectedFieldPosition()">
          </div>
@@ -1003,7 +1054,7 @@
          </div>
         </div>
         <div class="mt-4 p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
-         <p class="text-blue-500 text-xs font-semibold">💡 Tip: Seret medan di atas sijil untuk ubah kedudukan (juga boleh guna kekunci Arrow), seret bucu untuk ubah saiz kotak, atau masukkan nilai tepat di sini.</p>
+         <p class="text-blue-500 text-xs font-semibold">💡 Tip: Seret medan di atas sijil untuk ubah kedudukan, seret bucu untuk ubah saiz kotak, atau masukkan nilai tepat di sini.</p>
         </div>
        </div>
       </div><!-- Data Tab -->
@@ -1089,7 +1140,7 @@
           </div>
          </div><!-- Preview Before Generation -->
          <div class="mb-6">
-          <button class="btn-3d w-full py-3 text-md" onclick="previewFinalCertificate()">
+          <button class="btn-3d w-full py-3 text-md" style="background: linear-gradient(135deg, #0ea5e9, #38bdf8); box-shadow: 0 6px 0 #0369a1, 0 10px 20px rgba(14, 165, 233, 0.4);" onclick="previewFinalCertificate()">
            <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg> Preview Rupa Sijil </button>
           <div id="finalPreviewContainer" class="hidden mt-4 p-4 glass-card text-center">
            <h4 class="text-white text-sm font-medium mb-3">Preview Hasil Akhir Sijil:</h4>
@@ -1099,12 +1150,12 @@
 
          <!-- Generate Button & Reset --> 
          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button class="btn-3d w-full py-4 text-lg md:col-span-1" onclick="shareToSocial()">
+          <button class="btn-3d w-full py-4 text-lg md:col-span-1" style="background: linear-gradient(135deg, #0ea5e9, #38bdf8); box-shadow: 0 6px 0 #0284c7, 0 10px 20px rgba(14, 165, 233, 0.4);" onclick="shareToSocial()">
            <svg class="w-6 h-6 inline mr-2" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg> Kongsi </button>
           <button class="btn-3d btn-accent w-full py-4 text-lg md:col-span-1" onclick="generatePDFs()" id="generateBtn">
            <svg class="w-6 h-6 inline mr-2" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
            </svg> Jana PDF </button>
-          <button class="btn-3d w-full py-4 text-lg md:col-span-1" style="background: #ef4444 !important; box-shadow: 0 4px 0 #b91c1c !important;" onclick="resetProject()">
+          <button class="btn-3d w-full py-4 text-lg md:col-span-1" style="background: linear-gradient(135deg, #ef4444, #f87171); box-shadow: 0 6px 0 #b91c1c, 0 10px 20px rgba(239, 68, 68, 0.4);" onclick="resetProject()">
            <svg class="w-6 h-6 inline mr-2" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg> Reset </button>
          </div> <!-- Progress -->
          <div id="generateProgress" class="mt-6 hidden">
@@ -1142,16 +1193,13 @@
       showBackground: true
     };
     
-    // Variables for panning
-    let panState = { currentX: 0, currentY: 0, startX: 0, startY: 0, isPanning: false };
-    
     // ==================== DEFAULT CONFIG ====================
     const defaultConfig = {
       app_title: 'Certificate Generator Pro',
-      primary_color: '#22c55e',
-      secondary_color: '#4ade80',
-      accent_color: '#16a34a',
-      text_color: '#000000',
+      primary_color: '#0ea5e9',
+      secondary_color: '#10b981',
+      accent_color: '#3b82f6',
+      text_color: '#0f172a',
       background_color: '#f0fdf4'
     };
     
@@ -1235,7 +1283,7 @@
           }
 
           if (moved) {
-            e.preventDefault();
+            e.preventDefault;
             field.x = Math.max(0, Math.min(100, field.x));
             field.y = Math.max(0, Math.min(100, field.y));
             
@@ -1253,35 +1301,38 @@
 
       // --- CANVAS PANNING LOGIC ---
       const mover = document.getElementById('certificateMover');
+      let isPanning = false;
+      let startX = 0, startY = 0;
+      let currentX = 0, currentY = 0;
 
       if (mover) {
         mover.addEventListener('mousedown', (e) => {
           if (e.target.closest('.text-field')) return; // let fields handle their own drag
-          panState.isPanning = true;
-          panState.startX = e.clientX - panState.currentX;
-          panState.startY = e.clientY - panState.currentY;
+          isPanning = true;
+          startX = e.clientX - currentX;
+          startY = e.clientY - currentY;
           mover.style.cursor = 'grabbing';
           e.preventDefault(); // Prevents image selection
         });
         
         window.addEventListener('mousemove', (e) => {
-          if (panState.isPanning) {
-            panState.currentX = e.clientX - panState.startX;
-            panState.currentY = e.clientY - panState.startY;
-            mover.style.transform = `translate(calc(-50% + ${panState.currentX}px), calc(-50% + ${panState.currentY}px))`;
+          if (isPanning) {
+            currentX = e.clientX - startX;
+            currentY = e.clientY - startY;
+            mover.style.transform = `translate(calc(-50% + ${currentX}px), calc(-50% + ${currentY}px))`;
           }
         });
         
         window.addEventListener('mouseup', () => {
-          if (panState.isPanning) {
-            panState.isPanning = false;
+          if (isPanning) {
+            isPanning = false;
             mover.style.cursor = 'grab';
           }
         });
         
         document.getElementById('previewContainer').addEventListener('mouseleave', () => {
-          if (panState.isPanning) {
-            panState.isPanning = false;
+          if (isPanning) {
+            isPanning = false;
             mover.style.cursor = 'grab';
           }
         });
@@ -1371,10 +1422,6 @@
     }
     
     function handleExcelUpload(file) {
-      if (!window.XLSX) {
-        showToast('Pustaka Excel belum sedia. Sila tunggu sebentar...', 'error');
-        return;
-      }
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
@@ -1513,23 +1560,7 @@
       document.getElementById('fieldConfigPanel').style.display = 'block';
       
       updateBackgroundVisibility();
-      
-      // Auto fit on display
-      setTimeout(() => {
-        const container = document.getElementById('previewContainer');
-        if (appState.certificateWidth && container.clientWidth) {
-          const padding = 40;
-          const scaleX = (container.clientWidth - padding) / appState.certificateWidth;
-          const scaleY = (container.clientHeight - padding) / appState.certificateHeight;
-          appState.zoom = Math.min(scaleX, scaleY, 1);
-          updateCanvasScale();
-          
-          // Reset pan position
-          panState.currentX = 0;
-          panState.currentY = 0;
-          if(mover) mover.style.transform = `translate(-50%, -50%)`;
-        }
-      }, 100);
+      updateCanvasScale();
     }
     
     function updateBackgroundVisibility() {
@@ -1582,7 +1613,6 @@
         fontWeight: '700',
         color: '#000000',
         textAlign: 'center',
-        textBaseline: 'middle',
         x: 50,
         y: 50,
         width: 40,
@@ -1629,15 +1659,9 @@
       fieldEl.style.height = field.height + '%';
       fieldEl.style.transform = 'translate(-50%, -50%)';
       
-      // Horizontal Alignment
       if(field.textAlign === 'left') fieldEl.style.alignItems = 'flex-start';
       else if(field.textAlign === 'right') fieldEl.style.alignItems = 'flex-end';
       else fieldEl.style.alignItems = 'center';
-      
-      // Vertical Alignment
-      if(field.textBaseline === 'top') fieldEl.style.justifyContent = 'flex-start';
-      else if(field.textBaseline === 'bottom') fieldEl.style.justifyContent = 'flex-end';
-      else fieldEl.style.justifyContent = 'center';
       
       fieldEl.addEventListener('mousedown', (e) => {
         if (!e.target.classList.contains('resize-handle')) {
@@ -1655,6 +1679,10 @@
       setTimeout(() => {
         textEl.style.fontSize = field.fontSize + 'px';
       }, 0);
+    }
+    
+    function applyFieldStyles(el, field) {
+      // Obsolete. Kept to avoid undefined errors if accidentally called elsewhere.
     }
     
     function getSampleText(dataSource) {
@@ -1690,7 +1718,6 @@
       document.getElementById('fieldColor').value = field.color;
       document.getElementById('fieldColorText').value = field.color;
       document.getElementById('fieldTextAlign').value = field.textAlign;
-      document.getElementById('fieldTextBaseline').value = field.textBaseline || 'middle';
       document.getElementById('fieldPosX').value = field.x.toFixed(1);
       document.getElementById('fieldPosY').value = field.y.toFixed(1);
       document.getElementById('fieldWidth').value = field.width.toFixed(1);
@@ -1709,7 +1736,6 @@
       field.fontWeight = document.getElementById('fieldFontWeight').value;
       field.color = document.getElementById('fieldColor').value;
       field.textAlign = document.getElementById('fieldTextAlign').value;
-      field.textBaseline = document.getElementById('fieldTextBaseline').value;
       
       document.getElementById('fieldColorText').value = field.color;
       
@@ -1934,9 +1960,7 @@
       } else {
         appState.selectedGroups.add(name);
         badge.classList.add('selected');
-      } // update group checkboxes if panel is visible
-      updateGroupCheckboxes();
-      updatePDFCount();
+      }
     }
     
     // ==================== FIELD DATA SOURCE OPTIONS ====================
@@ -2112,7 +2136,6 @@
               label.classList.remove('selected');
             }
             updatePDFCount();
-            renderGroupsList(); // sync with left panel
           });
           container.appendChild(label);
         });
@@ -2126,13 +2149,11 @@
     function selectAllGroups() {
       Object.keys(appState.groups).forEach(name => appState.selectedGroups.add(name));
       updateGroupCheckboxes();
-      renderGroupsList();
     }
     
     function deselectAllGroups() {
       appState.selectedGroups.clear();
       updateGroupCheckboxes();
-      renderGroupsList();
     }
     
     function updatePDFCount() {
@@ -2163,7 +2184,6 @@
         let x = (field.x / 100) * cvs.width;
         let y = (field.y / 100) * cvs.height;
         let w = (field.width / 100) * cvs.width;
-        let h_px = (field.height / 100) * cvs.height;
         
         ctx.font = `${field.fontWeight} ${fontSize}px '${field.font}'`;
         ctx.fillStyle = field.color;
@@ -2198,17 +2218,7 @@
         }
         
         let totalTextHeight = lines.length * (fontSize * lineHeight);
-        let boxTop = y - h_px/2;
-        let boxBottom = y + h_px/2;
-        
-        let startY;
-        if (field.textBaseline === 'top') {
-            startY = boxTop + (fontSize * lineHeight / 2);
-        } else if (field.textBaseline === 'bottom') {
-            startY = boxBottom - totalTextHeight + (fontSize * lineHeight / 2);
-        } else {
-            startY = y - (totalTextHeight / 2) + (fontSize * lineHeight / 2);
-        }
+        let startY = y - (totalTextHeight / 2) + (fontSize * lineHeight / 2);
         
         for (let i = 0; i < lines.length; i++) {
             let lineY = startY + (i * (fontSize * lineHeight));
@@ -2222,10 +2232,6 @@
 
     // ==================== PDF GENERATION ====================
     async function generatePDFs() {
-      if (!window.jspdf) {
-        showToast('Pustaka PDF belum bersedia. Sila muat semula halaman.', 'error');
-        return;
-      }
       const { jsPDF } = window.jspdf;
       
       const btn = document.getElementById('generateBtn');
@@ -2261,9 +2267,8 @@
         
         // Get original image for Native 4K drawing into PDF
         const img = new Image();
-        await new Promise((resolve, reject) => {
+        await new Promise((resolve) => {
           img.onload = resolve;
-          img.onerror = () => reject(new Error('Gagal memuatkan gambar sijil.'));
           img.src = appState.certificateImage;
         });
         
@@ -2289,7 +2294,7 @@
             renderTextOnCanvas(ctx, text, field, cvs);
           });
           
-          return cvs.toDataURL('image/png'); 
+          return cvs.toDataURL('image/png'); // Menggunakan PNG untuk mengekalkan kualiti asal (lossless)
         };
         
         // Determine PDF orientation
@@ -2297,16 +2302,6 @@
         const pdfWidth = orientation === 'l' ? 297 : 210;
         const pdfHeight = orientation === 'l' ? 210 : 297;
         
-        // Zip implementation fallback for multiple files without folder API
-        let zip = null;
-        if (!appState.saveFolder && (mode === 'byGroup' || mode === 'individual')) {
-            if (window.JSZip) {
-                zip = new JSZip();
-            } else {
-                showToast('Amaran: Pelayar ini mungkin menghalang muat turun fail yang banyak. Sila benarkan tetapan (Allow multiple downloads).', 'error');
-            }
-        }
-
         if (mode === 'single') {
           // Single PDF with all certificates
           const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
@@ -2330,6 +2325,7 @@
           
           const pdfBlob = pdf.output('blob');
           await saveFileToSelectedFolder('sijil_semua.pdf', pdfBlob);
+          showToast(`${rowsToProcess.length} sijil berjaya dijana!`);
           
         } else if (mode === 'byGroup') {
           // Separate PDF per group
@@ -2365,12 +2361,10 @@
             
             const pdfBlob = pdf.output('blob');
             const safeFileName = groupName.replace(/[^a-zA-Z0-9]/g, '_');
-            if (zip) {
-                zip.file(`sijil_${safeFileName}.pdf`, pdfBlob);
-            } else {
-                await saveFileToSelectedFolder(`sijil_${safeFileName}.pdf`, pdfBlob);
-            }
+            await saveFileToSelectedFolder(`sijil_${safeFileName}.pdf`, pdfBlob);
           }
+          
+          showToast(`${groups.length} fail PDF berjaya dijana!`);
           
         } else if (mode === 'individual') {
           // Individual PDF per certificate
@@ -2393,11 +2387,7 @@
             pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
             
             const pdfBlob = pdf.output('blob');
-            if (zip) {
-                zip.file(`${fileName}.pdf`, pdfBlob);
-            } else {
-                await saveFileToSelectedFolder(`${fileName}.pdf`, pdfBlob);
-            }
+            await saveFileToSelectedFolder(`${fileName}.pdf`, pdfBlob);
             
             const progress = ((i + 1) / rowsToProcess.length) * 100;
             progressFill.style.width = progress + '%';
@@ -2406,25 +2396,8 @@
             
             await new Promise(r => setTimeout(r, 50));
           }
-        }
-
-        // Finalizing response
-        if (zip) {
-            progressDetail.textContent = 'Membungkus fail ke dalam format ZIP... Sila tunggu.';
-            const zipBlob = await zip.generateAsync({ type: 'blob' });
-            const url = URL.createObjectURL(zipBlob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'Sijil_Bulk_Semua.zip';
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(() => {
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }, 500);
-            showToast('Fail ZIP berjaya dimuat turun!');
-        } else {
-            showToast('Proses penjanaan sijil telah berjaya!');
+          
+          showToast(`${rowsToProcess.length} fail PDF berjaya dijana!`);
         }
         
       } catch (error) {
@@ -2437,7 +2410,7 @@
         setTimeout(() => {
           progressDiv.classList.add('hidden');
           progressFill.style.width = '0%';
-        }, 3000);
+        }, 2000);
       }
     }
     
@@ -2455,7 +2428,7 @@
     // ==================== SAVE FOLDER SELECTION ====================
     async function selectSaveFolder() {
       if (!window.showDirectoryPicker) {
-        showToast('Pelayar ini tidak menyokong tetapan folder automatik. Sijil akan disimpan di dalam folder Downloads (Default).', 'error');
+        showToast('Browser anda tidak menyokong pemilihan folder. Menggunakan muat turun default.', 'error');
         return;
       }
       
@@ -2464,7 +2437,7 @@
         appState.saveFolder = handle;
         appState.savePath = handle.name;
         document.getElementById('selectedPath').textContent = '📂 ' + handle.name;
-        showToast('Folder tempat simpanan berjaya ditetapkan!');
+        showToast('Folder pintu masuk berjaya dipilih!');
       } catch (err) {
         if (err.name !== 'AbortError') {
           console.error('Directory picker error:', err);
@@ -2482,10 +2455,8 @@
         a.download = filename;
         document.body.appendChild(a);
         a.click();
-        setTimeout(() => {
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }, 500);
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
         return;
       }
       
@@ -2503,65 +2474,49 @@
         a.download = filename;
         document.body.appendChild(a);
         a.click();
-        setTimeout(() => {
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }, 500);
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
       }
     }
 
     async function previewFinalCertificate() {
-      try {
-        if (appState.excelData.length === 0 || !appState.certificateImage) {
-          showToast('Sila muat naik sijil dan data dahulu!', 'error');
-          return;
-        }
-
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        const img = new Image();
-        await new Promise((resolve, reject) => {
-          img.onload = resolve;
-          img.onerror = () => reject(new Error('Gagal memuatkan gambar sijil.'));
-          img.src = appState.certificateImage;
-        });
-        
-        canvas.width = img.width;
-        canvas.height = img.height;
-        
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        if (appState.showBackground) {
-          ctx.drawImage(img, 0, 0);
-        }
-        
-        // Default to first index, or first item of selected group
-        let previewIdx = 0;
-        if (Object.keys(appState.groups).length > 0 && appState.selectedGroups.size > 0) {
-          const firstGroup = Array.from(appState.selectedGroups)[0];
-          if(appState.groups[firstGroup] && appState.groups[firstGroup].length > 0) {
-              previewIdx = appState.groups[firstGroup][0];
-          }
-        }
-        
-        appState.fields.forEach(field => {
-          const colIndex = appState.headers.indexOf(field.dataSource);
-          const text = colIndex !== -1 ? String(appState.excelData[previewIdx][colIndex] || '') : '';
-          renderTextOnCanvas(ctx, text, field, canvas);
-        });
-        
-        const previewImg = document.getElementById('finalPreviewImage');
-        previewImg.src = canvas.toDataURL('image/png');
-        document.getElementById('finalPreviewContainer').classList.remove('hidden');
-        document.getElementById('finalPreviewContainer').scrollIntoView({ behavior: 'smooth' });
-        
-        showToast('Preview berjaya dijana!');
-      } catch (err) {
-        console.error('Preview error:', err);
-        showToast('Ralat semasa menjana preview!', 'error');
+      if (appState.excelData.length === 0 || !appState.certificateImage) {
+        showToast('Sila muat naik sijil dan data dahulu!', 'error');
+        return;
       }
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      const img = new Image();
+      await new Promise((resolve) => {
+        img.onload = resolve;
+        img.src = appState.certificateImage;
+      });
+      
+      canvas.width = img.width;
+      canvas.height = img.height;
+      
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      if (appState.showBackground) {
+        ctx.drawImage(img, 0, 0);
+      }
+      
+      const idx = 0; // first record
+      
+      appState.fields.forEach(field => {
+        const colIndex = appState.headers.indexOf(field.dataSource);
+        const text = colIndex !== -1 ? String(appState.excelData[idx][colIndex] || '') : '';
+        renderTextOnCanvas(ctx, text, field, canvas);
+      });
+      
+      const previewImg = document.getElementById('finalPreviewImage');
+      previewImg.src = canvas.toDataURL('image/png');
+      document.getElementById('finalPreviewContainer').classList.remove('hidden');
+      
+      showToast('Preview berjaya dijana!');
     }
 
     function shareToSocial() {

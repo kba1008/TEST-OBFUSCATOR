@@ -12,6 +12,20 @@
   <style>
     * { box-sizing: border-box; }
     
+    /* Anti-Copy Protection */
+    body {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+    input, textarea, select {
+      -webkit-user-select: text;
+      -moz-user-select: text;
+      -ms-user-select: text;
+      user-select: text;
+    }
+
     :root {
       --primary: #6366f1;
       --secondary: #8b5cf6;
@@ -805,7 +819,7 @@
   <style>body { box-sizing: border-box; }</style>
   <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
  </head>
- <body class="h-full">
+ <body class="h-full" oncontextmenu="return false;">
   <div class="app-wrapper h-full"><!-- Floating Background -->
    <div class="floating-bg">
     <div class="floating-shape shape-1"></div>
@@ -852,8 +866,8 @@
        </div>
        <div id="certificatePreviewSmall" class="mt-4 hidden">
         <div class="flex items-center gap-3 p-3 bg-green-500/20 rounded-lg border border-green-500/40">
-         <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-         </svg><span class="text-green-400 text-sm font-medium" id="certificateFileName">certificate.png</span>
+         <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"
+         ></path></svg><span class="text-green-400 text-sm font-medium" id="certificateFileName">certificate.png</span>
         </div>
        </div>
       </div><!-- Upload Excel -->
@@ -887,8 +901,8 @@
        </div>
        <div id="excelInfo" class="mt-4 hidden">
         <div class="flex items-center gap-3 p-3 bg-green-500/20 rounded-lg border border-green-500/40 mb-3">
-         <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-         </svg><span class="text-green-400 text-sm font-medium" id="excelFileName">data.xlsx</span>
+         <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"
+         ></path></svg><span class="text-green-400 text-sm font-medium" id="excelFileName">data.xlsx</span>
         </div>
         <div class="grid grid-cols-2 gap-3 text-center">
          <div class="bg-purple-500/20 rounded-lg p-3 border border-purple-500/30">
@@ -944,7 +958,7 @@
           <p class="text-slate-400 text-sm">Muat naik gambar sijil untuk mula mereka bentuk</p>
          </div>
          <div id="certificateMover" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); cursor: grab; display: none; z-index: 10;">
-          <div id="certificateFloater" style="transform-style: preserve-3d; animation: floatCert 6s ease-in-out infinite;">
+          <div id="certificateFloater" style="transform-style: preserve-3d;">
            <div id="certificateCanvas" class="certificate-canvas" style="position: relative; display: inline-block; max-width: none; transform-origin: top left;"><img id="certificateImage" class="certificate-image" src="" alt="Certificate Template" style="display: block; max-width: none; height: auto;"> <!-- Text fields will be added here dynamically -->
            </div>
           </div>
@@ -1138,6 +1152,12 @@
          <div class="mb-6"><label class="block text-gray-400 text-sm mb-3">Pilihan Output:</label>
           <div class="space-y-3"><label class="flex items-center gap-3 cursor-pointer"> <input type="radio" name="outputMode" value="single" checked class="w-4 h-4 accent-purple-500"> <span class="text-white">Satu fail PDF (semua sijil)</span> </label> <label class="flex items-center gap-3 cursor-pointer"> <input type="radio" name="outputMode" value="byGroup" class="w-4 h-4 accent-purple-500"> <span class="text-white">Berasingan mengikut kumpulan</span> </label> <label class="flex items-center gap-3 cursor-pointer"> <input type="radio" name="outputMode" value="individual" class="w-4 h-4 accent-purple-500"> <span class="text-white">Satu PDF setiap sijil</span> </label>
           </div>
+         </div><!-- Custom Filename Options -->
+         <div class="mb-6" id="fileNameConfigSection" style="display: none;">
+          <label class="block text-gray-400 text-sm mb-3">Format Nama Fail (Gabungan Lajur): <span class="text-red-400">*Wajib pilih untuk mod individu</span></label>
+          <div id="fileNameCheckboxes" class="flex flex-wrap gap-2 max-h-32 overflow-y-auto scrollbar-custom p-2">
+          </div>
+          <div class="mt-2 text-sm text-gray-500">Contoh: <span id="fileNamePreview" class="text-white">Sila pilih sekurang-kurangnya 1 lajur</span></div>
          </div><!-- Preview Before Generation -->
          <div class="mb-6">
           <button class="btn-3d w-full py-3 text-md" style="background: linear-gradient(135deg, #0ea5e9, #38bdf8); box-shadow: 0 6px 0 #0369a1, 0 10px 20px rgba(14, 165, 233, 0.4);" onclick="previewFinalCertificate()">
@@ -1175,6 +1195,51 @@
    <div class="toast" id="toast"></div>
   </div>
   <script>
+    // ==================== SECURITY / ANTI-THEFT (ENHANCED) ====================
+    window.oncontextmenu = function () { return false; };
+    document.oncontextmenu = function () { return false; };
+    document.addEventListener('contextmenu', e => {
+      e.preventDefault();
+      e.stopPropagation();
+    }, true);
+
+    document.addEventListener('keydown', e => {
+      const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName);
+      const k = e.key ? e.key.toLowerCase() : '';
+      const c = e.keyCode;
+      
+      // Prevent F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U, etc
+      if (
+        k === 'f12' || c === 123 ||
+        (e.ctrlKey && e.shiftKey && (k === 'i' || k === 'j' || k === 'c' || c === 73 || c === 74 || c === 67)) ||
+        (e.ctrlKey && (k === 'u' || k === 's' || k === 'p' || c === 85 || c === 83 || c === 80)) ||
+        (e.metaKey && e.altKey && (k === 'i' || k === 'j' || k === 'c' || c === 73 || c === 74 || c === 67)) ||
+        (e.metaKey && (k === 'u' || k === 's' || k === 'p' || c === 85 || c === 83 || c === 80))
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+      
+      if (!isInput && (e.ctrlKey || e.metaKey) && (k === 'c' || c === 67)) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+    }, true);
+
+    document.addEventListener('dragstart', e => {
+      if (e.target.tagName === 'IMG') {
+        e.preventDefault();
+      }
+    });
+
+    document.addEventListener('selectstart', e => {
+      if (!['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) {
+        e.preventDefault();
+      }
+    });
+
     // ==================== APP STATE ====================
     const appState = {
       certificateImage: null,
@@ -1190,7 +1255,8 @@
       selectedGroups: new Set(),
       saveFolder: null,
       savePath: 'Muat turun (Default)',
-      showBackground: true
+      showBackground: true,
+      fileNameColumns: []
     };
     
     // ==================== DEFAULT CONFIG ====================
@@ -1444,6 +1510,7 @@
           document.getElementById('totalRows').textContent = appState.excelData.length;
           
           updateGroupColumnSelect();
+          renderFileNameCheckboxes();
           updateFieldDataSourceOptions();
           updateDataTable();
           updateSteps();
@@ -1496,6 +1563,7 @@
         document.getElementById('totalRows').textContent = appState.excelData.length;
         
         updateGroupColumnSelect();
+        renderFileNameCheckboxes();
         updateFieldDataSourceOptions();
         updateDataTable();
         updateSteps();
@@ -1533,6 +1601,7 @@
         document.getElementById('totalRows').textContent = appState.excelData.length;
         
         updateGroupColumnSelect();
+        renderFileNameCheckboxes();
         updateFieldDataSourceOptions();
         updateDataTable();
         updateSteps();
@@ -2182,7 +2251,21 @@
     
     // Listen for output mode changes
     document.querySelectorAll('input[name="outputMode"]').forEach(radio => {
-      radio.addEventListener('change', updatePDFCount);
+      radio.addEventListener('change', (e) => {
+        updatePDFCount();
+        const mode = e.target.value;
+        const section = document.getElementById('fileNameConfigSection');
+        if (mode === 'individual') {
+          section.style.display = 'block';
+          updateFileNamePreview();
+        } else {
+          section.style.display = 'none';
+          const generateBtn = document.getElementById('generateBtn');
+          generateBtn.disabled = false;
+          generateBtn.style.opacity = '1';
+          generateBtn.style.cursor = 'pointer';
+        }
+      });
     });
     
     function renderTextOnCanvas(ctx, text, field, cvs) {
@@ -2253,6 +2336,68 @@
             
             ctx.fillText(lines[i], drawX, lineY);
         }
+    }
+
+    function renderFileNameCheckboxes() {
+      const container = document.getElementById('fileNameCheckboxes');
+      if (!container) return;
+      container.innerHTML = '';
+      appState.fileNameColumns = []; 
+      
+      appState.headers.forEach(header => {
+        const label = document.createElement('label');
+        label.className = 'group-badge cursor-pointer';
+        label.innerHTML = `
+          <input type="checkbox" class="hidden" value="${header}">
+          <span>${header}</span>
+        `;
+        label.addEventListener('click', (e) => {
+          e.preventDefault();
+          const cb = label.querySelector('input');
+          cb.checked = !cb.checked;
+          if (cb.checked) {
+            if (!appState.fileNameColumns.includes(header)) appState.fileNameColumns.push(header);
+            label.classList.add('selected');
+          } else {
+            appState.fileNameColumns = appState.fileNameColumns.filter(col => col !== header);
+            label.classList.remove('selected');
+          }
+          updateFileNamePreview();
+        });
+        container.appendChild(label);
+      });
+      updateFileNamePreview();
+    }
+
+    function updateFileNamePreview() {
+      const preview = document.getElementById('fileNamePreview');
+      const generateBtn = document.getElementById('generateBtn');
+      const modeEl = document.querySelector('input[name="outputMode"]:checked');
+      const mode = modeEl ? modeEl.value : 'single';
+      
+      if (appState.fileNameColumns.length === 0) {
+        preview.textContent = 'Sila pilih sekurang-kurangnya 1 lajur';
+        preview.className = 'text-red-400';
+        if (mode === 'individual') {
+          generateBtn.disabled = true;
+          generateBtn.style.opacity = '0.5';
+          generateBtn.style.cursor = 'not-allowed';
+        }
+      } else {
+        const sampleIdx = 0;
+        let nameParts = appState.fileNameColumns.map(col => {
+          const colIndex = appState.headers.indexOf(col);
+          return colIndex !== -1 ? String(appState.excelData[sampleIdx][colIndex] || '') : '';
+        }).filter(Boolean);
+        
+        let sampleName = nameParts.length > 0 ? nameParts.join('_').replace(/[^a-zA-Z0-9_\- ]/g, '_') : 'sijil';
+        preview.textContent = sampleName + '.pdf';
+        preview.className = 'text-green-400';
+        
+        generateBtn.disabled = false;
+        generateBtn.style.opacity = '1';
+        generateBtn.style.cursor = 'pointer';
+      }
     }
 
     // ==================== PDF GENERATION ====================
@@ -2442,14 +2587,14 @@
             
             let fileName = `sijil_${i + 1}`;
             
-            // Resolve filename logic first
-            appState.fields.forEach(field => {
-              const colIndex = appState.headers.indexOf(field.dataSource);
-              const text = colIndex !== -1 ? String(appState.excelData[idx][colIndex] || '') : '';
-              if (field === appState.fields[0] && text) {
-                fileName = text.replace(/[^a-zA-Z0-9]/g, '_');
-              }
-            });
+            let nameParts = appState.fileNameColumns.map(col => {
+              const colIndex = appState.headers.indexOf(col);
+              return colIndex !== -1 ? String(appState.excelData[idx][colIndex] || '') : '';
+            }).filter(Boolean);
+            
+            if (nameParts.length > 0) {
+              fileName = nameParts.join('_').replace(/[^a-zA-Z0-9_\- ]/g, '_');
+            }
             
             drawCertificateToPDF(pdf, idx);
             

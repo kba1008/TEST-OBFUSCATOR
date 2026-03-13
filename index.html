@@ -2321,7 +2321,7 @@
             renderTextOnCanvas(ctx, text, field, cvs);
           });
           
-          return cvs.toDataURL('image/png'); // Menggunakan PNG untuk mengekalkan kualiti asal (lossless)
+          return cvs.toDataURL('image/jpeg', 0.85); // Tukar ke JPEG untuk elak ralat Invalid string length
         };
         
         // Determine PDF orientation
@@ -2331,7 +2331,7 @@
         
         if (mode === 'single') {
           // Single PDF with all certificates
-          const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
+          const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4', compress: true });
           
           for (let i = 0; i < rowsToProcess.length; i++) {
             const { idx } = rowsToProcess[i];
@@ -2339,7 +2339,7 @@
             if (i > 0) pdf.addPage();
             
             const imgData = drawCertificateToCanvas(idx);
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
             
             // Update progress
             const progress = ((i + 1) / rowsToProcess.length) * 100;
@@ -2367,7 +2367,7 @@
           
           for (const groupName of groups) {
             const indices = groupedRows[groupName];
-            const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
+            const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4', compress: true });
             
             for (let i = 0; i < indices.length; i++) {
               const idx = indices[i];
@@ -2375,7 +2375,7 @@
               if (i > 0) pdf.addPage();
               
               const imgData = drawCertificateToCanvas(idx);
-              pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+              pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
               
               totalProcessed++;
               const progress = (totalProcessed / rowsToProcess.length) * 100;
@@ -2397,7 +2397,7 @@
           // Individual PDF per certificate
           for (let i = 0; i < rowsToProcess.length; i++) {
             const { idx } = rowsToProcess[i];
-            const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
+            const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4', compress: true });
             
             let fileName = `sijil_${i + 1}`;
             
@@ -2411,7 +2411,7 @@
             });
             
             const imgData = drawCertificateToCanvas(idx);
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
             
             const pdfBlob = pdf.output('blob');
             await saveFileToSelectedFolder(`${fileName}.pdf`, pdfBlob);
@@ -2540,7 +2540,7 @@
       });
       
       const previewImg = document.getElementById('finalPreviewImage');
-      previewImg.src = canvas.toDataURL('image/png');
+      previewImg.src = canvas.toDataURL('image/jpeg', 0.85);
       document.getElementById('finalPreviewContainer').classList.remove('hidden');
       
       showToast('Preview berjaya dijana!');

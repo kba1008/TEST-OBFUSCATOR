@@ -681,83 +681,88 @@
 
     /* ===== LIGHT 3D THEME OVERRIDES ===== */
     :root {
-      --primary: #0ea5e9;
-      --secondary: #10b981;
-      --accent: #3b82f6;
-      --dark: #f0fdf4;
+      --primary: #ec4899;
+      --secondary: #8b5cf6;
+      --accent: #0ea5e9;
+      --dark: #f6f8fd;
       --light: #ffffff;
     }
     body {
-      background: linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 50%, #f0fdf4 100%) !important;
-      color: #0f172a;
+      background: linear-gradient(135deg, #f6f8fd 0%, #f1f5f9 50%, #e2e8f0 100%) !important;
+      color: #1e293b !important;
     }
     .glass-card {
-      background: rgba(255, 255, 255, 0.85) !important;
+      background: rgba(255, 255, 255, 0.7) !important;
+      backdrop-filter: blur(16px) !important;
       border: 1px solid rgba(255, 255, 255, 0.9) !important;
-      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 1) !important;
     }
-    .text-white { color: #0f172a !important; }
-    .text-gray-400 { color: #475569 !important; }
-    .text-gray-300 { color: #334155 !important; }
+    .text-white { color: #4338ca !important; } /* Cheerful vibrant indigo */
+    .text-gray-400 { color: #64748b !important; }
+    .text-gray-300 { color: #475569 !important; }
     .text-gray-500 { color: #64748b !important; }
-    .bg-gray-800 { background-color: #f1f5f9 !important; border-color: #cbd5e1 !important; }
+    .bg-gray-800 { background-color: #ffffff !important; border-color: #cbd5e1 !important; }
     
-    /* Ensure Buttons and badges remain white text */
+    /* Ensure Buttons and badges remain white text over vibrant gradient backgrounds */
     .btn-3d, .btn-3d *, .step-number, .toast, .group-badge, .group-count, .field-label {
       color: #ffffff !important;
     }
     
     /* Input Fields */
     .input-3d, .select-3d {
-      background: #ffffff !important;
-      border: 1px solid #bae6fd !important;
-      color: #0f172a !important;
-      box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+      background: rgba(255, 255, 255, 0.9) !important;
+      border: 1px solid #cbd5e1 !important;
+      color: #1e293b !important;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.05) !important;
     }
     .input-3d:focus, .select-3d:focus {
-      border-color: #0ea5e9 !important;
-      box-shadow: 0 0 15px rgba(14, 165, 233, 0.2) !important;
+      border-color: #ec4899 !important;
+      box-shadow: 0 0 15px rgba(236, 72, 153, 0.3) !important;
     }
+    .select-3d option { background: #ffffff !important; color: #1e293b !important; }
     
     /* Custom SVG colors */
-    .text-purple-400 { color: #0ea5e9 !important; }
+    .text-purple-400 { color: #8b5cf6 !important; }
     .text-green-400 { color: #10b981 !important; }
-    .text-pink-400 { color: #3b82f6 !important; }
-    .text-cyan-400 { color: #059669 !important; }
+    .text-pink-400 { color: #ec4899 !important; }
+    .text-cyan-400 { color: #0ea5e9 !important; }
     .text-red-400 { color: #ef4444 !important; }
-    .border-purple-500\/30 { border-color: rgba(14, 165, 233, 0.3) !important; }
+    .border-purple-500\/30 { border-color: rgba(139, 92, 246, 0.3) !important; }
     .border-green-500\/30 { border-color: rgba(16, 185, 129, 0.3) !important; }
-    .border-pink-500\/30 { border-color: rgba(59, 130, 246, 0.3) !important; }
-    .bg-purple-500\/10 { background-color: rgba(14, 165, 233, 0.1) !important; }
-    .bg-purple-500\/20 { background-color: rgba(14, 165, 233, 0.2) !important; }
+    .border-pink-500\/30 { border-color: rgba(236, 72, 153, 0.3) !important; }
+    .bg-purple-500\/10 { background-color: rgba(139, 92, 246, 0.1) !important; }
+    .bg-purple-500\/20 { background-color: rgba(139, 92, 246, 0.2) !important; }
     .bg-green-500\/20 { background-color: rgba(16, 185, 129, 0.2) !important; }
-    .bg-pink-500\/20 { background-color: rgba(59, 130, 246, 0.2) !important; }
-    .bg-cyan-500\/20 { background-color: rgba(5, 150, 105, 0.2) !important; }
-    .bg-blue-500\/10 { background-color: rgba(14, 165, 233, 0.1) !important; }
-    .border-blue-500\/30 { border-color: rgba(14, 165, 233, 0.3) !important; }
+    .bg-pink-500\/20 { background-color: rgba(236, 72, 153, 0.2) !important; }
+    .bg-cyan-500\/20 { background-color: rgba(14, 165, 233, 0.2) !important; }
+    .bg-blue-500\/10 { background-color: rgba(59, 130, 246, 0.1) !important; }
+    .border-blue-500\/30 { border-color: rgba(59, 130, 246, 0.3) !important; }
     
     /* Table */
-    .data-table th { background: #e0f2fe !important; color: #0f172a !important; border-bottom: 2px solid #bae6fd !important; }
-    .data-table td { border-bottom: 1px solid #f1f5f9 !important; }
+    .data-table th { background: #f1f5f9 !important; color: #334155 !important; border-bottom: 2px solid #cbd5e1 !important; }
+    .data-table td { border-bottom: 1px solid #e2e8f0 !important; color: #475569 !important; }
     .data-table tr:hover td { background: #f8fafc !important; }
     
     /* Steps */
-    .step.active span.text-sm { color: #0ea5e9 !important; font-weight: 600; }
+    .step.active span.text-sm { color: #ec4899 !important; font-weight: 600; }
     .step.completed span.text-sm { color: #10b981 !important; }
     .step-number { background: #ffffff !important; border-color: #cbd5e1 !important; color: #94a3b8 !important; }
-    .step.active .step-number { background: linear-gradient(135deg, #0ea5e9, #38bdf8) !important; border-color: #7dd3fc !important; color: #fff !important; }
+    .step.active .step-number { background: linear-gradient(135deg, #ec4899, #8b5cf6) !important; border-color: #d8b4fe !important; color: #fff !important; box-shadow: 0 0 15px rgba(236, 72, 153, 0.4) !important; }
     .step.completed .step-number { background: linear-gradient(135deg, #10b981, #34d399) !important; border-color: #6ee7b7 !important; color: #fff !important; }
     .step-connector { background: #cbd5e1 !important; }
     
     /* 3D Title */
     .title-3d {
-      background: linear-gradient(135deg, #0284c7 0%, #059669 50%, #2563eb 100%) !important;
+      background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 50%, #0ea5e9 100%) !important;
       -webkit-background-clip: text !important;
       -webkit-text-fill-color: transparent !important;
     }
+    .subtitle-3d { color: #475569 !important; font-weight: 600; }
     
     /* Control panels */
     .control-panel, .tab-container { background: rgba(0, 0, 0, 0.05) !important; }
+    .upload-zone { background: rgba(255,255,255,0.6) !important; border: 2px dashed #cbd5e1 !important; }
+    .upload-zone:hover { border-color: #ec4899 !important; background: rgba(236,72,153,0.05) !important; }
     
     /* Draggable Canvas & Floating */
     @keyframes floatCert {
@@ -768,25 +773,30 @@
       filter: drop-shadow(0 30px 40px rgba(0,0,0,0.15));
     }
     .btn-3d {
+      background: linear-gradient(135deg, #ec4899, #8b5cf6) !important;
+      box-shadow: 0 6px 0 #be185d, 0 10px 20px rgba(236, 72, 153, 0.4) !important;
+    }
+    .btn-3d:hover {
+      box-shadow: 0 8px 0 #be185d, 0 15px 30px rgba(236, 72, 153, 0.5) !important;
+    }
+    .btn-3d:active {
+      box-shadow: 0 2px 0 #be185d, 0 5px 10px rgba(236, 72, 153, 0.3) !important;
+    }
+    .btn-accent {
       background: linear-gradient(135deg, #0ea5e9, #10b981) !important;
       box-shadow: 0 6px 0 #0284c7, 0 10px 20px rgba(14, 165, 233, 0.4) !important;
     }
-    .btn-3d:hover {
+    .btn-accent:hover {
       box-shadow: 0 8px 0 #0284c7, 0 15px 30px rgba(14, 165, 233, 0.5) !important;
     }
-    .btn-3d:active {
+    .btn-accent:active {
       box-shadow: 0 2px 0 #0284c7, 0 5px 10px rgba(14, 165, 233, 0.3) !important;
     }
-    .btn-accent {
-      background: linear-gradient(135deg, #3b82f6, #0ea5e9) !important;
-      box-shadow: 0 6px 0 #2563eb, 0 10px 20px rgba(59, 130, 246, 0.4) !important;
-    }
-    .btn-accent:hover {
-      box-shadow: 0 8px 0 #2563eb, 0 15px 30px rgba(59, 130, 246, 0.5) !important;
-    }
-    .btn-accent:active {
-      box-shadow: 0 2px 0 #2563eb, 0 5px 10px rgba(59, 130, 246, 0.3) !important;
-    }
+    
+    /* Floating background shapes */
+    .shape-1 { background: linear-gradient(45deg, #fbcfe8, #f3e8ff); }
+    .shape-2 { background: linear-gradient(45deg, #e0f2fe, #ccfbf1); }
+    .shape-3 { background: linear-gradient(45deg, #fef08a, #fed7aa); }
   </style>
   <style>body { box-sizing: border-box; }</style>
   <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
@@ -1547,7 +1557,7 @@
         font: 'Arial',
         fontSize: 24,
         fontWeight: '700',
-        color: '#000000',
+        color: '#ec4899',
         textAlign: 'center',
         x: 50,
         y: 50
@@ -2130,6 +2140,40 @@
           img.src = appState.certificateImage;
         });
         
+        // Setup Canvas for perfect font rendering matching design mode
+        const cvs = document.createElement('canvas');
+        const ctx = cvs.getContext('2d');
+        cvs.width = img.width;
+        cvs.height = img.height;
+
+        const drawCertificateToCanvas = (idx) => {
+          ctx.clearRect(0, 0, cvs.width, cvs.height);
+          if (appState.showBackground) {
+            ctx.drawImage(img, 0, 0);
+          } else {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, cvs.width, cvs.height);
+          }
+          
+          appState.fields.forEach(field => {
+            const colIndex = appState.headers.indexOf(field.dataSource);
+            const text = colIndex !== -1 ? String(appState.excelData[idx][colIndex] || '') : '';
+            if (!text) return;
+            
+            ctx.font = `${field.fontWeight} ${field.fontSize}px '${field.font}'`;
+            ctx.fillStyle = field.color;
+            ctx.textAlign = field.textAlign;
+            ctx.textBaseline = 'middle';
+            
+            const x = (field.x / 100) * cvs.width;
+            const y = (field.y / 100) * cvs.height;
+            
+            ctx.fillText(text, x, y);
+          });
+          
+          return cvs.toDataURL('image/jpeg', 0.95);
+        };
+        
         // Determine PDF orientation
         const orientation = img.width > img.height ? 'l' : 'p';
         const pdfWidth = orientation === 'l' ? 297 : 210;
@@ -2144,37 +2188,8 @@
             
             if (i > 0) pdf.addPage();
             
-            // DRAW NATIVE 4K BACKGROUND
-            if (appState.showBackground) {
-              const isPng = appState.certificateImage.substring(0, 20).toLowerCase().includes('png');
-              pdf.addImage(appState.certificateImage, isPng ? 'PNG' : 'JPEG', 0, 0, pdfWidth, pdfHeight);
-            }
-            
-            // EMBED EDITABLE TEXT FOR FIELDS
-            appState.fields.forEach(field => {
-              const colIndex = appState.headers.indexOf(field.dataSource);
-              const text = colIndex !== -1 ? String(appState.excelData[idx][colIndex] || '') : '';
-              if (!text) return;
-              
-              let jsFont = 'helvetica';
-              if (['Times New Roman', 'Cambria', 'Playfair Display', 'Great Vibes'].includes(field.font)) jsFont = 'times';
-              else if (['Courier New'].includes(field.font)) jsFont = 'courier';
-              
-              let jsStyle = 'normal';
-              if (field.fontWeight >= '600' || field.fontWeight === 'bold') jsStyle = 'bold';
-              
-              pdf.setFont(jsFont, jsStyle);
-              
-              // Scale accurately for matching preview to print
-              const ptSize = field.fontSize * (pdfHeight / img.height) * 2.83465 * 1.333;
-              pdf.setFontSize(ptSize);
-              pdf.setTextColor(field.color);
-              
-              const pdfX = (field.x / 100) * pdfWidth;
-              const pdfY = (field.y / 100) * pdfHeight;
-              
-              pdf.text(text, pdfX, pdfY, { align: field.textAlign, baseline: 'middle' });
-            });
+            const imgData = drawCertificateToCanvas(idx);
+            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
             
             // Update progress
             const progress = ((i + 1) / rowsToProcess.length) * 100;
@@ -2209,34 +2224,8 @@
               
               if (i > 0) pdf.addPage();
               
-              if (appState.showBackground) {
-                const isPng = appState.certificateImage.substring(0, 20).toLowerCase().includes('png');
-                pdf.addImage(appState.certificateImage, isPng ? 'PNG' : 'JPEG', 0, 0, pdfWidth, pdfHeight);
-              }
-              
-              appState.fields.forEach(field => {
-                const colIndex = appState.headers.indexOf(field.dataSource);
-                const text = colIndex !== -1 ? String(appState.excelData[idx][colIndex] || '') : '';
-                if (!text) return;
-                
-                let jsFont = 'helvetica';
-                if (['Times New Roman', 'Cambria', 'Playfair Display', 'Great Vibes'].includes(field.font)) jsFont = 'times';
-                else if (['Courier New'].includes(field.font)) jsFont = 'courier';
-                
-                let jsStyle = 'normal';
-                if (field.fontWeight >= '600' || field.fontWeight === 'bold') jsStyle = 'bold';
-                
-                pdf.setFont(jsFont, jsStyle);
-                
-                const ptSize = field.fontSize * (pdfHeight / img.height) * 2.83465 * 1.333;
-                pdf.setFontSize(ptSize);
-                pdf.setTextColor(field.color);
-                
-                const pdfX = (field.x / 100) * pdfWidth;
-                const pdfY = (field.y / 100) * pdfHeight;
-                
-                pdf.text(text, pdfX, pdfY, { align: field.textAlign, baseline: 'middle' });
-              });
+              const imgData = drawCertificateToCanvas(idx);
+              pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
               
               totalProcessed++;
               const progress = (totalProcessed / rowsToProcess.length) * 100;
@@ -2260,42 +2249,19 @@
             const { idx } = rowsToProcess[i];
             const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
             
-            if (appState.showBackground) {
-              const isPng = appState.certificateImage.substring(0, 20).toLowerCase().includes('png');
-              pdf.addImage(appState.certificateImage, isPng ? 'PNG' : 'JPEG', 0, 0, pdfWidth, pdfHeight);
-            }
-            
             let fileName = `sijil_${i + 1}`;
             
+            // Resolve filename logic first
             appState.fields.forEach(field => {
               const colIndex = appState.headers.indexOf(field.dataSource);
               const text = colIndex !== -1 ? String(appState.excelData[idx][colIndex] || '') : '';
-              
-              // Use first field as filename if it has data
               if (field === appState.fields[0] && text) {
                 fileName = text.replace(/[^a-zA-Z0-9]/g, '_');
               }
-              
-              if (!text) return;
-              
-              let jsFont = 'helvetica';
-              if (['Times New Roman', 'Cambria', 'Playfair Display', 'Great Vibes'].includes(field.font)) jsFont = 'times';
-              else if (['Courier New'].includes(field.font)) jsFont = 'courier';
-              
-              let jsStyle = 'normal';
-              if (field.fontWeight >= '600' || field.fontWeight === 'bold') jsStyle = 'bold';
-              
-              pdf.setFont(jsFont, jsStyle);
-              
-              const ptSize = field.fontSize * (pdfHeight / img.height) * 2.83465 * 1.333;
-              pdf.setFontSize(ptSize);
-              pdf.setTextColor(field.color);
-              
-              const pdfX = (field.x / 100) * pdfWidth;
-              const pdfY = (field.y / 100) * pdfHeight;
-              
-              pdf.text(text, pdfX, pdfY, { align: field.textAlign, baseline: 'middle' });
             });
+            
+            const imgData = drawCertificateToCanvas(idx);
+            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
             
             const pdfBlob = pdf.output('blob');
             await saveFileToSelectedFolder(`${fileName}.pdf`, pdfBlob);
@@ -2458,5 +2424,5 @@
       }
     }
   </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9db6eea620eada55',t:'MTc3MzM2MTg0OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ </body>
 </html>

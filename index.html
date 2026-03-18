@@ -3,2814 +3,782 @@
  <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bulk Certificate Generator</title>
+  <title>PWA Generator Studio</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
   <script src="/_sdk/element_sdk.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&amp;family=Open+Sans:wght@300;400;600;700&amp;family=Lato:wght@300;400;700&amp;family=Montserrat:wght@300;400;500;600;700&amp;family=Oswald:wght@400;700&amp;family=Source+Sans+Pro:wght@300;400;600;700&amp;family=Raleway:wght@300;400;500;600;700&amp;family=PT+Sans:wght@400;700&amp;family=Merriweather:wght@300;400;700&amp;family=Noto+Sans:wght@400;700&amp;family=Nunito:wght@300;400;600;700&amp;family=Prompt:wght@300;400;500;700&amp;family=Work+Sans:wght@300;400;600&amp;family=Ubuntu:wght@300;400;500;700&amp;family=Muli:wght@300;400;600&amp;family=Playfair+Display:wght@400;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;family=Rubik:wght@300;400;500&amp;family=Lora:wght@400;500;600&amp;family=Mukta:wght@300;400;500&amp;family=Fira+Sans:wght@300;400;500&amp;family=Nunito+Sans:wght@300;400;600&amp;family=Quicksand:wght@300;400;500;600&amp;family=Karla:wght@400;500&amp;family=Barlow:wght@400;500&amp;family=Titillium+Web:wght@300;400;600&amp;family=Inconsolata:wght@400;500&amp;family=Heebo:wght@300;400;500&amp;family=Oxygen:wght@300;400;700&amp;family=Dosis:wght@300;400;500&amp;family=Poppins:wght@300;400;500;600;700&amp;family=Anton&amp;family=Cairo:wght@300;400;600&amp;family=Josefin+Sans:wght@300;400;600&amp;family=Signika:wght@300;400;600&amp;family=Arimo:wght@400;500;600&amp;family=Libre+Baskerville:wght@400;700&amp;family=Abel&amp;family=Pacifico&amp;family=Dancing+Script:wght@400;700&amp;family=Shadows+Into+Light&amp;family=Exo+2:wght@300;400;500&amp;family=Tajawal:wght@300;400;500&amp;family=Varela+Round&amp;family=Fjalla+One&amp;family=Hind:wght@300;400;500&amp;family=Bitter:wght@400;500&amp;family=Asap:wght@400;500&amp;family=Teko:wght@300;400;500&amp;family=Caveat:wght@400;500;600&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+  <script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['DM Sans', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace']
+      },
+      colors: {
+        brand: {
+          50: '#eff6ff',
+          100: '#dbeafe',
+          200: '#bfdbfe',
+          300: '#93c5fd',
+          400: '#60a5fa',
+          500: '#3b82f6',
+          600: '#2563eb',
+          700: '#1d4ed8',
+          800: '#1e40af',
+          900: '#1e3a8a'
+        }
+      }
+    }
+  }
+}
+</script>
   <style>
-    * { box-sizing: border-box; }
-    
-    /* Anti-Copy Protection */
-    body {
-      -webkit-user-select: none;
-      -moz-user-select: none;
-      -ms-user-select: none;
-      user-select: none;
-    }
-    input, textarea, select {
-      -webkit-user-select: text;
-      -moz-user-select: text;
-      -ms-user-select: text;
-      user-select: text;
-    }
+html, body { height: 100%; margin: 0; font-family: 'DM Sans', sans-serif; }
 
-    :root {
-      --primary: #6366f1;
-      --secondary: #8b5cf6;
-      --accent: #ec4899;
-      --dark: #1e1b4b;
-      --light: #f8fafc;
-    }
-    
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);
-      min-height: 100%;
-      overflow-x: hidden;
-    }
-    
-    .app-wrapper {
-      min-height: 100%;
-      perspective: 2000px;
-      transform-style: preserve-3d;
-    }
-    
-    .floating-bg {
-      position: fixed;
-      width: 100%;
-      height: 100%;
-      top: 0;
-      left: 0;
-      pointer-events: none;
-      z-index: 0;
-      overflow: hidden;
-    }
-    
-    .floating-shape {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(80px);
-      opacity: 0.4;
-      animation: float 20s ease-in-out infinite;
-    }
-    
-    .shape-1 {
-      width: 400px;
-      height: 400px;
-      background: linear-gradient(45deg, #6366f1, #8b5cf6);
-      top: -100px;
-      left: -100px;
-      animation-delay: 0s;
-    }
-    
-    .shape-2 {
-      width: 300px;
-      height: 300px;
-      background: linear-gradient(45deg, #ec4899, #f472b6);
-      bottom: -50px;
-      right: -50px;
-      animation-delay: -5s;
-    }
-    
-    .shape-3 {
-      width: 250px;
-      height: 250px;
-      background: linear-gradient(45deg, #06b6d4, #22d3ee);
-      top: 50%;
-      left: 50%;
-      animation-delay: -10s;
-    }
-    
-    @keyframes float {
-      0%, 100% { transform: translate(0, 0) rotate(0deg); }
-      25% { transform: translate(30px, -30px) rotate(5deg); }
-      50% { transform: translate(-20px, 20px) rotate(-5deg); }
-      75% { transform: translate(20px, 30px) rotate(3deg); }
-    }
-    
-    .glass-card {
-      background: rgba(255, 255, 255, 0.08);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 24px;
-      box-shadow: 
-        0 25px 50px -12px rgba(0, 0, 0, 0.5),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
-      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      transform-style: preserve-3d;
-    }
-    
-    .glass-card:hover {
-      transform: translateY(-5px) rotateX(2deg);
-      box-shadow: 
-        0 35px 60px -15px rgba(0, 0, 0, 0.6),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    }
-    
-    .card-3d {
-      transform-style: preserve-3d;
-      transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-    
-    .card-3d:hover {
-      transform: rotateY(-5deg) rotateX(5deg) translateZ(20px);
-    }
-    
-    .upload-zone {
-      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
-      border: 2px dashed rgba(139, 92, 246, 0.5);
-      border-radius: 20px;
-      transition: all 0.3s ease;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .upload-zone::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-      transition: left 0.5s ease;
-    }
-    
-    .upload-zone:hover::before {
-      left: 100%;
-    }
-    
-    .upload-zone:hover {
-      border-color: #8b5cf6;
-      background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
-      transform: scale(1.02);
-    }
-    
-    .upload-zone.dragover {
-      border-color: #ec4899;
-      background: linear-gradient(135deg, rgba(236, 72, 153, 0.2), rgba(244, 114, 182, 0.2));
-      transform: scale(1.05);
-    }
-    
-    .btn-3d {
-      position: relative;
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      border: none;
-      border-radius: 12px;
-      color: white;
-      font-weight: 600;
-      padding: 12px 24px;
-      cursor: pointer;
-      transform-style: preserve-3d;
-      transition: all 0.3s ease;
-      box-shadow: 
-        0 6px 0 #4338ca,
-        0 10px 20px rgba(99, 102, 241, 0.4);
-    }
-    
-    .btn-3d:hover {
-      transform: translateY(-2px);
-      box-shadow: 
-        0 8px 0 #4338ca,
-        0 15px 30px rgba(99, 102, 241, 0.5);
-    }
-    
-    .btn-3d:active {
-      transform: translateY(4px);
-      box-shadow: 
-        0 2px 0 #4338ca,
-        0 5px 10px rgba(99, 102, 241, 0.3);
-    }
-    
-    .btn-accent {
-      background: linear-gradient(135deg, #ec4899, #f472b6);
-      box-shadow: 
-        0 6px 0 #be185d,
-        0 10px 20px rgba(236, 72, 153, 0.4);
-    }
-    
-    .btn-accent:hover {
-      box-shadow: 
-        0 8px 0 #be185d,
-        0 15px 30px rgba(236, 72, 153, 0.5);
-    }
-    
-    .btn-accent:active {
-      box-shadow: 
-        0 2px 0 #be185d,
-        0 5px 10px rgba(236, 72, 153, 0.3);
-    }
-    
-    .preview-container {
-      position: relative;
-      background: rgba(0, 0, 0, 0.3);
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
-    }
-    
-    .certificate-canvas {
-      position: relative;
-      display: inline-block;
-      transform-origin: top left;
-    }
-    
-    .certificate-image {
-      display: block;
-      max-width: 100%;
-      height: auto;
-    }
-    
-    .text-field {
-      position: absolute;
-      cursor: move;
-      user-select: none;
-      padding: 4px;
-      background: rgba(99, 102, 241, 0.2);
-      border: 2px dashed rgba(139, 92, 246, 0.8);
-      border-radius: 8px;
-      transition: all 0.2s ease;
-      white-space: pre-wrap;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-    
-    .text-field:hover {
-      background: rgba(99, 102, 241, 0.3);
-      border-color: #ec4899;
-      box-shadow: 0 0 20px rgba(236, 72, 153, 0.5);
-    }
-    
-    .text-field.selected {
-      border-color: #22d3ee;
-      background: rgba(6, 182, 212, 0.2);
-      box-shadow: 0 0 25px rgba(34, 211, 238, 0.6);
-    }
-    
-    .text-field.dragging {
-      opacity: 0.8;
-      transform: scale(1.05);
-      z-index: 1000;
-    }
-    
-    .field-label {
-      position: absolute;
-      top: -24px;
-      left: 0;
-      font-size: 10px;
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      color: white;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-weight: 600;
-    }
-    
-    .resize-handle {
-      position: absolute;
-      width: 12px;
-      height: 12px;
-      background: #ec4899;
-      border-radius: 50%;
-      cursor: se-resize;
-      right: -6px;
-      bottom: -6px;
-      box-shadow: 0 0 10px rgba(236, 72, 153, 0.8);
-    }
-    
-    .control-panel {
-      background: rgba(30, 27, 75, 0.9);
-      border-radius: 16px;
-      border: 1px solid rgba(139, 92, 246, 0.3);
-    }
-    
-    .input-3d {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(139, 92, 246, 0.3);
-      border-radius: 10px;
-      padding: 10px 14px;
-      color: white;
-      font-size: 14px;
-      transition: all 0.3s ease;
-      width: 100%;
-    }
-    
-    .input-3d:focus {
-      outline: none;
-      border-color: #8b5cf6;
-      background: rgba(255, 255, 255, 0.1);
-      box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
-    }
-    
-    .select-3d {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(139, 92, 246, 0.3);
-      border-radius: 10px;
-      padding: 10px 14px;
-      color: white;
-      font-size: 14px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      width: 100%;
-      appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%238b5cf6'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 10px center;
-      background-size: 20px;
-    }
-    
-    .select-3d:focus {
-      outline: none;
-      border-color: #8b5cf6;
-      box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
-    }
-    
-    .select-3d option {
-      background: #1e1b4b;
-      color: white;
-    }
-    
-    .group-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
-      background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
-      border: 1px solid rgba(139, 92, 246, 0.4);
-      border-radius: 20px;
-      font-size: 13px;
-      color: white;
-      transition: all 0.3s ease;
-      cursor: pointer;
-    }
-    
-    .group-badge:hover {
-      background: linear-gradient(135deg, rgba(99, 102, 241, 0.4), rgba(139, 92, 246, 0.4));
-      transform: translateY(-2px);
-    }
-    
-    .group-badge.selected {
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      border-color: #a78bfa;
-    }
-    
-    .group-count {
-      background: rgba(255, 255, 255, 0.2);
-      padding: 2px 8px;
-      border-radius: 10px;
-      font-size: 11px;
-      font-weight: 600;
-    }
-    
-    .progress-bar {
-      height: 8px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 10px;
-      overflow: hidden;
-    }
-    
-    .progress-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #6366f1, #ec4899);
-      border-radius: 10px;
-      transition: width 0.3s ease;
-      position: relative;
-    }
-    
-    .progress-fill::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-      animation: shimmer 1.5s infinite;
-    }
-    
-    @keyframes shimmer {
-      0% { transform: translateX(-100%); }
-      100% { transform: translateX(100%); }
-    }
-    
-    .step-indicator {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 20px;
-      margin-bottom: 30px;
-    }
-    
-    .step {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      opacity: 0.5;
-      transition: all 0.3s ease;
-    }
-    
-    .step.active {
-      opacity: 1;
-    }
-    
-    .step.completed {
-      opacity: 1;
-    }
-    
-    .step-number {
-      width: 36px;
-      height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(255, 255, 255, 0.1);
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      border-radius: 50%;
-      font-weight: 600;
-      font-size: 14px;
-      color: white;
-      transition: all 0.3s ease;
-    }
-    
-    .step.active .step-number {
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      border-color: #a78bfa;
-      box-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
-    }
-    
-    .step.completed .step-number {
-      background: linear-gradient(135deg, #10b981, #34d399);
-      border-color: #6ee7b7;
-    }
-    
-    .step-connector {
-      width: 60px;
-      height: 2px;
-      background: rgba(255, 255, 255, 0.2);
-    }
-    
-    .toast {
-      position: fixed;
-      bottom: 30px;
-      right: 30px;
-      padding: 16px 24px;
-      background: linear-gradient(135deg, #10b981, #34d399);
-      color: white;
-      border-radius: 12px;
-      font-weight: 500;
-      box-shadow: 0 10px 40px rgba(16, 185, 129, 0.4);
-      transform: translateY(100px);
-      opacity: 0;
-      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      z-index: 9999;
-    }
-    
-    .toast.show {
-      transform: translateY(0);
-      opacity: 1;
-    }
-    
-    .toast.error {
-      background: linear-gradient(135deg, #ef4444, #f87171);
-      box-shadow: 0 10px 40px rgba(239, 68, 68, 0.4);
-    }
-    
-    .header-3d {
-      text-align: center;
-      margin-bottom: 30px;
-      transform-style: preserve-3d;
-      animation: headerFloat 6s ease-in-out infinite;
-    }
-    
-    @keyframes headerFloat {
-      0%, 100% { transform: translateY(0) rotateX(0); }
-      50% { transform: translateY(-10px) rotateX(2deg); }
-    }
-    
-    .title-3d {
-      font-family: 'Playfair Display', serif;
-      font-size: 48px;
-      font-weight: 700;
-      background: linear-gradient(135deg, #fff 0%, #a78bfa 50%, #f472b6 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      text-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-      letter-spacing: 2px;
-    }
-    
-    .subtitle-3d {
-      font-size: 16px;
-      color: rgba(255, 255, 255, 0.7);
-      margin-top: 10px;
-      letter-spacing: 4px;
-      text-transform: uppercase;
-    }
-    
-    .icon-3d {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 60px;
-      height: 60px;
-      background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(139, 92, 246, 0.3));
-      border-radius: 16px;
-      margin-bottom: 15px;
-      transform-style: preserve-3d;
-      transition: transform 0.3s ease;
-    }
-    
-    .icon-3d:hover {
-      transform: rotateY(15deg) rotateX(15deg);
-    }
-    
-    .data-table {
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 0;
-    }
-    
-    .data-table th {
-      background: rgba(99, 102, 241, 0.3);
-      padding: 12px 16px;
-      text-align: left;
-      font-weight: 600;
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: rgba(255, 255, 255, 0.9);
-      border-bottom: 2px solid rgba(139, 92, 246, 0.5);
-    }
-    
-    .data-table th:first-child {
-      border-radius: 10px 0 0 0;
-    }
-    
-    .data-table th:last-child {
-      border-radius: 0 10px 0 0;
-    }
-    
-    .data-table td {
-      padding: 12px 16px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      font-size: 13px;
-      color: rgba(255, 255, 255, 0.8);
-    }
-    
-    .data-table tr:hover td {
-      background: rgba(99, 102, 241, 0.1);
-    }
-    
-    .field-config-item {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(139, 92, 246, 0.2);
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 12px;
-      transition: all 0.3s ease;
-    }
-    
-    .field-config-item:hover {
-      background: rgba(255, 255, 255, 0.06);
-      border-color: rgba(139, 92, 246, 0.4);
-    }
-    
-    .color-input {
-      width: 50px;
-      height: 36px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      background: transparent;
-    }
-    
-    .color-input::-webkit-color-swatch-wrapper {
-      padding: 0;
-    }
-    
-    .color-input::-webkit-color-swatch {
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      border-radius: 6px;
-    }
-    
-    .tab-container {
-      display: flex;
-      gap: 4px;
-      background: rgba(0, 0, 0, 0.2);
-      padding: 4px;
-      border-radius: 12px;
-      margin-bottom: 20px;
-    }
-    
-    .tab-btn {
-      flex: 1;
-      padding: 10px 20px;
-      background: transparent;
-      border: none;
-      border-radius: 8px;
-      color: rgba(255, 255, 255, 0.6);
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-    
-    .tab-btn.active {
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      color: white;
-      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
-    }
-    
-    .scrollbar-custom::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-    
-    .scrollbar-custom::-webkit-scrollbar-track {
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 10px;
-    }
-    
-    .scrollbar-custom::-webkit-scrollbar-thumb {
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      border-radius: 10px;
-    }
-    
-    .zoom-controls {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: rgba(0, 0, 0, 0.3);
-      padding: 8px 16px;
-      border-radius: 30px;
-    }
-    
-    .zoom-btn {
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(255, 255, 255, 0.1);
-      border: none;
-      border-radius: 50%;
-      color: white;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-    
-    .zoom-btn:hover {
-      background: rgba(139, 92, 246, 0.5);
-    }
-    
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 500;
-    }
-    
-    .status-ready {
-      background: rgba(16, 185, 129, 0.2);
-      color: #34d399;
-      border: 1px solid rgba(16, 185, 129, 0.4);
-    }
-    
-    .status-pending {
-      background: rgba(245, 158, 11, 0.2);
-      color: #fbbf24;
-      border: 1px solid rgba(245, 158, 11, 0.4);
-    }
+.iphone-frame {
+  width: 280px;
+  height: 572px;
+  border-radius: 40px;
+  border: 6px solid #1e293b;
+  background: #000;
+  position: relative;
+  box-shadow: 0 25px 60px rgba(30,64,175,0.18), 0 0 0 2px #334155, inset 0 0 0 2px #1e293b;
+  overflow: hidden;
+}
+.iphone-notch {
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 120px; height: 28px;
+  background: #1e293b;
+  border-radius: 0 0 18px 18px;
+  z-index: 20;
+}
+.iphone-screen {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: 34px;
+  overflow: hidden;
+  background: #fff;
+}
+.iphone-screen iframe {
+  width: 100%; height: 100%;
+  border: none;
+  border-radius: 34px;
+}
+.iphone-home {
+  position: absolute;
+  bottom: 6px; left: 50%;
+  transform: translateX(-50%);
+  width: 100px; height: 4px;
+  background: #475569;
+  border-radius: 4px;
+  z-index: 20;
+}
 
-    /* ===== LIGHT 3D THEME OVERRIDES ===== */
-    :root {
-      --primary: #ec4899;
-      --secondary: #8b5cf6;
-      --accent: #0ea5e9;
-      --dark: #f6f8fd;
-      --light: #ffffff;
-    }
-    body {
-      background: linear-gradient(135deg, #f6f8fd 0%, #f1f5f9 50%, #e2e8f0 100%) !important;
-      color: #1e293b !important;
-    }
-    .glass-card {
-      background: rgba(255, 255, 255, 0.7) !important;
-      backdrop-filter: blur(16px) !important;
-      border: 1px solid rgba(255, 255, 255, 0.9) !important;
-      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 1) !important;
-    }
-    .text-white { color: #4338ca !important; } /* Cheerful vibrant indigo */
-    .text-gray-400 { color: #64748b !important; }
-    .text-gray-300 { color: #475569 !important; }
-    .text-gray-500 { color: #64748b !important; }
-    .bg-gray-800 { background-color: #ffffff !important; border-color: #cbd5e1 !important; }
-    
-    /* Ensure Buttons and badges remain white text over vibrant gradient backgrounds */
-    .btn-3d, .btn-3d *, .step-number, .toast, .group-badge, .group-count, .field-label {
-      color: #ffffff !important;
-    }
-    
-    /* Input Fields */
-    .input-3d, .select-3d {
-      background: rgba(255, 255, 255, 0.9) !important;
-      border: 1px solid #cbd5e1 !important;
-      color: #1e293b !important;
-      box-shadow: inset 0 2px 4px rgba(0,0,0,0.05) !important;
-    }
-    .input-3d:focus, .select-3d:focus {
-      border-color: #ec4899 !important;
-      box-shadow: 0 0 15px rgba(236, 72, 153, 0.3) !important;
-    }
-    .select-3d option { background: #ffffff !important; color: #1e293b !important; }
-    
-    /* Custom SVG colors */
-    .text-purple-400 { color: #8b5cf6 !important; }
-    .text-green-400 { color: #10b981 !important; }
-    .text-pink-400 { color: #ec4899 !important; }
-    .text-cyan-400 { color: #0ea5e9 !important; }
-    .text-red-400 { color: #ef4444 !important; }
-    .border-purple-500\/30 { border-color: rgba(139, 92, 246, 0.3) !important; }
-    .border-green-500\/30 { border-color: rgba(16, 185, 129, 0.3) !important; }
-    .border-pink-500\/30 { border-color: rgba(236, 72, 153, 0.3) !important; }
-    .bg-purple-500\/10 { background-color: rgba(139, 92, 246, 0.1) !important; }
-    .bg-purple-500\/20 { background-color: rgba(139, 92, 246, 0.2) !important; }
-    .bg-green-500\/20 { background-color: rgba(16, 185, 129, 0.2) !important; }
-    .bg-pink-500\/20 { background-color: rgba(236, 72, 153, 0.2) !important; }
-    .bg-cyan-500\/20 { background-color: rgba(14, 165, 233, 0.2) !important; }
-    .bg-blue-500\/10 { background-color: rgba(59, 130, 246, 0.1) !important; }
-    .border-blue-500\/30 { border-color: rgba(59, 130, 246, 0.3) !important; }
-    
-    /* Table */
-    .data-table th { background: #f1f5f9 !important; color: #334155 !important; border-bottom: 2px solid #cbd5e1 !important; }
-    .data-table td { border-bottom: 1px solid #e2e8f0 !important; color: #475569 !important; }
-    .data-table tr:hover td { background: #f8fafc !important; }
-    
-    /* Steps */
-    .step.active span.text-sm { color: #ec4899 !important; font-weight: 600; }
-    .step.completed span.text-sm { color: #10b981 !important; }
-    .step-number { background: #ffffff !important; border-color: #cbd5e1 !important; color: #94a3b8 !important; }
-    .step.active .step-number { background: linear-gradient(135deg, #ec4899, #8b5cf6) !important; border-color: #d8b4fe !important; color: #fff !important; box-shadow: 0 0 15px rgba(236, 72, 153, 0.4) !important; }
-    .step.completed .step-number { background: linear-gradient(135deg, #10b981, #34d399) !important; border-color: #6ee7b7 !important; color: #fff !important; }
-    .step-connector { background: #cbd5e1 !important; }
-    
-    /* 3D Title */
-    .title-3d {
-      background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 50%, #0ea5e9 100%) !important;
-      -webkit-background-clip: text !important;
-      -webkit-text-fill-color: transparent !important;
-    }
-    .subtitle-3d { color: #475569 !important; font-weight: 600; }
-    
-    /* Control panels */
-    .control-panel, .tab-container { background: rgba(0, 0, 0, 0.05) !important; }
-    .upload-zone { background: rgba(255,255,255,0.6) !important; border: 2px dashed #cbd5e1 !important; }
-    .upload-zone:hover { border-color: #ec4899 !important; background: rgba(236,72,153,0.05) !important; }
-    
-    /* Draggable Canvas & Floating */
-    @keyframes floatCert {
-      0%, 100% { transform: translateY(0px) rotateX(2deg) rotateY(-1deg); }
-      50% { transform: translateY(-15px) rotateX(4deg) rotateY(1deg); }
-    }
-    #certificateFloater {
-      filter: drop-shadow(0 30px 40px rgba(0,0,0,0.15));
-    }
-    .btn-3d {
-      background: linear-gradient(135deg, #ec4899, #8b5cf6) !important;
-      box-shadow: 0 6px 0 #be185d, 0 10px 20px rgba(236, 72, 153, 0.4) !important;
-    }
-    .btn-3d:hover {
-      box-shadow: 0 8px 0 #be185d, 0 15px 30px rgba(236, 72, 153, 0.5) !important;
-    }
-    .btn-3d:active {
-      box-shadow: 0 2px 0 #be185d, 0 5px 10px rgba(236, 72, 153, 0.3) !important;
-    }
-    .btn-accent {
-      background: linear-gradient(135deg, #0ea5e9, #10b981) !important;
-      box-shadow: 0 6px 0 #0284c7, 0 10px 20px rgba(14, 165, 233, 0.4) !important;
-    }
-    .btn-accent:hover {
-      box-shadow: 0 8px 0 #0284c7, 0 15px 30px rgba(14, 165, 233, 0.5) !important;
-    }
-    .btn-accent:active {
-      box-shadow: 0 2px 0 #0284c7, 0 5px 10px rgba(14, 165, 233, 0.3) !important;
-    }
-    
-    /* Floating background shapes */
-    .shape-1 { background: linear-gradient(45deg, #fbcfe8, #f3e8ff); }
-    .shape-2 { background: linear-gradient(45deg, #e0f2fe, #ccfbf1); }
-    .shape-3 { background: linear-gradient(45deg, #fef08a, #fed7aa); }
-  </style>
+.code-editor {
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #1e293b;
+  resize: none;
+  outline: none;
+  padding: 14px;
+  width: 100%;
+  height: 100%;
+  tab-size: 2;
+}
+.code-editor:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.13);
+}
+
+.tab-btn {
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.18s;
+  border: 1.5px solid transparent;
+  background: #f1f5f9;
+  color: #64748b;
+  white-space: nowrap;
+}
+.tab-btn.active {
+  background: #2563eb;
+  color: #fff;
+  border-color: #1d4ed8;
+  box-shadow: 0 2px 8px rgba(37,99,235,0.18);
+}
+.tab-btn:hover:not(.active) {
+  background: #e2e8f0;
+  color: #1e40af;
+}
+
+.mode-toggle {
+  display: flex; gap: 4px;
+  background: #f1f5f9;
+  border-radius: 10px;
+  padding: 3px;
+}
+.mode-btn {
+  padding: 7px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.18s;
+  border: none;
+  background: transparent;
+  color: #64748b;
+}
+.mode-btn.active {
+  background: #fff;
+  color: #2563eb;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+.toast-container {
+  position: fixed;
+  top: 16px; right: 16px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.toast {
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  animation: toastIn 0.3s ease;
+  max-width: 320px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+.toast.success { background: #2563eb; }
+.toast.error { background: #dc2626; }
+.toast.info { background: #0ea5e9; }
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.gen-btn {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  font-weight: 700;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 22px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 14px rgba(37,99,235,0.25);
+}
+.gen-btn:hover { box-shadow: 0 6px 20px rgba(37,99,235,0.35); transform: translateY(-1px); }
+.gen-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.help-overlay {
+  position: fixed; inset: 0;
+  background: rgba(15,23,42,0.55);
+  z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.help-modal {
+  background: #fff;
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 520px;
+  width: 90%;
+  max-height: 80%;
+  overflow-y: auto;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.2);
+  animation: modalIn 0.25s ease;
+}
+@keyframes modalIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+.spinner {
+  width: 20px; height: 20px;
+  border: 2.5px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.file-size-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.version-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  color: #fff;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; }
+
+@media (max-width: 900px) {
+  .main-layout { flex-direction: column !important; }
+  .iphone-frame { width: 220px; height: 450px; border-radius: 32px; }
+  .iphone-notch { width: 90px; height: 22px; border-radius: 0 0 14px 14px; }
+  .iphone-screen { border-radius: 26px; }
+  .iphone-screen iframe { border-radius: 26px; }
+}
+</style>
   <style>body { box-sizing: border-box; }</style>
   <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
  </head>
- <body class="h-full" oncontextmenu="return false;">
-  <div class="app-wrapper h-full"><!-- Floating Background -->
-   <div class="floating-bg">
-    <div class="floating-shape shape-1"></div>
-    <div class="floating-shape shape-2"></div>
-    <div class="floating-shape shape-3"></div>
-   </div><!-- Main Content -->
-   <div class="relative z-10 p-6 h-full overflow-auto scrollbar-custom"><!-- Header -->
-    <div class="header-3d">
-     <h1 class="title-3d" id="appTitle">Certificate Generator ProS</h1>
-     <p class="subtitle-3d">Sistem Cetakan Sijil Bulk Berkuasa AI</p>
-    </div><!-- Step Indicator -->
-    <div class="step-indicator">
-     <div class="step active" id="step1">
-      <div class="step-number">
-       1
-      </div><span class="text-white text-sm hidden sm:inline">Muat Naik</span>
-     </div>
-     <div class="step-connector"></div>
-     <div class="step" id="step2">
-      <div class="step-number">
-       2
-      </div><span class="text-white text-sm hidden sm:inline">Reka Bentuk</span>
-     </div>
-     <div class="step-connector"></div>
-     <div class="step" id="step3">
-      <div class="step-number">
-       3
-      </div><span class="text-white text-sm hidden sm:inline">Jana PDF</span>
-     </div>
-    </div><!-- Main Grid -->
-    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6"><!-- Left Panel - Upload & Data -->
-     <div class="xl:col-span-1 space-y-6"><!-- Upload Certificate -->
-      <div class="glass-card card-3d p-6">
-       <div class="icon-3d">
-        <svg class="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-        </svg>
-       </div>
-       <h3 class="text-white font-semibold text-lg mb-2">Templat Sijil</h3>
-       <p class="text-gray-400 text-sm mb-4">Muat naik gambar sijil anda (PNG, JPG)</p>
-       <div class="upload-zone p-8 text-center" id="certificateDropZone"><input type="file" id="certificateInput" accept="image/*" class="hidden">
-        <svg class="w-12 h-12 mx-auto text-purple-400 mb-3" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-        </svg>
-        <p class="text-white font-medium">Seret &amp; Lepas atau</p><button class="btn-3d mt-3 text-sm" onclick="document.getElementById('certificateInput').click()"> Pilih Fail </button>
-       </div>
-       <div id="certificatePreviewSmall" class="mt-4 hidden">
-        <div class="flex items-center gap-3 p-3 bg-green-500/20 rounded-lg border border-green-500/40">
-         <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"
-         ></path></svg><span class="text-green-400 text-sm font-medium" id="certificateFileName">certificate.png</span>
-        </div>
-       </div>
-      </div><!-- Upload Excel -->
-      <div class="glass-card card-3d p-6">
-       <div class="icon-3d">
-        <svg class="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-        </svg>
-       </div>
-       <h3 class="text-white font-semibold text-lg mb-2">Data Excel</h3>
-       <p class="text-gray-400 text-sm mb-4">Muat naik fail Excel dengan senarai penerima</p>
-       <div class="upload-zone p-8 text-center" id="excelDropZone"><input type="file" id="excelInput" accept=".xlsx,.xls,.csv" class="hidden">
-        <svg class="w-12 h-12 mx-auto text-green-400 mb-3" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-        </svg>
-        <p class="text-white font-medium">Seret &amp; Lepas atau</p><button class="btn-3d mt-3 text-sm" style="background: linear-gradient(135deg, #10b981, #34d399); box-shadow: 0 6px 0 #059669, 0 10px 20px rgba(16, 185, 129, 0.4);" onclick="document.getElementById('excelInput').click()"> Pilih Fail Excel </button>
-       </div>
-       <!-- NEW: Google Sheets Integration -->
-       <div class="mt-6 pt-4 border-t border-green-500/30">
-         <label class="block text-gray-400 text-sm mb-2">Atau Import dari Google Sheets (Link View):</label>
-         <div class="flex gap-2">
-           <input type="text" id="gsheetUrlInput" class="input-3d flex-1 text-sm py-2 px-3" placeholder="https://docs.google.com/spreadsheets/d/.../edit">
-           <button class="btn-3d text-sm py-2 px-4" style="background: linear-gradient(135deg, #10b981, #34d399); box-shadow: 0 4px 0 #059669;" onclick="importGoogleSheet()">Import</button>
-         </div>
-       </div>
-       <!-- NEW: Clipboard Integration -->
-       <div class="mt-4 pt-4 border-t border-green-500/30">
-         <label class="block text-gray-400 text-sm mb-2">Atau Tampal Data (Copy/Paste dari Excel):</label>
-         <div class="flex gap-2">
-           <textarea id="clipboardInput" class="input-3d flex-1 text-sm py-2 px-3 h-10 min-h-[40px] resize-y" placeholder="Tampal (Ctrl+V) data di sini..."></textarea>
-           <button class="btn-3d text-sm py-2 px-4" style="background: linear-gradient(135deg, #10b981, #34d399); box-shadow: 0 4px 0 #059669;" onclick="importClipboardData()">Proses</button>
-         </div>
-       </div>
-       <div id="excelInfo" class="mt-4 hidden">
-        <div class="flex items-center gap-3 p-3 bg-green-500/20 rounded-lg border border-green-500/40 mb-3">
-         <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"
-         ></path></svg><span class="text-green-400 text-sm font-medium" id="excelFileName">data.xlsx</span>
-        </div>
-        <div class="grid grid-cols-2 gap-3 text-center">
-         <div class="bg-purple-500/20 rounded-lg p-3 border border-purple-500/30">
-          <div class="text-2xl font-bold text-purple-400" id="totalRows">
-           0
-          </div>
-          <div class="text-xs text-gray-400">
-           Jumlah Rekod
-          </div>
-         </div>
-         <div class="bg-pink-500/20 rounded-lg p-3 border border-pink-500/30">
-          <div class="text-2xl font-bold text-pink-400" id="totalGroups">
-           0
-          </div>
-          <div class="text-xs text-gray-400">
-           Kumpulan
-          </div>
-         </div>
-        </div>
-       </div>
-      </div><!-- Groups Panel -->
-      <div class="glass-card card-3d p-6" id="groupsPanel" style="display: none;">
-       <h3 class="text-white font-semibold text-lg mb-4">📁 Kumpulan &amp; Filter</h3>
-       <p class="text-gray-400 text-sm mb-3">Pilih lajur untuk gabungan kumpulan (Boleh pilih &gt; 1):</p>
-       <div id="groupColumnCheckboxes" class="flex flex-wrap gap-2 max-h-32 overflow-y-auto scrollbar-custom p-2 mb-4">
-       </div>
-       <div class="flex gap-2 mb-3">
-         <input type="text" id="groupSearchInput" class="input-3d flex-1 text-sm py-2 px-3" placeholder="🔍 Cari / filter kumpulan..." onkeyup="renderGroupsList()">
-         <select id="groupSortSelect" class="select-3d w-1/3 text-sm py-2 px-3" onchange="renderGroupsList()">
-           <option value="name_asc">A-Z</option>
-           <option value="name_desc">Z-A</option>
-           <option value="count_desc">Terbanyak</option>
-           <option value="count_asc">Sedikit</option>
-         </select>
-       </div>
-       <div class="flex gap-2 mb-3">
-         <button class="text-purple-400 text-xs hover:text-purple-300 font-medium" onclick="selectAllGroupsPanel()">Pilih Semua Dilihat</button>
-         <span class="text-gray-600 text-xs">|</span>
-         <button class="text-purple-400 text-xs hover:text-purple-300 font-medium" onclick="deselectAllGroupsPanel()">Nyahpilih Semua Dilihat</button>
-       </div>
-       <div id="groupsList" class="flex flex-wrap gap-2 max-h-48 overflow-y-auto scrollbar-custom"><!-- Groups will be listed here -->
-       </div>
+ <body class="h-full bg-white">
+  <div id="app-root" class="h-full flex flex-col overflow-auto" style="background: linear-gradient(180deg, #eff6ff 0%, #ffffff 40%);"><!-- Top Bar: API Key -->
+   <div class="w-full px-4 pt-3 pb-2" style="flex-shrink:0;">
+    <div class="flex items-center gap-2 max-w-7xl mx-auto">
+     <div class="flex items-center gap-2 bg-white border border-blue-200 rounded-xl px-3 py-2 flex-1 shadow-sm"><i data-lucide="key" style="width:16px;height:16px;color:#2563eb;flex-shrink:0;"></i> <input id="apiKeyInput" type="password" placeholder="Masukkan Groq API Key anda di sini..." class="flex-1 bg-transparent outline-none text-sm text-slate-700 font-mono placeholder:text-slate-400" autocomplete="off"> <button id="toggleKeyBtn" onclick="toggleKeyVisibility()" class="text-slate-400 hover:text-blue-600 transition" title="Tunjuk/Sembunyi"> <i data-lucide="eye" style="width:16px;height:16px;"></i> </button>
+     </div><a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" class="text-xs text-blue-500 hover:text-blue-700 font-semibold whitespace-nowrap">Dapatkan Key →</a>
+    </div>
+   </div><!-- Header -->
+   <header class="w-full px-4 pb-3" style="flex-shrink:0;">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+     <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-md"><i data-lucide="smartphone" style="width:18px;height:18px;color:#fff;"></i>
       </div>
-     </div><!-- Center Panel - Certificate Preview -->
-     <div class="xl:col-span-2 space-y-6"><!-- Tab Navigation -->
-      <div class="tab-container"><button class="tab-btn active" data-tab="design" onclick="switchTab('design')"> 🎨 Reka Bentuk </button> <button class="tab-btn" data-tab="data" onclick="switchTab('data')"> 📊 Data Preview </button> <button class="tab-btn" data-tab="generate" onclick="switchTab('generate')"> 📄 Jana PDF </button>
-      </div><!-- Design Tab -->
-      <div id="designTab" class="space-y-4"><!-- Zoom Controls -->
-       <div class="flex items-center justify-between flex-wrap gap-4">
-        <div class="zoom-controls"><button class="zoom-btn" onclick="adjustZoom(-0.1)">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
-          </svg></button> <span class="text-white text-sm font-medium" id="zoomLevel">100%</span> <button class="zoom-btn" onclick="adjustZoom(0.1)">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-          </svg></button> <button class="zoom-btn" onclick="resetZoom()">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-          </svg></button>
-        </div>
-        <div class="flex items-center gap-2"><span class="status-badge" id="statusBadge"> <span class="status-pending">⏳ Sila muat naik fail</span> </span>
-        </div>
-       </div><!-- Certificate Preview Area -->
-       <div class="glass-card p-6"><!-- Toggle Background Display -->
-        <div class="mb-4 flex items-center justify-between p-3 bg-purple-500/10 rounded-lg border border-purple-500/30"><label class="flex items-center gap-3 cursor-pointer"> <input type="checkbox" id="showBackgroundToggle" checked class="w-4 h-4 accent-purple-500"> <span class="text-white text-sm">Tunjuk gambar latar belakang (Untick untuk latar putih)</span> </label> <span class="text-gray-400 text-xs">PDF: <span id="pdfBgStatus">Ada latar</span></span>
-        </div>
-        <div class="preview-container overflow-hidden scrollbar-custom relative" style="height: 700px;" id="previewContainer">
-         <div id="emptyPreview" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center py-20 text-center w-full">
-          <svg class="w-24 h-24 text-blue-500/30 mb-4 mx-auto" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-          </svg>
-          <h4 class="text-slate-600 text-lg font-medium mb-2">Tiada Sijil Dimuat Naik</h4>
-          <p class="text-slate-400 text-sm">Muat naik gambar sijil untuk mula mereka bentuk</p>
-         </div>
-         <div id="certificateMover" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); cursor: grab; display: none; z-index: 10;">
-          <div id="certificateFloater" style="transform-style: preserve-3d;">
-           <div id="certificateCanvas" class="certificate-canvas" style="position: relative; display: inline-block; max-width: none; transform-origin: top left;"><img id="certificateImage" class="certificate-image" src="" alt="Certificate Template" style="display: block; max-width: none; height: auto;"> <!-- Text fields will be added here dynamically -->
-           </div>
-          </div>
-         </div>
-        </div>
-       </div><!-- Field Configuration -->
-       <div class="glass-card p-6" id="fieldConfigPanel" style="display: none;">
-        <h3 class="text-white font-semibold text-lg mb-4">⚙️ Tetapan Medan</h3>
-        <p class="text-gray-400 text-sm mb-4">Klik pada medan di sijil untuk edit, atau tambah medan baru:</p><button class="btn-3d w-full mb-4" onclick="addNewField()">
-         <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-         </svg> Tambah Medan Baru </button>
-        <div id="fieldsList" class="space-y-3 max-h-80 overflow-y-auto scrollbar-custom"><!-- Field configs will be added here -->
-        </div>
-       </div><!-- Selected Field Editor -->
-       <div class="glass-card p-6" id="fieldEditor" style="display: none;">
-        <div class="flex items-center justify-between mb-4">
-         <h3 class="text-white font-semibold text-lg">✏️ Edit Medan</h3><button class="text-red-400 hover:text-red-300 transition-colors" onclick="deleteSelectedField()">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-          </svg></button>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-         <div><label class="block text-gray-400 text-sm mb-2">Sumber Data (Lajur Excel)</label> <select id="fieldDataSource" class="select-3d" onchange="updateSelectedField()"> <option value="">-- Pilih Lajur --</option> </select>
-         </div>
-         <div><label class="block text-gray-400 text-sm mb-2">Font</label> 
-           <select id="fieldFont" class="select-3d" onchange="updateSelectedField()">
-             <optgroup label="Microsoft Office Standard (Editable PDF)">
-               <option value="Arial">Arial</option> 
-               <option value="Times New Roman">Times New Roman</option> 
-               <option value="Calibri">Calibri</option>
-               <option value="Cambria">Cambria</option>
-               <option value="Tahoma">Tahoma</option>
-               <option value="Verdana">Verdana</option>
-               <option value="Courier New">Courier New</option>
-               <option value="Trebuchet MS">Trebuchet MS</option>
-             </optgroup>
-             <optgroup label="Custom Fonts (Image Render)">
-               <option value="Roboto">Roboto</option>
-               <option value="Open Sans">Open Sans</option>
-               <option value="Lato">Lato</option>
-               <option value="Montserrat">Montserrat</option>
-               <option value="Oswald">Oswald</option>
-               <option value="Source Sans Pro">Source Sans Pro</option>
-               <option value="Raleway">Raleway</option>
-               <option value="PT Sans">PT Sans</option>
-               <option value="Merriweather">Merriweather</option>
-               <option value="Noto Sans">Noto Sans</option>
-               <option value="Nunito">Nunito</option>
-               <option value="Prompt">Prompt</option>
-               <option value="Work Sans">Work Sans</option>
-               <option value="Ubuntu">Ubuntu</option>
-               <option value="Muli">Muli</option>
-               <option value="Playfair Display">Playfair Display</option>
-               <option value="Inter">Inter</option>
-               <option value="Rubik">Rubik</option>
-               <option value="Lora">Lora</option>
-               <option value="Mukta">Mukta</option>
-               <option value="Fira Sans">Fira Sans</option>
-               <option value="Nunito Sans">Nunito Sans</option>
-               <option value="Quicksand">Quicksand</option>
-               <option value="Karla">Karla</option>
-               <option value="Barlow">Barlow</option>
-               <option value="Titillium Web">Titillium Web</option>
-               <option value="Inconsolata">Inconsolata</option>
-               <option value="Heebo">Heebo</option>
-               <option value="Oxygen">Oxygen</option>
-               <option value="Dosis">Dosis</option>
-               <option value="Poppins">Poppins</option>
-               <option value="Anton">Anton</option>
-               <option value="Cairo">Cairo</option>
-               <option value="Josefin Sans">Josefin Sans</option>
-               <option value="Signika">Signika</option>
-               <option value="Arimo">Arimo</option>
-               <option value="Libre Baskerville">Libre Baskerville</option>
-               <option value="Abel">Abel</option>
-               <option value="Pacifico">Pacifico</option>
-               <option value="Dancing Script">Dancing Script</option>
-               <option value="Shadows Into Light">Shadows Into Light</option>
-               <option value="Exo 2">Exo 2</option>
-               <option value="Tajawal">Tajawal</option>
-               <option value="Varela Round">Varela Round</option>
-               <option value="Fjalla One">Fjalla One</option>
-               <option value="Hind">Hind</option>
-               <option value="Bitter">Bitter</option>
-               <option value="Asap">Asap</option>
-               <option value="Teko">Teko</option>
-               <option value="Caveat">Caveat</option>
-             </optgroup>
-           </select>
-         </div>
-         <div><label class="block text-gray-400 text-sm mb-2">Saiz Font Maksima (px)</label> <input type="number" id="fieldFontSize" class="input-3d" value="60" min="8" max="200" onchange="updateSelectedField()">
-         </div>
-         <div><label class="block text-gray-400 text-sm mb-2">Warna</label>
-          <div class="flex gap-2"><input type="color" id="fieldColor" class="color-input" value="#000000" onchange="updateSelectedField()"> <input type="text" id="fieldColorText" class="input-3d flex-1" value="#000000" onchange="document.getElementById('fieldColor').value = this.value; updateSelectedField()">
-          </div>
-         </div>
-         <div><label class="block text-gray-400 text-sm mb-2">Font Weight</label> <select id="fieldFontWeight" class="select-3d" onchange="updateSelectedField()"> <option value="300">Light (300)</option> <option value="400">Regular (400)</option> <option value="500">Medium (500)</option> <option value="600">Semi Bold (600)</option> <option value="700" selected>Bold (700)</option> </select>
-         </div>
-         <div><label class="block text-gray-400 text-sm mb-2">Text Align</label> <select id="fieldTextAlign" class="select-3d" onchange="updateSelectedField()"> <option value="left">Kiri</option> <option value="center" selected>Tengah</option> <option value="right">Kanan</option> </select>
-         </div>
-         <div><label class="block text-gray-400 text-sm mb-2">Vertical Align</label> <select id="fieldTextBaseline" class="select-3d" onchange="updateSelectedField()"> <option value="top">Atas</option> <option value="middle" selected>Tengah</option> <option value="bottom">Bawah</option> </select>
-         </div>
-         <div><label class="block text-gray-400 text-sm mb-2">Kedudukan X (%)</label> <input type="number" id="fieldPosX" class="input-3d" value="50" min="0" max="100" step="0.1" onchange="updateSelectedFieldPosition()">
-         </div>
-         <div><label class="block text-gray-400 text-sm mb-2">Kedudukan Y (%)</label> <input type="number" id="fieldPosY" class="input-3d" value="50" min="0" max="100" step="0.1" onchange="updateSelectedFieldPosition()">
-         </div>
-         <div><label class="block text-gray-400 text-sm mb-2">Lebar Kotak (%)</label> <input type="number" id="fieldWidth" class="input-3d" value="40" min="1" max="100" step="0.1" onchange="updateSelectedFieldPosition()">
-         </div>
-         <div><label class="block text-gray-400 text-sm mb-2">Tinggi Kotak (%)</label> <input type="number" id="fieldHeight" class="input-3d" value="15" min="1" max="100" step="0.1" onchange="updateSelectedFieldPosition()">
-         </div>
-        </div>
-        <div class="mt-4 p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
-         <p class="text-blue-500 text-xs font-semibold">💡 Tip: Seret medan di atas sijil untuk ubah kedudukan, seret bucu untuk ubah saiz kotak, atau masukkan nilai tepat di sini.</p>
-        </div>
-       </div>
-      </div><!-- Data Tab -->
-      <div id="dataTab" class="hidden">
-       <div class="glass-card p-6">
-        <div class="flex items-center justify-between mb-4 flex-wrap gap-4">
-         <h3 class="text-white font-semibold text-lg">📊 Preview Data Excel</h3>
-         <div class="flex items-center gap-2"><span class="text-gray-400 text-sm">Rekod:</span> <span class="text-white font-bold" id="dataRowCount">0</span>
-         </div>
-        </div>
-        <div id="noDataMessage" class="text-center py-10">
-         <svg class="w-16 h-16 mx-auto text-gray-600 mb-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-         </svg>
-         <p class="text-gray-500">Tiada data Excel dimuat naik</p>
-        </div>
-        <div id="dataTableContainer" class="hidden overflow-x-auto scrollbar-custom" style="max-height: 500px;">
-         <table class="data-table" id="dataTable">
-          <thead id="dataTableHead"></thead>
-          <tbody id="dataTableBody"></tbody>
-         </table>
-        </div>
-       </div>
-      </div><!-- Generate Tab -->
-      <div id="generateTab" class="hidden">
-       <div class="glass-card p-6">
-        <h3 class="text-white font-semibold text-lg mb-4">📄 Jana Sijil PDF</h3>
-        <div id="generateNotReady" class="text-center py-10">
-         <svg class="w-16 h-16 mx-auto text-yellow-500/50 mb-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-         </svg>
-         <p class="text-gray-400 mb-2">Sila lengkapkan langkah berikut:</p>
-         <ul class="text-gray-500 text-sm space-y-1">
-          <li id="checkCert" class="flex items-center justify-center gap-2"><span class="text-red-400">✗</span> Muat naik gambar sijil</li>
-          <li id="checkExcel" class="flex items-center justify-center gap-2"><span class="text-red-400">✗</span> Muat naik fail Excel</li>
-          <li id="checkFields" class="flex items-center justify-center gap-2"><span class="text-red-400">✗</span> Tambah sekurang-kurangnya satu medan</li>
-         </ul>
-        </div>
-        <div id="generateReady" class="hidden">
-         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div class="bg-purple-500/20 rounded-xl p-4 border border-purple-500/30 text-center">
-           <div class="text-3xl font-bold text-purple-400" id="genTotalCerts">
-            0
-           </div>
-           <div class="text-gray-400 text-sm">
-            Jumlah Sijil
-           </div>
-          </div>
-          <div class="bg-pink-500/20 rounded-xl p-4 border border-pink-500/30 text-center">
-           <div class="text-3xl font-bold text-pink-400" id="genTotalPDFs">
-            1
-           </div>
-           <div class="text-gray-400 text-sm">
-            Fail PDF
-           </div>
-          </div>
-          <div class="bg-cyan-500/20 rounded-xl p-4 border border-cyan-500/30 text-center">
-           <div class="text-3xl font-bold text-cyan-400" id="genTotalFields">
-            0
-           </div>
-           <div class="text-gray-400 text-sm">
-            Medan Aktif
-           </div>
-          </div>
-         </div><!-- Save Location Selection -->
-         <div class="mb-6 p-4 bg-blue-500/10 rounded-lg border border-blue-500/30">
-          <label class="block text-gray-300 text-sm font-medium mb-3">📁 Lokasi Simpanan:</label>
-          <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-           <div class="flex-1 bg-gray-800 rounded-lg p-3 border border-gray-700 flex items-center gap-2">
-            <svg class="w-5 h-5 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
-            </svg><span class="text-gray-300 text-sm" id="selectedPath">Disimpan secara automatik ke folder "Downloads" peranti anda</span>
-           </div>
-          </div>
-         </div><!-- Group Selection for PDF -->
-         <div class="mb-6" id="groupSelectionSection" style="display: none;">
-          <label class="block text-gray-400 text-sm mb-3">Pilih kumpulan untuk dijana:</label>
-          <div class="flex gap-2 mb-3">
-             <input type="text" id="genGroupSearchInput" class="input-3d flex-1 text-sm py-2 px-3" placeholder="🔍 Filter senarai di bawah..." onkeyup="updateGroupCheckboxes()">
-          </div>
-          <div id="groupCheckboxes" class="flex flex-wrap gap-2 max-h-32 overflow-y-auto scrollbar-custom p-2">
-          </div>
-          <div class="flex gap-2 mt-3">
-            <button class="text-purple-400 text-sm hover:text-purple-300" onclick="selectAllGroups()">Pilih Semua Dilihat</button> <span class="text-gray-600">|</span> <button class="text-purple-400 text-sm hover:text-purple-300" onclick="deselectAllGroups()">Nyahpilih Semua Dilihat</button>
-          </div>
-         </div><!-- Output Options -->
-         <div class="mb-6"><label class="block text-gray-400 text-sm mb-3">Pilihan Output:</label>
-          <div class="space-y-3"><label class="flex items-center gap-3 cursor-pointer"> <input type="radio" name="outputMode" value="single" checked class="w-4 h-4 accent-purple-500"> <span class="text-white">Satu fail PDF (semua sijil)</span> </label> <label class="flex items-center gap-3 cursor-pointer"> <input type="radio" name="outputMode" value="byGroup" class="w-4 h-4 accent-purple-500"> <span class="text-white">Berasingan mengikut kumpulan</span> </label> <label class="flex items-center gap-3 cursor-pointer"> <input type="radio" name="outputMode" value="individual" class="w-4 h-4 accent-purple-500"> <span class="text-white">Satu PDF setiap sijil</span> </label>
-          </div>
-         </div><!-- Custom Filename Options -->
-         <div class="mb-6" id="fileNameConfigSection" style="display: none;">
-          <label class="block text-gray-400 text-sm mb-3">Format Nama Fail (Gabungan Lajur): <span class="text-red-400">*Wajib pilih untuk mod individu</span></label>
-          <div id="fileNameCheckboxes" class="flex flex-wrap gap-2 max-h-32 overflow-y-auto scrollbar-custom p-2">
-          </div>
-          <div class="mt-2 text-sm text-gray-500">Contoh: <span id="fileNamePreview" class="text-white">Sila pilih sekurang-kurangnya 1 lajur</span></div>
-         </div><!-- Preview Before Generation -->
-         <div class="mb-6">
-          <button class="btn-3d w-full py-3 text-md" style="background: linear-gradient(135deg, #0ea5e9, #38bdf8); box-shadow: 0 6px 0 #0369a1, 0 10px 20px rgba(14, 165, 233, 0.4);" onclick="previewFinalCertificate()">
-           <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg> Preview Rupa Sijil </button>
-          <div id="finalPreviewContainer" class="hidden mt-4 p-4 glass-card text-center">
-           <h4 class="text-white text-sm font-medium mb-3">Preview Hasil Akhir Sijil:</h4>
-           <img id="finalPreviewImage" class="max-w-full h-auto rounded border border-gray-600 mx-auto" src="">
-          </div>
-         </div>
-
-         <!-- Generate Button & Reset --> 
-         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button class="btn-3d w-full py-4 text-lg md:col-span-1" style="background: linear-gradient(135deg, #0ea5e9, #38bdf8); box-shadow: 0 6px 0 #0284c7, 0 10px 20px rgba(14, 165, 233, 0.4);" onclick="shareToSocial()">
-           <svg class="w-6 h-6 inline mr-2" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg> Kongsi </button>
-          <button class="btn-3d btn-accent w-full py-4 text-lg md:col-span-1" onclick="generatePDFs()" id="generateBtn">
-           <svg class="w-6 h-6 inline mr-2" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-           </svg> Jana PDF </button>
-          <button class="btn-3d w-full py-4 text-lg md:col-span-1" style="background: linear-gradient(135deg, #ef4444, #f87171); box-shadow: 0 6px 0 #b91c1c, 0 10px 20px rgba(239, 68, 68, 0.4);" onclick="resetProject()">
-           <svg class="w-6 h-6 inline mr-2" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg> Reset </button>
-         </div> <!-- Progress -->
-         <div id="generateProgress" class="mt-6 hidden">
-          <div class="flex items-center justify-between mb-2"><span class="text-gray-400 text-sm">Menjana sijil...</span> <span class="text-white font-medium" id="progressText">0%</span>
-          </div>
-          <div class="progress-bar">
-           <div class="progress-fill" id="progressFill" style="width: 0%"></div>
-          </div>
-          <p class="text-gray-500 text-xs mt-2" id="progressDetail">Memproses...</p>
-         </div>
-        </div>
-       </div>
+      <div>
+       <h1 id="appTitle" class="text-lg font-bold text-slate-800 leading-tight">PWA Generator Studio</h1>
+       <p class="text-xs text-slate-500">Penjana Aplikasi PWA Berkuasa AI</p>
       </div>
+     </div>
+     <div class="flex items-center gap-2"><span id="versionBadge" class="version-badge">v1.0</span> <button onclick="showHelp()" class="w-8 h-8 rounded-lg bg-blue-50 hover:bg-blue-100 flex items-center justify-center transition" title="Bantuan"> <i data-lucide="help-circle" style="width:16px;height:16px;color:#2563eb;"></i> </button>
      </div>
     </div>
-   </div><!-- Toast Notification -->
-   <div class="toast" id="toast"></div>
+   </header><!-- Mode Toggle -->
+   <div class="w-full px-4 pb-3" style="flex-shrink:0;">
+    <div class="max-w-7xl mx-auto">
+     <div class="mode-toggle inline-flex"><button class="mode-btn active" id="modeNew" onclick="setMode('new')"> <span class="flex items-center gap-1.5"><i data-lucide="plus-circle" style="width:14px;height:14px;"></i> Baru</span> </button> <button class="mode-btn" id="modeEditor" onclick="setMode('editor')"> <span class="flex items-center gap-1.5"><i data-lucide="wrench" style="width:14px;height:14px;"></i> Editor/Repair</span> </button>
+     </div>
+    </div>
+   </div><!-- Main Content -->
+   <div class="flex-1 w-full px-4 pb-4 overflow-auto">
+    <div class="max-w-7xl mx-auto main-layout flex gap-4" style="height:100%;"><!-- Left: Prompt + Code -->
+     <div class="flex-1 flex flex-col gap-3 min-w-0" style="min-height:0;"><!-- Prompt Input -->
+      <div class="bg-white rounded-2xl border border-blue-100 shadow-sm p-4" style="flex-shrink:0;"><label class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 block">Prompt Arahan</label> <textarea id="promptInput" rows="3" class="w-full bg-blue-50/50 border border-blue-100 rounded-xl p-3 text-sm text-slate-700 outline-none resize-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition" placeholder="Huraikan aplikasi PWA yang anda mahu..."></textarea> <!-- Editor Mode: Paste Code -->
+       <div id="pasteCodeSection" class="hidden mt-3"><label class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 block">Tampal Kod Sedia Ada (untuk ubah suai/repair)</label> <textarea id="pasteCodeInput" rows="5" class="code-editor" style="height:120px;" placeholder="Tampal kod HTML/JS/CSS anda di sini untuk diperbaiki..."></textarea>
+       </div>
+       <div class="flex items-center gap-2 mt-3"><button id="generateBtn" onclick="generateCode()" class="gen-btn flex items-center gap-2"> <i data-lucide="zap" style="width:16px;height:16px;"></i> <span id="genBtnText">Jana PWA</span> </button> <button onclick="copyCurrentCode()" class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-semibold transition flex items-center gap-1.5" title="Salin Kod"> <i data-lucide="copy" style="width:14px;height:14px;"></i> Salin </button> <button onclick="downloadAllFiles()" class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-semibold transition flex items-center gap-1.5" title="Muat Turun Semua"> <i data-lucide="download" style="width:14px;height:14px;"></i> Muat Turun </button>
+       </div>
+      </div><!-- File Tabs -->
+      <div class="flex items-center gap-1.5 flex-wrap" style="flex-shrink:0;"><button class="tab-btn active" data-tab="index" onclick="switchTab('index')">index.html</button> <button class="tab-btn" data-tab="manifest" onclick="switchTab('manifest')">manifest.json</button> <button class="tab-btn" data-tab="sw" onclick="switchTab('sw')">sw.js</button> <button class="tab-btn" data-tab="gas" onclick="switchTab('gas')">Google Apps Script</button> <button class="tab-btn" data-tab="other" onclick="switchTab('other')">Other</button> <span id="fileSizeBadge" class="file-size-badge ml-auto">0 B</span>
+      </div><!-- Code Display -->
+      <div class="flex-1 relative rounded-2xl overflow-hidden border border-blue-100 shadow-sm bg-white" style="min-height:200px;"><textarea id="codeDisplay" class="code-editor" style="border:none;border-radius:16px;height:100%;" spellcheck="false" placeholder="Kod akan dipaparkan di sini selepas dijana..."></textarea>
+      </div>
+     </div><!-- Right: iPhone Mockup -->
+     <div class="flex flex-col items-center gap-3" style="flex-shrink:0;">
+      <p class="text-xs font-semibold text-slate-400 uppercase tracking-widest">Pratonton Langsung</p>
+      <div class="iphone-frame">
+       <div class="iphone-notch"></div>
+       <div class="iphone-screen"><iframe id="previewFrame" sandbox="allow-scripts allow-same-origin" srcdoc="<html><body style='display:flex;align-items:center;justify-content:center;height:100%;font-family:sans-serif;color:#94a3b8;background:#f8fafc;'><div style='text-align:center;'><p style='font-size:36px;margin:0;'>📱</p><p style='font-size:13px;margin-top:8px;'>Pratonton PWA</p></div></body></html>"></iframe>
+       </div>
+       <div class="iphone-home"></div>
+      </div><button onclick="refreshPreview()" class="flex items-center gap-1.5 text-xs font-semibold text-blue-500 hover:text-blue-700 transition"> <i data-lucide="refresh-cw" style="width:12px;height:12px;"></i> Muat Semula </button>
+     </div>
+    </div>
+   </div>
+  </div><!-- Toast Container -->
+  <div id="toastContainer" class="toast-container"></div><!-- Help Overlay -->
+  <div id="helpOverlay" class="help-overlay" style="display:none;" onclick="if(event.target===this)closeHelp()">
+   <div class="help-modal">
+    <div class="flex items-center justify-between mb-4">
+     <h2 class="text-lg font-bold text-slate-800">📋 Log Perubahan &amp; Bantuan</h2><button onclick="closeHelp()" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition"> <i data-lucide="x" style="width:16px;height:16px;color:#64748b;"></i> </button>
+    </div>
+    <div id="helpContent" class="text-sm text-slate-600 leading-relaxed space-y-3">
+     <p class="text-slate-400">Belum ada perubahan dijana lagi.</p>
+    </div>
+   </div>
   </div>
   <script>
-    // ==================== SECURITY / ANTI-THEFT (ENHANCED) ====================
-    window.oncontextmenu = function () { return false; };
-    document.oncontextmenu = function () { return false; };
-    document.addEventListener('contextmenu', e => {
-      e.preventDefault();
-      e.stopPropagation();
-    }, true);
+// ========== STATE ==========
+const state = {
+  mode: 'new',
+  currentTab: 'index',
+  version: { major: 1, minor: 0 },
+  files: {
+    index: '',
+    manifest: '',
+    sw: '',
+    gas: '',
+    other: ''
+  },
+  changelog: [],
+  isGenerating: false
+};
 
-    document.addEventListener('keydown', e => {
-      const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName);
-      const k = e.key ? e.key.toLowerCase() : '';
-      const c = e.keyCode;
-      
-      // Prevent F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U, etc
-      if (
-        k === 'f12' || c === 123 ||
-        (e.ctrlKey && e.shiftKey && (k === 'i' || k === 'j' || k === 'c' || c === 73 || c === 74 || c === 67)) ||
-        (e.ctrlKey && (k === 'u' || k === 's' || k === 'p' || c === 85 || c === 83 || c === 80)) ||
-        (e.metaKey && e.altKey && (k === 'i' || k === 'j' || k === 'c' || c === 73 || c === 74 || c === 67)) ||
-        (e.metaKey && (k === 'u' || k === 's' || k === 'p' || c === 85 || c === 83 || c === 80))
-      ) {
-        e.preventDefault();
-        e.stopPropagation();
-        return false;
-      }
-      
-      if (!isInput && (e.ctrlKey || e.metaKey) && (k === 'c' || c === 67)) {
-        e.preventDefault();
-        e.stopPropagation();
-        return false;
-      }
-    }, true);
+// ========== ELEMENT SDK ==========
+const defaultConfig = {
+  app_title: 'PWA Generator Studio',
+  background_color: '#eff6ff',
+  surface_color: '#ffffff',
+  text_color: '#1e293b',
+  primary_action: '#2563eb',
+  secondary_action: '#64748b'
+};
 
-    document.addEventListener('dragstart', e => {
-      if (e.target.tagName === 'IMG') {
-        e.preventDefault();
-      }
+window.elementSdk.init({
+  defaultConfig,
+  onConfigChange: async (config) => {
+    const title = config.app_title || defaultConfig.app_title;
+    const bg = config.background_color || defaultConfig.background_color;
+    const surface = config.surface_color || defaultConfig.surface_color;
+    const text = config.text_color || defaultConfig.text_color;
+    const primary = config.primary_action || defaultConfig.primary_action;
+    const secondary = config.secondary_action || defaultConfig.secondary_action;
+
+    const el = id => document.getElementById(id);
+    const appRoot = el('app-root');
+    if (appRoot) appRoot.style.background = `linear-gradient(180deg, ${bg} 0%, ${surface} 40%)`;
+
+    const titleEl = el('appTitle');
+    if (titleEl) { titleEl.textContent = title; titleEl.style.color = text; }
+
+    document.querySelectorAll('.gen-btn').forEach(b => {
+      b.style.background = `linear-gradient(135deg, ${primary}, ${primary})`;
     });
-
-    document.addEventListener('selectstart', e => {
-      if (!['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) {
-        e.preventDefault();
-      }
+    document.querySelectorAll('.tab-btn.active').forEach(b => {
+      b.style.background = primary; b.style.borderColor = primary;
     });
-
-    // ==================== APP STATE ====================
-    const appState = {
-      certificateImage: null,
-      certificateWidth: 0,
-      certificateHeight: 0,
-      excelData: [],
-      headers: [],
-      fields: [],
-      selectedFieldId: null,
-      zoom: 1,
-      groups: {},
-      groupColumns: [],
-      selectedGroups: new Set(),
-      saveFolder: null,
-      savePath: 'Muat turun (Default)',
-      showBackground: true,
-      fileNameColumns: []
-    };
-    
-    // ==================== DEFAULT CONFIG ====================
-    const defaultConfig = {
-      app_title: 'Sijil Generator Pro',
-      primary_color: '#0ea5e9',
-      secondary_color: '#10b981',
-      accent_color: '#3b82f6',
-      text_color: '#0f172a',
-      background_color: '#f0fdf4'
-    };
-    
-    let config = { ...defaultConfig };
-    
-    // ==================== ELEMENT SDK INIT ====================
-    if (window.elementSdk) {
-      window.elementSdk.init({
-        defaultConfig,
-        onConfigChange: async (newConfig) => {
-          config = { ...defaultConfig, ...newConfig };
-          applyConfig();
-        },
-        mapToCapabilities: (cfg) => ({
-          recolorables: [
-            {
-              get: () => cfg.background_color || defaultConfig.background_color,
-              set: (v) => window.elementSdk.setConfig({ background_color: v })
-            },
-            {
-              get: () => cfg.primary_color || defaultConfig.primary_color,
-              set: (v) => window.elementSdk.setConfig({ primary_color: v })
-            },
-            {
-              get: () => cfg.secondary_color || defaultConfig.secondary_color,
-              set: (v) => window.elementSdk.setConfig({ secondary_color: v })
-            },
-            {
-              get: () => cfg.accent_color || defaultConfig.accent_color,
-              set: (v) => window.elementSdk.setConfig({ accent_color: v })
-            },
-            {
-              get: () => cfg.text_color || defaultConfig.text_color,
-              set: (v) => window.elementSdk.setConfig({ text_color: v })
-            }
-          ],
-          borderables: [],
-          fontEditable: undefined,
-          fontSizeable: undefined
-        }),
-        mapToEditPanelValues: (cfg) => new Map([
-          ['app_title', cfg.app_title || defaultConfig.app_title]
-        ])
-      });
-    }
-    
-    function applyConfig() {
-      document.getElementById('appTitle').textContent = config.app_title || defaultConfig.app_title;
-      document.body.style.background = `linear-gradient(135deg, ${config.background_color || defaultConfig.background_color} 0%, ${config.primary_color || defaultConfig.primary_color}50 50%, ${config.background_color || defaultConfig.background_color} 100%)`;
-    }
-    
-    // ==================== INITIALIZATION ====================
-    document.addEventListener('DOMContentLoaded', () => {
-      initDropZones();
-      applyConfig();
-      
-      // Background toggle
-      const bgToggle = document.getElementById('showBackgroundToggle');
-      bgToggle.addEventListener('change', (e) => {
-        appState.showBackground = e.target.checked;
-        updateBackgroundVisibility();
-        updatePDFBackgroundStatus();
-      });
-
-      // Keyboard arrow keys for moving field
-      document.addEventListener('keydown', (e) => {
-        if (appState.selectedFieldId) {
-          if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
-          
-          const field = appState.fields.find(f => f.id === appState.selectedFieldId);
-          if (!field) return;
-
-          let moved = false;
-          const step = e.shiftKey ? 1 : 0.2;
-
-          switch(e.key) {
-            case 'ArrowUp': field.y -= step; moved = true; break;
-            case 'ArrowDown': field.y += step; moved = true; break;
-            case 'ArrowLeft': field.x -= step; moved = true; break;
-            case 'ArrowRight': field.x += step; moved = true; break;
-          }
-
-          if (moved) {
-            e.preventDefault;
-            field.x = Math.max(0, Math.min(100, field.x));
-            field.y = Math.max(0, Math.min(100, field.y));
-            
-            const fieldEl = document.getElementById(field.id);
-            fieldEl.style.left = field.x + '%';
-            fieldEl.style.top = field.y + '%';
-            
-            if (appState.selectedFieldId === field.id) {
-              document.getElementById('fieldPosX').value = field.x.toFixed(1);
-              document.getElementById('fieldPosY').value = field.y.toFixed(1);
-            }
-          }
-        }
-      });
-
-      // --- CANVAS PANNING LOGIC ---
-      const mover = document.getElementById('certificateMover');
-      let isPanning = false;
-      let startX = 0, startY = 0;
-      let currentX = 0, currentY = 0;
-
-      if (mover) {
-        mover.addEventListener('mousedown', (e) => {
-          if (e.target.closest('.text-field')) return; // let fields handle their own drag
-          isPanning = true;
-          startX = e.clientX - currentX;
-          startY = e.clientY - currentY;
-          mover.style.cursor = 'grabbing';
-          e.preventDefault(); // Prevents image selection
-        });
-        
-        window.addEventListener('mousemove', (e) => {
-          if (isPanning) {
-            currentX = e.clientX - startX;
-            currentY = e.clientY - startY;
-            mover.style.transform = `translate(calc(-50% + ${currentX}px), calc(-50% + ${currentY}px))`;
-          }
-        });
-        
-        window.addEventListener('mouseup', () => {
-          if (isPanning) {
-            isPanning = false;
-            mover.style.cursor = 'grab';
-          }
-        });
-        
-        document.getElementById('previewContainer').addEventListener('mouseleave', () => {
-          if (isPanning) {
-            isPanning = false;
-            mover.style.cursor = 'grab';
-          }
-        });
-      }
+    document.querySelectorAll('.version-badge').forEach(b => {
+      b.style.background = `linear-gradient(135deg, ${primary}, ${primary})`;
     });
-    
-    // ==================== FILE UPLOAD HANDLERS ====================
-    function initDropZones() {
-      const certZone = document.getElementById('certificateDropZone');
-      const excelZone = document.getElementById('excelDropZone');
-      const certInput = document.getElementById('certificateInput');
-      const excelInput = document.getElementById('excelInput');
-      
-      // Certificate Drop Zone
-      certZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        certZone.classList.add('dragover');
-      });
-      
-      certZone.addEventListener('dragleave', () => {
-        certZone.classList.remove('dragover');
-      });
-      
-      certZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        certZone.classList.remove('dragover');
-        const file = e.dataTransfer.files[0];
-        if (file && file.type.startsWith('image/')) {
-          handleCertificateUpload(file);
-        } else {
-          showToast('Sila muat naik fail gambar sahaja!', 'error');
-        }
-      });
-      
-      certInput.addEventListener('change', (e) => {
-        if (e.target.files[0]) {
-          handleCertificateUpload(e.target.files[0]);
-        }
-      });
-      
-      // Excel Drop Zone
-      excelZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        excelZone.classList.add('dragover');
-      });
-      
-      excelZone.addEventListener('dragleave', () => {
-        excelZone.classList.remove('dragover');
-      });
-      
-      excelZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        excelZone.classList.remove('dragover');
-        const file = e.dataTransfer.files[0];
-        if (file) {
-          handleExcelUpload(file);
-        }
-      });
-      
-      excelInput.addEventListener('change', (e) => {
-        if (e.target.files[0]) {
-          handleExcelUpload(e.target.files[0]);
-        }
-      });
-    }
-    
-    function handleCertificateUpload(file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          appState.certificateImage = e.target.result;
-          appState.certificateWidth = img.width;
-          appState.certificateHeight = img.height;
-          
-          document.getElementById('certificateFileName').textContent = file.name;
-          document.getElementById('certificatePreviewSmall').classList.remove('hidden');
-          
-          displayCertificate();
-          updateSteps();
-          updateGenerateReadiness();
-          showToast('Sijil berjaya dimuat naik!');
-        };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    }
-    
-    function handleExcelUpload(file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const sheetName = workbook.SheetNames[0];
-          const sheet = workbook.Sheets[sheetName];
-          const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-          
-          if (jsonData.length < 2) {
-            showToast('Fail Excel mesti mempunyai header dan data!', 'error');
-            return;
-          }
-          
-          appState.headers = jsonData[0].map(h => String(h || '').trim());
-          appState.excelData = jsonData.slice(1).filter(row => row.some(cell => cell !== null && cell !== undefined && cell !== ''));
-          
-          document.getElementById('excelFileName').textContent = file.name;
-          document.getElementById('excelInfo').classList.remove('hidden');
-          document.getElementById('totalRows').textContent = appState.excelData.length;
-          
-          updateGroupColumnSelect();
-          renderFileNameCheckboxes();
-          updateFieldDataSourceOptions();
-          updateDataTable();
-          updateSteps();
-          updateGenerateReadiness();
-          
-          showToast(`${appState.excelData.length} rekod berjaya dimuat!`);
-        } catch (error) {
-          console.error('Excel parse error:', error);
-          showToast('Gagal membaca fail Excel!', 'error');
-        }
-      };
-      reader.readAsArrayBuffer(file);
-    }
+  },
+  mapToCapabilities: (config) => ({
+    recolorables: [
+      { get: () => config.background_color || defaultConfig.background_color, set: (v) => { config.background_color = v; window.elementSdk.setConfig({ background_color: v }); } },
+      { get: () => config.surface_color || defaultConfig.surface_color, set: (v) => { config.surface_color = v; window.elementSdk.setConfig({ surface_color: v }); } },
+      { get: () => config.text_color || defaultConfig.text_color, set: (v) => { config.text_color = v; window.elementSdk.setConfig({ text_color: v }); } },
+      { get: () => config.primary_action || defaultConfig.primary_action, set: (v) => { config.primary_action = v; window.elementSdk.setConfig({ primary_action: v }); } },
+      { get: () => config.secondary_action || defaultConfig.secondary_action, set: (v) => { config.secondary_action = v; window.elementSdk.setConfig({ secondary_action: v }); } }
+    ],
+    borderables: [],
+    fontEditable: {
+      get: () => config.font_family || 'DM Sans',
+      set: (v) => { config.font_family = v; window.elementSdk.setConfig({ font_family: v }); }
+    },
+    fontSizeable: undefined
+  }),
+  mapToEditPanelValues: (config) => new Map([
+    ['app_title', config.app_title || defaultConfig.app_title]
+  ])
+});
 
-    async function importGoogleSheet() {
-      const url = document.getElementById('gsheetUrlInput').value;
-      if (!url) {
-        showToast('Sila masukkan URL Google Sheets', 'error');
-        return;
-      }
-      const match = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
-      if (!match) {
-        showToast('Format URL tidak sah. Pastikan copy link penuh.', 'error');
-        return;
-      }
-      const sheetId = match[1];
-      const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
-      
-      showToast('Sedang memuat turun data...');
-      try {
-        const response = await fetch(csvUrl);
-        if (!response.ok) throw new Error('Network error');
-        const csvText = await response.text();
-        
-        const workbook = XLSX.read(csvText, { type: 'string' });
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-        
-        if (jsonData.length < 2) {
-          showToast('Tiada data atau format tidak sah!', 'error');
-          return;
-        }
-        
-        appState.headers = jsonData[0].map(h => String(h || '').trim());
-        appState.excelData = jsonData.slice(1).filter(row => row.some(cell => cell !== null && cell !== undefined && cell !== ''));
-        
-        document.getElementById('excelFileName').textContent = "Google Sheets Data";
-        document.getElementById('excelInfo').classList.remove('hidden');
-        document.getElementById('totalRows').textContent = appState.excelData.length;
-        
-        updateGroupColumnSelect();
-        renderFileNameCheckboxes();
-        updateFieldDataSourceOptions();
-        updateDataTable();
-        updateSteps();
-        updateGenerateReadiness();
-        
-        showToast(`${appState.excelData.length} rekod berjaya diimport!`);
-      } catch (err) {
-        console.error(err);
-        showToast('Ralat memuat data. Pastikan Sheet diset "Anyone with the link can view".', 'error');
-      }
-    }
+// ========== UTILITY FUNCTIONS ==========
 
-    function importClipboardData() {
-      const text = document.getElementById('clipboardInput').value.trim();
-      if (!text) {
-        showToast('Sila tampal data terlebih dahulu', 'error');
-        return;
-      }
-      try {
-        const workbook = XLSX.read(text, { type: 'string' });
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-        
-        if (jsonData.length < 2) {
-          showToast('Tiada data atau format tidak sah!', 'error');
-          return;
-        }
-        
-        appState.headers = jsonData[0].map(h => String(h || '').trim());
-        appState.excelData = jsonData.slice(1).filter(row => row.some(cell => cell !== null && cell !== undefined && cell !== ''));
-        
-        document.getElementById('excelFileName').textContent = "Data Clipboard";
-        document.getElementById('excelInfo').classList.remove('hidden');
-        document.getElementById('totalRows').textContent = appState.excelData.length;
-        
-        updateGroupColumnSelect();
-        renderFileNameCheckboxes();
-        updateFieldDataSourceOptions();
-        updateDataTable();
-        updateSteps();
-        updateGenerateReadiness();
-        
-        showToast(`${appState.excelData.length} rekod berjaya diimport!`);
-        document.getElementById('clipboardInput').value = '';
-      } catch (err) {
-        console.error(err);
-        showToast('Ralat memproses data clipboard.', 'error');
-      }
-    }
-    
-    // ==================== CERTIFICATE DISPLAY ====================
-    function displayCertificate() {
-      const canvas = document.getElementById('certificateCanvas');
-      const img = document.getElementById('certificateImage');
-      const emptyPreview = document.getElementById('emptyPreview');
-      const mover = document.getElementById('certificateMover');
-      
-      img.src = appState.certificateImage;
-      if (mover) mover.style.display = 'block';
-      if (emptyPreview) emptyPreview.style.display = 'none';
-      
-      document.getElementById('fieldConfigPanel').style.display = 'block';
-      
-      updateBackgroundVisibility();
-      updateCanvasScale();
-    }
-    
-    function updateBackgroundVisibility() {
-      const img = document.getElementById('certificateImage');
-      const canvas = document.getElementById('certificateCanvas');
-      if (appState.showBackground) {
-        img.style.visibility = 'visible';
-        canvas.style.backgroundColor = 'transparent';
-      } else {
-        img.style.visibility = 'hidden';
-        canvas.style.backgroundColor = '#ffffff';
-      }
-    }
-    
-    function updatePDFBackgroundStatus() {
-      const status = document.getElementById('pdfBgStatus');
-      status.textContent = appState.showBackground ? 'Ada latar' : 'Kosong';
-      status.style.color = appState.showBackground ? '#34d399' : '#fbbf24';
-    }
-    
-    function updateCanvasScale() {
-      const canvas = document.getElementById('certificateCanvas');
-      canvas.style.transform = `scale(${appState.zoom})`;
-      document.getElementById('zoomLevel').textContent = Math.round(appState.zoom * 100) + '%';
-    }
-    
-    function adjustZoom(delta) {
-      appState.zoom = Math.max(0.3, Math.min(2, appState.zoom + delta));
-      updateCanvasScale();
-    }
-    
-    function resetZoom() {
-      appState.zoom = 1;
-      updateCanvasScale();
-    }
-    
-    // ==================== FIELD MANAGEMENT ====================
-    function addNewField() {
-      if (!appState.certificateImage) {
-        showToast('Sila muat naik sijil terlebih dahulu!', 'error');
-        return;
-      }
-      
-      const fieldId = 'field_' + Date.now();
-      const newField = {
-        id: fieldId,
-        dataSource: appState.headers[0] || '',
-        font: 'Arial',
-        fontSize: 60,
-        fontWeight: '700',
-        color: '#000000',
-        textAlign: 'center',
-        textBaseline: 'middle',
-        x: 50,
-        y: 50,
-        width: 40,
-        height: 15
-      };
-      
-      appState.fields.push(newField);
-      renderField(newField);
-      selectField(fieldId);
-      updateFieldsList();
-      updateGenerateReadiness();
-      
-      showToast('Medan baru ditambah!');
-    }
-    
-    function renderField(field) {
-      const canvas = document.getElementById('certificateCanvas');
-      
-      let fieldEl = document.getElementById(field.id);
-      if (fieldEl) fieldEl.remove();
-      
-      fieldEl = document.createElement('div');
-      fieldEl.id = field.id;
-      fieldEl.className = 'text-field';
-      fieldEl.innerHTML = `
-        <span class="field-label">${field.dataSource || 'Tiada Data'}</span>
-        <span class="field-text">${getSampleText(field.dataSource)}</span>
-        <div class="resize-handle" onmousedown="startResize(event, '${field.id}')"></div>
-      `;
-      
-      const textEl = fieldEl.querySelector('.field-text');
-      textEl.style.fontFamily = `'${field.font}', sans-serif`;
-      textEl.style.fontWeight = field.fontWeight;
-      textEl.style.color = field.color;
-      textEl.style.textAlign = field.textAlign;
-      textEl.style.width = '100%';
-      textEl.style.whiteSpace = 'pre-wrap';
-      textEl.style.wordWrap = 'break-word';
-      textEl.style.lineHeight = '1.2';
-      
-      fieldEl.style.left = field.x + '%';
-      fieldEl.style.top = field.y + '%';
-      fieldEl.style.width = field.width + '%';
-      fieldEl.style.height = field.height + '%';
-      fieldEl.style.transform = 'translate(-50%, -50%)';
-      
-      if(field.textAlign === 'left') fieldEl.style.alignItems = 'flex-start';
-      else if(field.textAlign === 'right') fieldEl.style.alignItems = 'flex-end';
-      else fieldEl.style.alignItems = 'center';
-      
-      if(field.textBaseline === 'top') fieldEl.style.justifyContent = 'flex-start';
-      else if(field.textBaseline === 'bottom') fieldEl.style.justifyContent = 'flex-end';
-      else fieldEl.style.justifyContent = 'center';
-      
-      fieldEl.addEventListener('mousedown', (e) => {
-        if (!e.target.classList.contains('resize-handle')) {
-          startDrag(e, field.id);
-        }
-      });
-      
-      fieldEl.addEventListener('click', (e) => {
-        e.stopPropagation();
-        selectField(field.id);
-      });
-      
-      canvas.appendChild(fieldEl);
-      
-      setTimeout(() => {
-        textEl.style.fontSize = field.fontSize + 'px';
-      }, 0);
-    }
-    
-    function applyFieldStyles(el, field) {
-      // Obsolete. Kept to avoid undefined errors if accidentally called elsewhere.
-    }
-    
-    function getSampleText(dataSource) {
-      if (!dataSource || appState.excelData.length === 0) return '[Data]';
-      const colIndex = appState.headers.indexOf(dataSource);
-      if (colIndex === -1) return '[Data]';
-      return appState.excelData[0][colIndex] || '[Data]';
-    }
-    
-    function selectField(fieldId) {
-      // Deselect all
-      document.querySelectorAll('.text-field').forEach(el => el.classList.remove('selected'));
-      
-      // Select new
-      const fieldEl = document.getElementById(fieldId);
-      if (fieldEl) {
-        fieldEl.classList.add('selected');
-        appState.selectedFieldId = fieldId;
-        
-        const field = appState.fields.find(f => f.id === fieldId);
-        if (field) {
-          populateFieldEditor(field);
-          document.getElementById('fieldEditor').style.display = 'block';
-        }
-      }
-    }
-    
-    function populateFieldEditor(field) {
-      document.getElementById('fieldDataSource').value = field.dataSource;
-      document.getElementById('fieldFont').value = field.font;
-      document.getElementById('fieldFontSize').value = field.fontSize || 60;
-      document.getElementById('fieldFontWeight').value = field.fontWeight;
-      document.getElementById('fieldColor').value = field.color;
-      document.getElementById('fieldColorText').value = field.color;
-      document.getElementById('fieldTextAlign').value = field.textAlign;
-      document.getElementById('fieldTextBaseline').value = field.textBaseline || 'middle';
-      document.getElementById('fieldPosX').value = field.x.toFixed(1);
-      document.getElementById('fieldPosY').value = field.y.toFixed(1);
-      document.getElementById('fieldWidth').value = field.width.toFixed(1);
-      document.getElementById('fieldHeight').value = field.height.toFixed(1);
-    }
-    
-    function updateSelectedField() {
-      if (!appState.selectedFieldId) return;
-      
-      const field = appState.fields.find(f => f.id === appState.selectedFieldId);
-      if (!field) return;
-      
-      field.dataSource = document.getElementById('fieldDataSource').value;
-      field.font = document.getElementById('fieldFont').value;
-      field.fontSize = parseInt(document.getElementById('fieldFontSize').value) || 60;
-      field.fontWeight = document.getElementById('fieldFontWeight').value;
-      field.color = document.getElementById('fieldColor').value;
-      field.textAlign = document.getElementById('fieldTextAlign').value;
-      field.textBaseline = document.getElementById('fieldTextBaseline').value;
-      
-      document.getElementById('fieldColorText').value = field.color;
-      
-      renderField(field);
-      selectField(field.id);
-      updateFieldsList();
-    }
-    
-    function updateSelectedFieldPosition() {
-      if (!appState.selectedFieldId) return;
-      
-      const field = appState.fields.find(f => f.id === appState.selectedFieldId);
-      if (!field) return;
-      
-      field.x = parseFloat(document.getElementById('fieldPosX').value) || 50;
-      field.y = parseFloat(document.getElementById('fieldPosY').value) || 50;
-      field.width = parseFloat(document.getElementById('fieldWidth').value) || 40;
-      field.height = parseFloat(document.getElementById('fieldHeight').value) || 15;
-      
-      renderField(field);
-      selectField(field.id);
-    }
-    
-    function deleteSelectedField() {
-      if (!appState.selectedFieldId) return;
-      
-      const fieldEl = document.getElementById(appState.selectedFieldId);
-      if (fieldEl) fieldEl.remove();
-      
-      appState.fields = appState.fields.filter(f => f.id !== appState.selectedFieldId);
-      appState.selectedFieldId = null;
-      
-      document.getElementById('fieldEditor').style.display = 'none';
-      updateFieldsList();
-      updateGenerateReadiness();
-      
-      showToast('Medan dipadam!');
-    }
-    
-    // ==================== DRAG & DROP ====================
-    let dragState = { isDragging: false, fieldId: null, startX: 0, startY: 0, fieldStartX: 0, fieldStartY: 0 };
-    
-    function startDrag(e, fieldId) {
-      e.preventDefault();
-      e.stopPropagation();
-      
-      const canvas = document.getElementById('certificateCanvas');
-      const rect = canvas.getBoundingClientRect();
-      
-      dragState.isDragging = true;
-      dragState.fieldId = fieldId;
-      dragState.startX = e.clientX;
-      dragState.startY = e.clientY;
-      
-      const field = appState.fields.find(f => f.id === fieldId);
-      dragState.fieldStartX = field.x;
-      dragState.fieldStartY = field.y;
-      
-      document.getElementById(fieldId).classList.add('dragging');
-      
-      document.addEventListener('mousemove', onDrag);
-      document.addEventListener('mouseup', stopDrag);
-    }
-    
-    function onDrag(e) {
-      if (!dragState.isDragging) return;
-      
-      const canvas = document.getElementById('certificateCanvas');
-      const img = document.getElementById('certificateImage');
-      
-      const deltaX = (e.clientX - dragState.startX) / (img.offsetWidth * appState.zoom) * 100;
-      const deltaY = (e.clientY - dragState.startY) / (img.offsetHeight * appState.zoom) * 100;
-      
-      const field = appState.fields.find(f => f.id === dragState.fieldId);
-      if (field) {
-        field.x = Math.max(0, Math.min(100, dragState.fieldStartX + deltaX));
-        field.y = Math.max(0, Math.min(100, dragState.fieldStartY + deltaY));
-        
-        const fieldEl = document.getElementById(field.id);
-        fieldEl.style.left = field.x + '%';
-        fieldEl.style.top = field.y + '%';
-        
-        if (appState.selectedFieldId === field.id) {
-          document.getElementById('fieldPosX').value = field.x.toFixed(1);
-          document.getElementById('fieldPosY').value = field.y.toFixed(1);
-        }
-      }
-    }
-    
-    function stopDrag() {
-      if (dragState.fieldId) {
-        document.getElementById(dragState.fieldId).classList.remove('dragging');
-      }
-      dragState.isDragging = false;
-      dragState.fieldId = null;
-      
-      document.removeEventListener('mousemove', onDrag);
-      document.removeEventListener('mouseup', stopDrag);
-    }
-    
-    // ==================== RESIZE ====================
-    let resizeState = { isResizing: false, fieldId: null, startX: 0, startY: 0, startWidth: 0, startHeight: 0 };
-    
-    function startResize(e, fieldId) {
-      e.preventDefault();
-      e.stopPropagation();
-      
-      resizeState.isResizing = true;
-      resizeState.fieldId = fieldId;
-      resizeState.startX = e.clientX;
-      resizeState.startY = e.clientY;
-      
-      const field = appState.fields.find(f => f.id === fieldId);
-      resizeState.startWidth = field.width;
-      resizeState.startHeight = field.height;
-      
-      document.addEventListener('mousemove', onResize);
-      document.addEventListener('mouseup', stopResize);
-    }
-    
-    function onResize(e) {
-      if (!resizeState.isResizing) return;
-      
-      const img = document.getElementById('certificateImage');
-      const zoom = appState.zoom || 1;
-      
-      const deltaX = (e.clientX - resizeState.startX) / (img.offsetWidth * zoom) * 100;
-      const deltaY = (e.clientY - resizeState.startY) / (img.offsetHeight * zoom) * 100;
-      
-      const field = appState.fields.find(f => f.id === resizeState.fieldId);
-      if (field) {
-        field.width = Math.max(5, resizeState.startWidth + deltaX * 2);
-        field.height = Math.max(5, resizeState.startHeight + deltaY * 2);
-        
-        renderField(field);
-        
-        if (appState.selectedFieldId === field.id) {
-          document.getElementById('fieldWidth').value = field.width.toFixed(1);
-          document.getElementById('fieldHeight').value = field.height.toFixed(1);
-        }
-      }
-    }
-    
-    function stopResize() {
-      resizeState.isResizing = false;
-      resizeState.fieldId = null;
-      
-      document.removeEventListener('mousemove', onResize);
-      document.removeEventListener('mouseup', stopResize);
-    }
-    
-    // ==================== GROUP MANAGEMENT ====================
-    function updateGroupColumnSelect() {
-      const container = document.getElementById('groupColumnCheckboxes');
-      if (!container) return;
-      container.innerHTML = '';
-      appState.groupColumns = [];
-      
-      appState.headers.forEach(header => {
-        const label = document.createElement('label');
-        label.className = 'group-badge cursor-pointer';
-        label.innerHTML = `
-          <input type="checkbox" class="hidden" value="${header}">
-          <span>${header}</span>
-        `;
-        label.addEventListener('click', (e) => {
-          e.preventDefault();
-          const cb = label.querySelector('input');
-          cb.checked = !cb.checked;
-          if (cb.checked) {
-            if (!appState.groupColumns.includes(header)) appState.groupColumns.push(header);
-            label.classList.add('selected');
-          } else {
-            appState.groupColumns = appState.groupColumns.filter(col => col !== header);
-            label.classList.remove('selected');
-          }
-          calculateGroups();
-        });
-        container.appendChild(label);
-      });
-      
-      document.getElementById('groupsPanel').style.display = 'block';
-    }
-    
-    function calculateGroups() {
-      appState.groups = {};
-      
-      if (appState.groupColumns.length === 0) {
-        document.getElementById('totalGroups').textContent = '0';
-        document.getElementById('groupsList').innerHTML = '<p class="text-gray-500 text-sm">Pilih lajur kumpulan</p>';
-        updateGenerateReadiness(); 
-        return;
-      }
-      
-      const colIndices = appState.groupColumns.map(col => appState.headers.indexOf(col)).filter(i => i !== -1);
-      
-      appState.excelData.forEach((row, rowIndex) => {
-        let groupParts = colIndices.map(i => String(row[i] || 'N/A').trim());
-        let groupName = groupParts.join(' - ');
-        if(!groupName) groupName = 'Lain-lain';
-        
-        if (!appState.groups[groupName]) {
-          appState.groups[groupName] = [];
-        }
-        appState.groups[groupName].push(rowIndex);
-      });
-      
-      const groupNames = Object.keys(appState.groups);
-      document.getElementById('totalGroups').textContent = groupNames.length;
-      
-      appState.selectedGroups = new Set(groupNames);
-      
-      renderGroupsList();
-      updateGenerateReadiness();
-    }
-    
-    function renderGroupsList() {
-      const container = document.getElementById('groupsList');
-      if (!container) return;
-      container.innerHTML = '';
-      
-      const searchTerm = (document.getElementById('groupSearchInput')?.value || '').toLowerCase();
-      const sortMode = document.getElementById('groupSortSelect')?.value || 'name_asc';
-      
-      let groupNames = Object.keys(appState.groups);
-      
-      if (searchTerm) {
-        groupNames = groupNames.filter(name => name.toLowerCase().includes(searchTerm));
-      }
-      
-      groupNames.sort((a, b) => {
-        if (sortMode === 'name_asc') return a.localeCompare(b);
-        if (sortMode === 'name_desc') return b.localeCompare(a);
-        if (sortMode === 'count_desc') return appState.groups[b].length - appState.groups[a].length;
-        if (sortMode === 'count_asc') return appState.groups[a].length - appState.groups[b].length;
-        return 0;
-      });
-      
-      groupNames.forEach(name => {
-        const badge = document.createElement('div');
-        badge.className = 'group-badge ' + (appState.selectedGroups.has(name) ? 'selected' : '');
-        badge.innerHTML = `
-          <span>${name}</span>
-          <span class="group-count">${appState.groups[name].length}</span>
-        `;
-        badge.addEventListener('click', () => {
-          toggleGroup(name, badge);
-        });
-        container.appendChild(badge);
-      });
-    }
-    
-    function toggleGroup(name, badge) {
-      if (appState.selectedGroups.has(name)) {
-        appState.selectedGroups.delete(name);
-        badge.classList.remove('selected');
-      } else {
-        appState.selectedGroups.add(name);
-        badge.classList.add('selected');
-      }
-      updatePDFCount();
-      updateGroupCheckboxes(); 
-    }
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; setTimeout(() => toast.remove(), 300); }, 3500);
+}
 
-    function selectAllGroupsPanel() {
-      const searchTerm = (document.getElementById('groupSearchInput')?.value || '').toLowerCase();
-      Object.keys(appState.groups).forEach(name => {
-         if(name.toLowerCase().includes(searchTerm)) {
-             appState.selectedGroups.add(name);
-         }
-      });
-      renderGroupsList();
-      updateGenerateReadiness();
-    }
+function toggleKeyVisibility() {
+  const input = document.getElementById('apiKeyInput');
+  input.type = input.type === 'password' ? 'text' : 'password';
+}
 
-    function deselectAllGroupsPanel() {
-      const searchTerm = (document.getElementById('groupSearchInput')?.value || '').toLowerCase();
-      Object.keys(appState.groups).forEach(name => {
-         if(name.toLowerCase().includes(searchTerm)) {
-             appState.selectedGroups.delete(name);
-         }
-      });
-      renderGroupsList();
-      updateGenerateReadiness();
-    }
-    
-    // ==================== FIELD DATA SOURCE OPTIONS ====================
-    function updateFieldDataSourceOptions() {
-      const select = document.getElementById('fieldDataSource');
-      select.innerHTML = '<option value="">-- Pilih Lajur --</option>';
-      
-      appState.headers.forEach(header => {
-        const opt = document.createElement('option');
-        opt.value = header;
-        opt.textContent = header;
-        select.appendChild(opt);
-      });
-    }
-    
-    // ==================== DATA TABLE ====================
-    function updateDataTable() {
-      const container = document.getElementById('dataTableContainer');
-      const noData = document.getElementById('noDataMessage');
-      const thead = document.getElementById('dataTableHead');
-      const tbody = document.getElementById('dataTableBody');
-      
-      if (appState.excelData.length === 0) {
-        container.classList.add('hidden');
-        noData.classList.remove('hidden');
-        return;
-      }
-      
-      container.classList.remove('hidden');
-      noData.classList.add('hidden');
-      
-      // Header
-      thead.innerHTML = '<tr>' + appState.headers.map(h => `<th>${h}</th>`).join('') + '</tr>';
-      
-      // Body (limit to 100 rows for performance)
-      const displayData = appState.excelData.slice(0, 100);
-      tbody.innerHTML = displayData.map(row => 
-        '<tr>' + appState.headers.map((_, i) => `<td>${row[i] !== undefined ? row[i] : ''}</td>`).join('') + '</tr>'
-      ).join('');
-      
-      document.getElementById('dataRowCount').textContent = appState.excelData.length;
-    }
-    
-    // ==================== FIELD LIST ====================
-    function updateFieldsList() {
-      const container = document.getElementById('fieldsList');
-      container.innerHTML = '';
-      
-      appState.fields.forEach(field => {
-        const item = document.createElement('div');
-        item.className = 'field-config-item cursor-pointer';
-        if (appState.selectedFieldId === field.id) {
-          item.style.borderColor = 'rgba(34, 211, 238, 0.6)';
-        }
-        item.innerHTML = `
-          <div class="flex items-center justify-between">
-            <div>
-              <span class="text-white font-medium">${field.dataSource || 'Tiada Data'}</span>
-              <span class="text-gray-500 text-xs ml-2">${field.font} ${field.fontSize}px</span>
-            </div>
-            <div class="w-4 h-4 rounded" style="background: ${field.color}"></div>
-          </div>
-        `;
-        item.addEventListener('click', () => selectField(field.id));
-        container.appendChild(item);
-      });
-    }
-    
-    // ==================== TAB SWITCHING ====================
-    function switchTab(tabName) {
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-      document.querySelector(`.tab-btn[data-tab="${tabName}"]`).classList.add('active');
-      
-      document.getElementById('designTab').classList.add('hidden');
-      document.getElementById('dataTab').classList.add('hidden');
-      document.getElementById('generateTab').classList.add('hidden');
-      
-      document.getElementById(tabName + 'Tab').classList.remove('hidden');
-    }
-    
-    // ==================== STEP INDICATOR ====================
-    function updateSteps() {
-      const step1 = document.getElementById('step1');
-      const step2 = document.getElementById('step2');
-      const step3 = document.getElementById('step3');
-      
-      if (appState.certificateImage && appState.excelData.length > 0) {
-        step1.classList.add('completed');
-        step1.classList.remove('active');
-        step2.classList.add('active');
-        
-        if (appState.fields.length > 0) {
-          step2.classList.add('completed');
-          step2.classList.remove('active');
-          step3.classList.add('active');
-        }
-      }
-      
-      // Update status badge
-      const badge = document.getElementById('statusBadge');
-      if (appState.certificateImage && appState.excelData.length > 0 && appState.fields.length > 0) {
-        badge.innerHTML = '<span class="status-ready">✓ Sedia untuk jana</span>';
-      } else {
-        badge.innerHTML = '<span class="status-pending">⏳ Sila lengkapkan tetapan</span>';
-      }
-    }
-    
-    // ==================== GENERATE READINESS ====================
-    function updateGenerateReadiness() {
-      const notReady = document.getElementById('generateNotReady');
-      const ready = document.getElementById('generateReady');
-      
-      const hasCert = !!appState.certificateImage;
-      const hasExcel = appState.excelData.length > 0;
-      const hasFields = appState.fields.length > 0;
-      
-      document.getElementById('checkCert').innerHTML = hasCert 
-        ? '<span class="text-green-400">✓</span> Gambar sijil dimuat naik'
-        : '<span class="text-red-400">✗</span> Muat naik gambar sijil';
-        
-      document.getElementById('checkExcel').innerHTML = hasExcel
-        ? '<span class="text-green-400">✓</span> Fail Excel dimuat naik'
-        : '<span class="text-red-400">✗</span> Muat naik fail Excel';
-        
-      document.getElementById('checkFields').innerHTML = hasFields
-        ? '<span class="text-green-400">✓</span> Medan ditambah'
-        : '<span class="text-red-400">✗</span> Tambah sekurang-kurangnya satu medan';
-      
-      if (hasCert && hasExcel && hasFields) {
-        notReady.classList.add('hidden');
-        ready.classList.remove('hidden');
-        
-        document.getElementById('genTotalCerts').textContent = appState.excelData.length;
-        document.getElementById('genTotalFields').textContent = appState.fields.length;
-        
-        // Update group checkboxes
-        updateGroupCheckboxes();
-      } else {
-        notReady.classList.remove('hidden');
-        ready.classList.add('hidden');
-      }
-    }
-    
-    function updateGroupCheckboxes() {
-      const container = document.getElementById('groupCheckboxes');
-      const section = document.getElementById('groupSelectionSection');
-      
-      let groupNames = Object.keys(appState.groups);
-      
-      if (groupNames.length > 0) {
-        section.style.display = 'block';
-        container.innerHTML = '';
-        
-        const searchTerm = (document.getElementById('genGroupSearchInput')?.value || '').toLowerCase();
-        if (searchTerm) {
-          groupNames = groupNames.filter(name => name.toLowerCase().includes(searchTerm));
-        }
-        
-        groupNames.forEach(name => {
-          const label = document.createElement('label');
-          label.className = 'group-badge cursor-pointer';
-          if (appState.selectedGroups.has(name)) {
-            label.classList.add('selected');
-          }
-          label.innerHTML = `
-            <input type="checkbox" class="hidden" value="${name}" ${appState.selectedGroups.has(name) ? 'checked' : ''}>
-            <span>${name}</span>
-            <span class="group-count">${appState.groups[name].length}</span>
-          `;
-          label.addEventListener('click', (e) => {
-            e.preventDefault();
-            const cb = label.querySelector('input');
-            cb.checked = !cb.checked;
-            if (cb.checked) {
-              appState.selectedGroups.add(name);
-              label.classList.add('selected');
-            } else {
-              appState.selectedGroups.delete(name);
-              label.classList.remove('selected');
-            }
-            updatePDFCount();
-            renderGroupsList(); 
-          });
-          container.appendChild(label);
-        });
-        
-        updatePDFCount();
-      } else {
-        section.style.display = 'none';
-      }
-    }
-    
-    function selectAllGroups() {
-      const searchTerm = (document.getElementById('genGroupSearchInput')?.value || '').toLowerCase();
-      Object.keys(appState.groups).forEach(name => {
-         if(name.toLowerCase().includes(searchTerm)) {
-             appState.selectedGroups.add(name);
-         }
-      });
-      updateGroupCheckboxes();
-      renderGroupsList();
-    }
-    
-    function deselectAllGroups() {
-      const searchTerm = (document.getElementById('genGroupSearchInput')?.value || '').toLowerCase();
-      Object.keys(appState.groups).forEach(name => {
-         if(name.toLowerCase().includes(searchTerm)) {
-             appState.selectedGroups.delete(name);
-         }
-      });
-      updateGroupCheckboxes();
-      renderGroupsList();
-    }
-    
-    function updatePDFCount() {
-      const mode = document.querySelector('input[name="outputMode"]:checked').value;
-      let count = 1;
-      
-      if (mode === 'byGroup') {
-        count = appState.selectedGroups.size || 1;
-      } else if (mode === 'individual') {
-        let total = 0;
-        appState.selectedGroups.forEach(name => {
-          total += appState.groups[name].length;
-        });
-        count = total || appState.excelData.length;
-      }
-      
-      document.getElementById('genTotalPDFs').textContent = count;
-    }
-    
-    // Listen for output mode changes
-    document.querySelectorAll('input[name="outputMode"]').forEach(radio => {
-      radio.addEventListener('change', (e) => {
-        updatePDFCount();
-        const mode = e.target.value;
-        const section = document.getElementById('fileNameConfigSection');
-        if (mode === 'individual') {
-          section.style.display = 'block';
-          updateFileNamePreview();
-        } else {
-          section.style.display = 'none';
-          const generateBtn = document.getElementById('generateBtn');
-          generateBtn.disabled = false;
-          generateBtn.style.opacity = '1';
-          generateBtn.style.cursor = 'pointer';
-        }
-      });
-    });
-    
-    function renderTextOnCanvas(ctx, text, field, cvs) {
-        let fontSize = field.fontSize || 60;
-        
-        let x = (field.x / 100) * cvs.width;
-        let y = (field.y / 100) * cvs.height;
-        let w = (field.width / 100) * cvs.width;
-        
-        ctx.font = `${field.fontWeight} ${fontSize}px '${field.font}'`;
-        ctx.fillStyle = field.color;
-        ctx.textAlign = field.textAlign;
-        
-        let alignV = field.textBaseline || 'middle';
-        let h = (field.height / 100) * cvs.height;
-        
-        if (alignV === 'top') {
-            ctx.textBaseline = 'top';
-        } else if (alignV === 'bottom') {
-            ctx.textBaseline = 'bottom';
-        } else {
-            ctx.textBaseline = 'middle';
-        }
-        
-        let lines = [];
-        let lineHeight = 1.2;
-        
-        let explicitLines = text.split(/\r?\n/);
-        
-        for (let i = 0; i < explicitLines.length; i++) {
-            let eLine = explicitLines[i];
-            if (eLine === "") {
-                lines.push("");
-                continue;
-            }
-            let words = eLine.split(' ');
-            let currentLine = words[0] || "";
-            
-            for (let j = 1; j < words.length; j++) {
-                let word = words[j];
-                let width = ctx.measureText(currentLine + " " + word).width;
-                if (width <= w) {
-                    currentLine += " " + word;
-                } else {
-                    lines.push(currentLine);
-                    currentLine = word;
-                }
-            }
-            if(currentLine) lines.push(currentLine);
-        }
-        
-        let totalTextHeight = lines.length * (fontSize * lineHeight);
-        let startY;
-        
-        if (alignV === 'top') {
-            startY = y - h/2;
-        } else if (alignV === 'bottom') {
-            startY = y + h/2 - totalTextHeight + (fontSize * lineHeight);
-        } else {
-            startY = y - (totalTextHeight / 2) + (fontSize * lineHeight / 2);
-        }
-        
-        for (let i = 0; i < lines.length; i++) {
-            let lineY = startY + (i * (fontSize * lineHeight));
-            let drawX = x; 
-            if (field.textAlign === 'left') drawX = x - w/2;
-            if (field.textAlign === 'right') drawX = x + w/2;
-            
-            ctx.fillText(lines[i], drawX, lineY);
-        }
-    }
+function formatFileSize(str) {
+  const bytes = new Blob([str || '']).size;
+  if (bytes === 0) return '0 B';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(2) + ' MB';
+}
 
-    function renderFileNameCheckboxes() {
-      const container = document.getElementById('fileNameCheckboxes');
-      if (!container) return;
-      container.innerHTML = '';
-      appState.fileNameColumns = []; 
-      
-      appState.headers.forEach(header => {
-        const label = document.createElement('label');
-        label.className = 'group-badge cursor-pointer';
-        label.innerHTML = `
-          <input type="checkbox" class="hidden" value="${header}">
-          <span>${header}</span>
-        `;
-        label.addEventListener('click', (e) => {
-          e.preventDefault();
-          const cb = label.querySelector('input');
-          cb.checked = !cb.checked;
-          if (cb.checked) {
-            if (!appState.fileNameColumns.includes(header)) appState.fileNameColumns.push(header);
-            label.classList.add('selected');
-          } else {
-            appState.fileNameColumns = appState.fileNameColumns.filter(col => col !== header);
-            label.classList.remove('selected');
-          }
-          updateFileNamePreview();
-        });
-        container.appendChild(label);
-      });
-      updateFileNamePreview();
-    }
+function updateFileSizeBadge() {
+  const code = state.files[state.currentTab] || '';
+  document.getElementById('fileSizeBadge').textContent = formatFileSize(code);
+}
 
-    function updateFileNamePreview() {
-      const preview = document.getElementById('fileNamePreview');
-      const generateBtn = document.getElementById('generateBtn');
-      const modeEl = document.querySelector('input[name="outputMode"]:checked');
-      const mode = modeEl ? modeEl.value : 'single';
-      
-      if (appState.fileNameColumns.length === 0) {
-        preview.textContent = 'Sila pilih sekurang-kurangnya 1 lajur';
-        preview.className = 'text-red-400';
-        if (mode === 'individual') {
-          generateBtn.disabled = true;
-          generateBtn.style.opacity = '0.5';
-          generateBtn.style.cursor = 'not-allowed';
-        }
-      } else {
-        const sampleIdx = 0;
-        let nameParts = appState.fileNameColumns.map(col => {
-          const colIndex = appState.headers.indexOf(col);
-          return colIndex !== -1 ? String(appState.excelData[sampleIdx][colIndex] || '') : '';
-        }).filter(Boolean);
-        
-        let sampleName = nameParts.length > 0 ? nameParts.join('_').replace(/[^a-zA-Z0-9_\- ]/g, '_') : 'sijil';
-        preview.textContent = sampleName + '.pdf';
-        preview.className = 'text-green-400';
-        
-        generateBtn.disabled = false;
-        generateBtn.style.opacity = '1';
-        generateBtn.style.cursor = 'pointer';
-      }
-    }
+function updateVersionBadge() {
+  document.getElementById('versionBadge').textContent = `v${state.version.major}.${state.version.minor}`;
+}
 
-    // ==================== PDF GENERATION ====================
-    async function generatePDFs() {
-      const { jsPDF } = window.jspdf;
-      
-      const btn = document.getElementById('generateBtn');
-      const progressDiv = document.getElementById('generateProgress');
-      const progressFill = document.getElementById('progressFill');
-      const progressText = document.getElementById('progressText');
-      const progressDetail = document.getElementById('progressDetail');
-      
-      btn.disabled = true;
-      btn.innerHTML = '<svg class="w-6 h-6 inline mr-2 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Menjana...';
-      progressDiv.classList.remove('hidden');
-      
-      const mode = document.querySelector('input[name="outputMode"]:checked').value;
-      
-      try {
-        // Determine which rows to process
-        let rowsToProcess = [];
-        
-        if (Object.keys(appState.groups).length > 0 && appState.selectedGroups.size > 0) {
-          appState.selectedGroups.forEach(groupName => {
-            if (appState.groups[groupName]) {
-              rowsToProcess.push(...appState.groups[groupName].map(idx => ({ idx, group: groupName })));
-            }
-          });
-        } else {
-          rowsToProcess = appState.excelData.map((_, idx) => ({ idx, group: 'All' }));
-        }
-        
-        if (rowsToProcess.length === 0) {
-          showToast('Tiada data untuk dijana!', 'error');
-          return;
-        }
-        
-        // Get original image for Native 4K drawing into PDF
-        const img = new Image();
-        await new Promise((resolve) => {
-          img.onload = resolve;
-          img.src = appState.certificateImage;
-        });
-        
-        // Determine PDF orientation
-        const orientation = img.width > img.height ? 'l' : 'p';
-        const pdfWidth = orientation === 'l' ? 297 : 210;
-        const pdfHeight = orientation === 'l' ? 210 : 297;
-        
-        const drawCertificateToPDF = (pdf, idx) => {
-          if (appState.showBackground) {
-            let format = 'JPEG';
-            if (appState.certificateImage.startsWith('data:image/png')) format = 'PNG';
-            if (appState.certificateImage.startsWith('data:image/webp')) format = 'WEBP';
-            pdf.addImage(appState.certificateImage, format, 0, 0, pdfWidth, pdfHeight, 'CERT_BG');
-          } else {
-            pdf.setFillColor(255, 255, 255);
-            pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
-          }
-          
-          appState.fields.forEach(field => {
-            const colIndex = appState.headers.indexOf(field.dataSource);
-            const text = colIndex !== -1 ? String(appState.excelData[idx][colIndex] || '') : '';
-            if (!text) return;
-            
-            let x = (field.x / 100) * pdfWidth;
-            let y = (field.y / 100) * pdfHeight;
-            let w = (field.width / 100) * pdfWidth;
-            let h = (field.height / 100) * pdfHeight;
-            
-            let fontSizePx = field.fontSize || 60;
-            let r = pdfHeight / img.height;
-            let fontSizePt = fontSizePx * r * (72 / 25.4);
-            
-            pdf.setFontSize(fontSizePt);
-            
-            let fontStyle = (field.fontWeight === 'bold' || field.fontWeight === '700') ? 'bold' : 'normal';
-            let fontName = 'helvetica';
-            let fNameLower = (field.font || '').toLowerCase();
-            if (fNameLower.includes('times') || fNameLower.includes('merriweather') || fNameLower.includes('playfair') || fNameLower.includes('lora') || fNameLower.includes('baskerville')) fontName = 'times';
-            else if (fNameLower.includes('courier') || fNameLower.includes('inconsolata')) fontName = 'courier';
-            
-            pdf.setFont(fontName, fontStyle);
-            
-            let hex = field.color || '#000000';
-            let rColor = parseInt(hex.substring(1,3), 16) || 0;
-            let gColor = parseInt(hex.substring(3,5), 16) || 0;
-            let bColor = parseInt(hex.substring(5,7), 16) || 0;
-            pdf.setTextColor(rColor, gColor, bColor);
-            
-            let lines = pdf.splitTextToSize(text, w);
-            let lineHeightPt = fontSizePt * 1.2;
-            let lineHeightMm = lineHeightPt * (25.4 / 72);
-            let totalTextHeightMm = lines.length * lineHeightMm;
-            
-            let alignV = field.textBaseline || 'middle';
-            let startY = y;
-            if (alignV === 'top') {
-                startY = y - h/2 + (lineHeightMm / 2);
-            } else if (alignV === 'bottom') {
-                startY = y + h/2 - totalTextHeightMm + (lineHeightMm / 2);
-            } else {
-                startY = y - (totalTextHeightMm / 2) + (lineHeightMm / 2);
-            }
-            
-            let drawX = x;
-            if (field.textAlign === 'left') drawX = x - w/2;
-            if (field.textAlign === 'right') drawX = x + w/2;
-            
-            lines.forEach((line, index) => {
-                let lineY = startY + (index * lineHeightMm);
-                pdf.text(line, drawX, lineY, {
-                    align: field.textAlign || 'center',
-                    baseline: 'middle'
-                });
-            });
-          });
-        };
-        
-        if (mode === 'single') {
-          // Single PDF with all certificates
-          const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4', compress: true });
-          
-          for (let i = 0; i < rowsToProcess.length; i++) {
-            const { idx } = rowsToProcess[i];
-            
-            if (i > 0) pdf.addPage();
-            
-            drawCertificateToPDF(pdf, idx);
-            
-            // Update progress
-            const progress = ((i + 1) / rowsToProcess.length) * 100;
-            progressFill.style.width = progress + '%';
-            progressText.textContent = Math.round(progress) + '%';
-            progressDetail.textContent = `Memproses sijil ${i + 1} daripada ${rowsToProcess.length}`;
-            
-            await new Promise(r => setTimeout(r, 10));
-          }
-          
-          const pdfBlob = pdf.output('blob');
-          await saveFileToSelectedFolder('sijil_semua.pdf', pdfBlob);
-          showToast(`${rowsToProcess.length} sijil berjaya dijana!`);
-          
-        } else if (mode === 'byGroup') {
-          // Separate PDF per group
-          const groupedRows = {};
-          rowsToProcess.forEach(({ idx, group }) => {
-            if (!groupedRows[group]) groupedRows[group] = [];
-            groupedRows[group].push(idx);
-          });
-          
-          const groups = Object.keys(groupedRows);
-          let totalProcessed = 0;
-          
-          for (const groupName of groups) {
-            const indices = groupedRows[groupName];
-            const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4', compress: true });
-            
-            for (let i = 0; i < indices.length; i++) {
-              const idx = indices[i];
-              
-              if (i > 0) pdf.addPage();
-              
-              drawCertificateToPDF(pdf, idx);
-              
-              totalProcessed++;
-              const progress = (totalProcessed / rowsToProcess.length) * 100;
-              progressFill.style.width = progress + '%';
-              progressText.textContent = Math.round(progress) + '%';
-              progressDetail.textContent = `Kumpulan: ${groupName} - Sijil ${i + 1}/${indices.length}`;
-              
-              await new Promise(r => setTimeout(r, 10));
-            }
-            
-            const pdfBlob = pdf.output('blob');
-            const safeFileName = groupName.replace(/[^a-zA-Z0-9]/g, '_');
-            await saveFileToSelectedFolder(`sijil_${safeFileName}.pdf`, pdfBlob);
-          }
-          
-          showToast(`${groups.length} fail PDF berjaya dijana!`);
-          
-        } else if (mode === 'individual') {
-          // Individual PDF per certificate
-          for (let i = 0; i < rowsToProcess.length; i++) {
-            const { idx } = rowsToProcess[i];
-            const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4', compress: true });
-            
-            let fileName = `sijil_${i + 1}`;
-            
-            let nameParts = appState.fileNameColumns.map(col => {
-              const colIndex = appState.headers.indexOf(col);
-              return colIndex !== -1 ? String(appState.excelData[idx][colIndex] || '') : '';
-            }).filter(Boolean);
-            
-            if (nameParts.length > 0) {
-              fileName = nameParts.join('_').replace(/[^a-zA-Z0-9_\- ]/g, '_');
-            }
-            
-            drawCertificateToPDF(pdf, idx);
-            
-            const pdfBlob = pdf.output('blob');
-            await saveFileToSelectedFolder(`${fileName}.pdf`, pdfBlob);
-            
-            const progress = ((i + 1) / rowsToProcess.length) * 100;
-            progressFill.style.width = progress + '%';
-            progressText.textContent = Math.round(progress) + '%';
-            progressDetail.textContent = `Menjana sijil ${i + 1} daripada ${rowsToProcess.length}`;
-            
-            await new Promise(r => setTimeout(r, 50));
-          }
-          
-          showToast(`${rowsToProcess.length} fail PDF berjaya dijana!`);
-        }
-        
-      } catch (error) {
-        console.error('PDF generation error:', error);
-        showToast('Ralat semasa menjana PDF!', 'error');
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<svg class="w-6 h-6 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>Jana PDF';
-        
-        setTimeout(() => {
-          progressDiv.classList.add('hidden');
-          progressFill.style.width = '0%';
-        }, 2000);
-      }
-    }
-    
-    // ==================== TOAST NOTIFICATION ====================
-    function showToast(message, type = 'success') {
-      const toast = document.getElementById('toast');
-      toast.textContent = message;
-      toast.className = 'toast show' + (type === 'error' ? ' error' : '');
-      
-      setTimeout(() => {
-        toast.classList.remove('show');
-      }, 3000);
-    }
-    
-    // ==================== SAVE FOLDER SELECTION ====================
-    // Dibuang bagi mengelakkan ralat 'System File' pada pelayar web
-    
-    // ==================== ENHANCED DOWNLOAD HANDLER ====================
-    async function saveFileToSelectedFolder(filename, blob) {
-      // Terus menggunakan kaedah standard muat turun bagi mengelakkan 
-      // ralat sekuriti 'System File' ketika memilih folder manual
+// ========== MODE TOGGLE ==========
+function setMode(mode) {
+  state.mode = mode;
+  document.getElementById('modeNew').classList.toggle('active', mode === 'new');
+  document.getElementById('modeEditor').classList.toggle('active', mode === 'editor');
+  
+  // Properly show/hide paste code section
+  const pasteSection = document.getElementById('pasteCodeSection');
+  if (mode === 'editor') {
+    pasteSection.classList.remove('hidden');
+    pasteSection.style.display = 'block';
+  } else {
+    pasteSection.classList.add('hidden');
+    pasteSection.style.display = 'none';
+  }
+  
+  // Update button text and clear input on mode change
+  document.getElementById('genBtnText').textContent = mode === 'new' ? 'Jana PWA' : 'Repair / Ubah Suai';
+  if (mode === 'editor') {
+    document.getElementById('promptInput').placeholder = 'Terangkan perubahan yang anda mahu buat pada kod...';
+  } else {
+    document.getElementById('promptInput').placeholder = 'Huraikan aplikasi PWA yang anda mahu...';
+  }
+  
+  lucide.createIcons();
+}
+
+// ========== TAB SWITCHING ==========
+function switchTab(tab) {
+  state.currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+  document.getElementById('codeDisplay').value = state.files[tab] || '';
+  updateFileSizeBadge();
+}
+
+// ========== PREVIEW ==========
+function refreshPreview() {
+  const frame = document.getElementById('previewFrame');
+  let html = state.files.index || '';
+  if (!html.trim()) {
+    frame.srcdoc = "<html><body style='display:flex;align-items:center;justify-content:center;height:100%;font-family:sans-serif;color:#94a3b8;background:#f8fafc;'><div style='text-align:center;'><p style='font-size:36px;margin:0;'>📱</p><p style='font-size:13px;margin-top:8px;'>Pratonton PWA</p></div></body></html>";
+    return;
+  }
+  // Inject viewport meta for mobile preview
+  if (!html.includes('viewport')) {
+    html = html.replace('<head>', '<head><meta name="viewport" content="width=device-width,initial-scale=1.0">');
+  }
+  frame.srcdoc = html;
+}
+
+// ========== COPY & DOWNLOAD ==========
+function copyCurrentCode() {
+  const code = state.files[state.currentTab];
+  if (!code) { showToast('Tiada kod untuk disalin', 'error'); return; }
+  navigator.clipboard.writeText(code).then(() => showToast('Kod berjaya disalin!', 'success')).catch(() => showToast('Gagal menyalin', 'error'));
+}
+
+function downloadAllFiles() {
+  const fileNames = { index: 'index.html', manifest: 'manifest.json', sw: 'sw.js', gas: 'google-apps-script.gs', other: 'other.txt' };
+  let hasFile = false;
+  for (const [key, content] of Object.entries(state.files)) {
+    if (content && content.trim()) {
+      hasFile = true;
+      const blob = new Blob([content], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 100);
+      a.href = url; a.download = fileNames[key]; a.click();
+      URL.revokeObjectURL(url);
     }
+  }
+  if (!hasFile) showToast('Tiada fail untuk dimuat turun', 'error');
+  else showToast('Semua fail dimuat turun!', 'success');
+}
 
-    async function previewFinalCertificate() {
-      if (appState.excelData.length === 0 || !appState.certificateImage) {
-        showToast('Sila muat naik sijil dan data dahulu!', 'error');
-        return;
+// ========== ERROR DETECTION SYSTEM ==========
+const errorDetector = {
+  errors: [],
+  warnings: [],
+
+  validateJSON(str, type) {
+    try {
+      JSON.parse(str);
+      return { valid: true };
+    } catch (e) {
+      return { valid: false, error: `${type} JSON tidak sah: ${e.message}` };
+    }
+  },
+
+  validateHTML(str) {
+    const issues = [];
+    // Check for unclosed tags
+    const tagPattern = /<(\w+)[^>]*>/g;
+    const closedTags = new Set(['img', 'input', 'br', 'hr', 'meta', 'link']);
+    let match;
+    while ((match = tagPattern.exec(str)) !== null) {
+      const tag = match[1].toLowerCase();
+      if (!closedTags.has(tag) && !str.includes(`</${tag}>`)) {
+        issues.push(`Tag <${tag}> mungkin tidak ditutup`);
       }
+    }
+    // Check for basic HTML structure
+    if (!str.includes('<html') && str.includes('<body')) issues.push('HTML structure tidak lengkap - tiada <html> tag');
+    if (!str.includes('<!doctype html') && !str.includes('<!DOCTYPE html')) issues.push('DOCTYPE declaration hilang');
+    // Check for meta viewport
+    if (!str.includes('viewport') && str.includes('<head')) issues.push('Meta viewport hilang - PWA mungkin tidak responsive');
+    return issues;
+  },
 
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      
-      const img = new Image();
-      await new Promise((resolve) => {
-        img.onload = resolve;
-        img.src = appState.certificateImage;
+  validateManifest(str) {
+    const issues = [];
+    try {
+      const manifest = JSON.parse(str);
+      if (!manifest.name) issues.push('Manifest: "name" diperlukan');
+      if (!manifest.short_name) issues.push('Manifest: "short_name" diperlukan');
+      if (!manifest.start_url) issues.push('Manifest: "start_url" diperlukan (sepatutnya "/" atau "./index.html")');
+      if (!manifest.display) issues.push('Manifest: "display" diperlukan (sepatutnya "standalone")');
+      if (!manifest.icons || manifest.icons.length === 0) issues.push('Manifest: sekurang-kurangnya 1 icon diperlukan');
+      if (!manifest.theme_color) issues.push('Manifest: "theme_color" diperlukan');
+      if (!manifest.background_color) issues.push('Manifest: "background_color" diperlukan');
+    } catch (e) {
+      issues.push(`Manifest JSON tidak sah: ${e.message}`);
+    }
+    return issues;
+  },
+
+  validateServiceWorker(str) {
+    const issues = [];
+    if (!str.includes('self.addEventListener')) issues.push('Service Worker: tiada event listener');
+    if (!str.includes('install') && !str.includes("'install'")) issues.push('Service Worker: tiada install event');
+    if (!str.includes('fetch') && !str.includes("'fetch'")) issues.push('Service Worker: tiada fetch event (caching tidak akan berfungsi)');
+    if (!str.includes('activate') && !str.includes("'activate'")) issues.push('Service Worker: tiada activate event');
+    return issues;
+  },
+
+  validateIndex(str) {
+    const issues = [];
+    if (!str.includes('navigator.serviceWorker') && !str.includes('serviceWorker')) {
+      issues.push('Index.html: Service Worker tidak didaftarkan');
+    }
+    if (!str.includes('manifest')) {
+      issues.push('Index.html: manifest.json tidak dirujuk');
+    }
+    if (!str.includes('charset') && !str.includes('utf-8')) {
+      issues.push('Index.html: Charset encoding tidak ditetapkan');
+    }
+    if (!str.includes('<title>')) {
+      issues.push('Index.html: Page title hilang');
+    }
+    return issues;
+  },
+
+  scan() {
+    this.errors = [];
+    this.warnings = [];
+
+    // Validate each file
+    if (state.files.index && state.files.index.trim()) {
+      const htmlIssues = this.validateHTML(state.files.index);
+      const indexIssues = this.validateIndex(state.files.index);
+      [...htmlIssues, ...indexIssues].forEach(issue => {
+        if (issue.includes('mungkin') || issue.includes('tidak akan')) {
+          this.warnings.push({ file: 'index.html', msg: issue });
+        } else {
+          this.errors.push({ file: 'index.html', msg: issue });
+        }
       });
-      
-      canvas.width = img.width;
-      canvas.height = img.height;
-      
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      if (appState.showBackground) {
-        ctx.drawImage(img, 0, 0);
-      }
-      
-      const idx = 0; // first record
-      
-      appState.fields.forEach(field => {
-        const colIndex = appState.headers.indexOf(field.dataSource);
-        const text = colIndex !== -1 ? String(appState.excelData[idx][colIndex] || '') : '';
-        renderTextOnCanvas(ctx, text, field, canvas);
+    }
+
+    if (state.files.manifest && state.files.manifest.trim()) {
+      const manifestIssues = this.validateManifest(state.files.manifest);
+      manifestIssues.forEach(issue => {
+        if (issue.includes('diperlukan')) {
+          this.errors.push({ file: 'manifest.json', msg: issue });
+        } else {
+          this.warnings.push({ file: 'manifest.json', msg: issue });
+        }
       });
-      
-      const previewImg = document.getElementById('finalPreviewImage');
-      previewImg.src = canvas.toDataURL('image/jpeg', 0.85);
-      document.getElementById('finalPreviewContainer').classList.remove('hidden');
-      
-      showToast('Preview berjaya dijana!');
     }
 
-    function shareToSocial() {
-      if (navigator.share) {
-        navigator.share({
-          title: 'Certificate Generator Pro',
-          text: 'Saya menjana sijil dengan mudah menggunakan Certificate Generator Pro!',
-          url: window.location.href
-        }).then(() => showToast('Berjaya dikongsikan!'))
-          .catch(err => console.error('Share failed:', err));
-      } else {
-        showToast('Pelayar ini tidak menyokong fungsi Share.', 'error');
-      }
+    if (state.files.sw && state.files.sw.trim()) {
+      const swIssues = this.validateServiceWorker(state.files.sw);
+      swIssues.forEach(issue => {
+        if (issue.includes('tidak akan')) {
+          this.warnings.push({ file: 'sw.js', msg: issue });
+        } else {
+          this.errors.push({ file: 'sw.js', msg: issue });
+        }
+      });
     }
 
-    function resetProject() {
-      if(confirm('Adakah anda pasti untuk reset semua tetapan projek ini?')) {
-        location.reload();
-      }
+    return { errors: this.errors, warnings: this.warnings };
+  }
+};
+
+// ========== HELP / CHANGELOG / DIAGNOSTICS ==========
+function showHelp() {
+  const content = document.getElementById('helpContent');
+  const { errors, warnings } = errorDetector.scan();
+
+  let html = '';
+
+  // Diagnostics Section
+  if (errors.length > 0 || warnings.length > 0) {
+    html += '<div class="mb-4">';
+    html += '<h3 class="font-bold text-slate-800 mb-2">🔍 Pengesan Ralat</h3>';
+
+    if (errors.length > 0) {
+      html += '<div class="mb-2">';
+      errors.forEach(err => {
+        html += `<div class="p-2 bg-red-50 border border-red-200 rounded-lg mb-2">
+          <p class="text-xs font-semibold text-red-700">❌ ${err.file}</p>
+          <p class="text-xs text-red-600 mt-1">${err.msg}</p>
+        </div>`;
+      });
+      html += '</div>';
     }
-  </script>
- </body>
+
+    if (warnings.length > 0) {
+      html += '<div>';
+      warnings.forEach(warn => {
+        html += `<div class="p-2 bg-yellow-50 border border-yellow-200 rounded-lg mb-2">
+          <p class="text-xs font-semibold text-yellow-700">⚠️ ${warn.file}</p>
+          <p class="text-xs text-yellow-600 mt-1">${warn.msg}</p>
+        </div>`;
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+  } else if (Object.values(state.files).some(f => f && f.trim())) {
+    html += '<div class="p-3 bg-green-50 border border-green-200 rounded-xl mb-4"><p class="text-sm font-semibold text-green-700">✅ Semua fail terlihat baik!</p></div>';
+  }
+
+  // Changelog Section
+  html += '<h3 class="font-bold text-slate-800 mb-2">📋 Log Perubahan</h3>';
+  if (state.changelog.length === 0) {
+    html += '<p class="text-slate-400">Belum ada perubahan dijana lagi.</p>';
+  } else {
+    state.changelog.forEach(log => {
+      html += `
+        <div class="p-3 bg-blue-50 rounded-xl border border-blue-100 mb-2">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="version-badge text-xs">v${log.version}</span>
+            <span class="text-xs text-slate-400">${log.timestamp}</span>
+          </div>
+          <p class="text-sm text-slate-700 font-medium">${log.mode === 'new' ? '🆕 Jana Baru' : '🔧 Repair/Ubah Suai'}</p>
+          <p class="text-xs text-slate-500 mt-1">${log.summary}</p>
+        </div>
+      `;
+    });
+  }
+
+  content.innerHTML = html;
+  document.getElementById('helpOverlay').style.display = 'flex';
+  lucide.createIcons();
+}
+
+function closeHelp() {
+  document.getElementById('helpOverlay').style.display = 'none';
+}
+
+// ========== AI GENERATION ==========
+async function generateCode() {
+  const apiKey = document.getElementById('apiKeyInput').value.trim();
+  if (!apiKey) { showToast('Sila masukkan Groq API Key', 'error'); return; }
+
+  const prompt = document.getElementById('promptInput').value.trim();
+  if (!prompt) { showToast('Sila masukkan arahan prompt', 'error'); return; }
+
+  if (state.isGenerating) return;
+  state.isGenerating = true;
+
+  const btn = document.getElementById('generateBtn');
+  const btnText = document.getElementById('genBtnText');
+  btn.disabled = true;
+  btnText.innerHTML = '<span class="spinner"></span> Menjana...';
+
+  const pastedCode = state.mode === 'editor' ? document.getElementById('pasteCodeInput').value.trim() : '';
+  const existingIndex = state.files.index || '';
+
+  let systemPrompt = '';
+  if (state.mode === 'new') {
+    systemPrompt = `You are an expert PWA developer. Generate a COMPLETE Progressive Web App based on the user's prompt.
+
+CRITICAL RULES:
+1. You MUST respond with a valid JSON object containing these keys: "index", "manifest", "sw", "gas", "other", "summary"
+2. "index" = complete index.html with inline CSS/JS, responsive, includes PWA meta tags and service worker registration
+3. "manifest" = valid manifest.json for PWA
+4. "sw" = service worker (sw.js) with caching strategy
+5. "gas" = Google Apps Script code if backend is needed, otherwise empty string
+6. "other" = any additional code/config needed, otherwise empty string
+7. "summary" = brief description in Malay of what was generated (2-3 sentences)
+8. All code must be production-ready, beautiful UI, mobile-first responsive design
+9. Use modern CSS, clean typography, and professional color schemes
+10. The index.html must be fully self-contained and functional
+11. Ensure manifest.json references correct icons and start_url
+12. Service worker must cache essential assets
+13. Do NOT wrap your response in markdown code blocks. Return ONLY the raw JSON object.`;
+  } else {
+    systemPrompt = `You are an expert PWA developer and code repair specialist. The user will provide existing code and instructions for modifications/repairs.
+
+CRITICAL RULES:
+1. You MUST respond with a valid JSON object containing these keys: "index", "manifest", "sw", "gas", "other", "summary"
+2. Repair, improve, or modify the provided code based on the user's prompt
+3. Keep all working functionality intact - only change what's requested
+4. Fix any bugs, accessibility issues, or performance problems mentioned
+5. "summary" = brief description in Malay of what changes were made (2-3 sentences)
+6. If code for a file type is not provided, generate appropriate code or return empty string
+7. Do NOT wrap your response in markdown code blocks. Return ONLY the raw JSON object.`;
+  }
+
+  let userMessage = '';
+  if (state.mode === 'new') {
+    userMessage = `Create a PWA app: ${prompt}`;
+  } else {
+    const codeToEdit = pastedCode || existingIndex;
+    userMessage = `Here is the existing code to repair/modify:\n\n${codeToEdit}\n\nInstructions: ${prompt}`;
+    if (state.files.manifest) userMessage += `\n\nExisting manifest.json:\n${state.files.manifest}`;
+    if (state.files.sw) userMessage += `\n\nExisting sw.js:\n${state.files.sw}`;
+  }
+
+  try {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage }
+        ],
+        temperature: 0.7,
+        max_tokens: 32000,
+        response_format: { type: 'json_object' }
+      })
+    });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.error?.message || `API Error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content;
+
+    if (!content) throw new Error('Tiada respons dari AI');
+
+    let parsed;
+    try {
+      parsed = JSON.parse(content);
+    } catch (e) {
+      // Try to extract JSON from markdown code blocks
+      const jsonMatch = content.match(/</script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9de1844a43f335be',t:'MTc3MzgwODM4MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

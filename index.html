@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ms" class="h-full">
+<html lang="en" class="h-full">
  <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,778 +7,815 @@
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
   <script src="/_sdk/element_sdk.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet">
   <script>
 tailwind.config = {
   theme: {
     extend: {
-      fontFamily: {
-        sans: ['DM Sans', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace']
-      },
+      fontFamily: { jakarta: ['Plus Jakarta Sans', 'sans-serif'] },
       colors: {
-        brand: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a'
-        }
+        brand: { 50:'#eff6ff',100:'#dbeafe',200:'#bfdbfe',300:'#93c5fd',400:'#60a5fa',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8',800:'#1e40af',900:'#1e3a8a' }
       }
     }
   }
 }
 </script>
   <style>
-html, body { height: 100%; margin: 0; font-family: 'DM Sans', sans-serif; }
+html, body { height: 100%; margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
 
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: #93c5fd; border-radius: 10px; }
+
+/* iPhone Mockup */
 .iphone-frame {
-  width: 280px;
-  height: 572px;
+  width: 280px; height: 572px;
   border-radius: 40px;
-  border: 6px solid #1e293b;
+  border: 4px solid #1e293b;
   background: #000;
   position: relative;
-  box-shadow: 0 25px 60px rgba(30,64,175,0.18), 0 0 0 2px #334155, inset 0 0 0 2px #1e293b;
+  box-shadow: 0 0 0 2px #475569, 0 20px 60px rgba(0,0,0,0.3);
   overflow: hidden;
 }
 .iphone-notch {
-  position: absolute;
-  top: 0; left: 50%;
-  transform: translateX(-50%);
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%);
   width: 120px; height: 28px;
-  background: #1e293b;
-  border-radius: 0 0 18px 18px;
-  z-index: 20;
+  background: #1e293b; border-radius: 0 0 18px 18px; z-index: 10;
 }
-.iphone-screen {
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  border-radius: 34px;
-  overflow: hidden;
-  background: #fff;
+.iphone-screen { 
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: 36px; overflow: hidden; background: #fff;
 }
 .iphone-screen iframe {
-  width: 100%; height: 100%;
-  border: none;
-  border-radius: 34px;
+  width: 100%; height: 100%; border: none; border-radius: 36px;
 }
 .iphone-home {
-  position: absolute;
-  bottom: 6px; left: 50%;
-  transform: translateX(-50%);
-  width: 100px; height: 4px;
-  background: #475569;
-  border-radius: 4px;
-  z-index: 20;
+  position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+  width: 100px; height: 4px; background: #475569; border-radius: 2px; z-index: 10;
 }
 
-.code-editor {
-  background: #f8fafc;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 10px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
-  line-height: 1.6;
-  color: #1e293b;
-  resize: none;
-  outline: none;
-  padding: 14px;
-  width: 100%;
-  height: 100%;
-  tab-size: 2;
-}
-.code-editor:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59,130,246,0.13);
-}
-
-.tab-btn {
-  padding: 7px 14px;
-  font-size: 12px;
-  font-weight: 600;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.18s;
-  border: 1.5px solid transparent;
-  background: #f1f5f9;
-  color: #64748b;
-  white-space: nowrap;
-}
-.tab-btn.active {
-  background: #2563eb;
-  color: #fff;
-  border-color: #1d4ed8;
-  box-shadow: 0 2px 8px rgba(37,99,235,0.18);
-}
-.tab-btn:hover:not(.active) {
-  background: #e2e8f0;
-  color: #1e40af;
-}
-
-.mode-toggle {
-  display: flex; gap: 4px;
-  background: #f1f5f9;
-  border-radius: 10px;
-  padding: 3px;
-}
-.mode-btn {
-  padding: 7px 16px;
-  font-size: 13px;
-  font-weight: 600;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.18s;
-  border: none;
-  background: transparent;
-  color: #64748b;
-}
-.mode-btn.active {
-  background: #fff;
-  color: #2563eb;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-}
-
-.toast-container {
-  position: fixed;
-  top: 16px; right: 16px;
-  z-index: 9999;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
+/* Toast */
 .toast {
-  padding: 12px 18px;
-  border-radius: 10px;
-  font-size: 13px;
-  font-weight: 500;
-  color: #fff;
-  animation: toastIn 0.3s ease;
-  max-width: 320px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px);
+  padding: 12px 24px; border-radius: 12px; color: #fff; font-weight: 500;
+  z-index: 9999; transition: transform 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+  font-size: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
 }
-.toast.success { background: #2563eb; }
-.toast.error { background: #dc2626; }
-.toast.info { background: #0ea5e9; }
+.toast.show { transform: translateX(-50%) translateY(0); }
 
-@keyframes toastIn {
-  from { opacity: 0; transform: translateY(-12px); }
-  to { opacity: 1; transform: translateY(0); }
+/* Code editor */
+.code-editor {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 12px; line-height: 1.6;
+  tab-size: 2; white-space: pre-wrap; word-wrap: break-word;
+  color: #1e293b; background: #f8fafc;
+  border: 1px solid #e2e8f0; border-radius: 12px;
+  padding: 16px; min-height: 200px; max-height: 400px;
+  overflow-y: auto; outline: none; resize: vertical;
 }
+.code-editor:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
 
-.gen-btn {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  color: #fff;
-  font-weight: 700;
-  border: none;
-  border-radius: 10px;
-  padding: 10px 22px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 14px rgba(37,99,235,0.25);
+/* Tabs */
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px 8px 0 0;
+  font-size: 12px; font-weight: 600;
+  cursor: pointer; border: 1px solid #e2e8f0;
+  border-bottom: none; transition: all 0.2s;
+  display: flex; align-items: center; gap: 6px;
 }
-.gen-btn:hover { box-shadow: 0 6px 20px rgba(37,99,235,0.35); transform: translateY(-1px); }
-.gen-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.tab-btn.active { background: #fff; color: #2563eb; border-color: #bfdbfe; }
+.tab-btn:not(.active) { background: #f1f5f9; color: #64748b; }
+.tab-btn:not(.active):hover { background: #e2e8f0; }
 
-.help-overlay {
-  position: fixed; inset: 0;
-  background: rgba(15,23,42,0.55);
-  z-index: 1000;
-  display: flex; align-items: center; justify-content: center;
-  animation: fadeIn 0.2s ease;
+/* Pulse animation for generating */
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(59,130,246,0.4); }
+  70% { box-shadow: 0 0 0 12px rgba(59,130,246,0); }
+  100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
 }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.generating { animation: pulse-ring 1.5s infinite; }
 
-.help-modal {
-  background: #fff;
-  border-radius: 16px;
-  padding: 28px;
-  max-width: 520px;
-  width: 90%;
-  max-height: 80%;
-  overflow-y: auto;
-  box-shadow: 0 25px 60px rgba(0,0,0,0.2);
-  animation: modalIn 0.25s ease;
-}
-@keyframes modalIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+/* Fade in */
+@keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+.fade-up { animation: fadeUp 0.4s ease-out forwards; }
 
-.spinner {
-  width: 20px; height: 20px;
-  border: 2.5px solid rgba(255,255,255,0.3);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-  display: inline-block;
+/* Mode toggle */
+.mode-pill {
+  display: flex; background: #f1f5f9; border-radius: 12px; padding: 3px;
+  border: 1px solid #e2e8f0;
 }
+.mode-pill button {
+  padding: 8px 20px; border-radius: 10px; font-size: 13px; font-weight: 600;
+  cursor: pointer; border: none; transition: all 0.25s;
+}
+.mode-pill button.active { background: #2563eb; color: #fff; box-shadow: 0 2px 8px rgba(37,99,235,0.3); }
+.mode-pill button:not(.active) { background: transparent; color: #64748b; }
+.mode-pill button:not(.active):hover { color: #1e293b; }
+
+/* Spinner */
+.spinner { display:inline-block; width:18px; height:18px; border:2.5px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation: spin 0.7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.file-size-badge {
-  font-size: 10px;
-  font-weight: 600;
-  padding: 2px 7px;
-  border-radius: 6px;
-  background: #dbeafe;
-  color: #1d4ed8;
-}
-
+/* Version badge */
 .version-badge {
-  font-size: 11px;
-  font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #2563eb, #3b82f6);
-  color: #fff;
+  display: inline-flex; align-items: center; gap: 4px;
+  background: linear-gradient(135deg, #dbeafe, #eff6ff);
+  color: #1d4ed8; font-size: 11px; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; border: 1px solid #bfdbfe;
 }
 
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; }
-
-@media (max-width: 900px) {
-  .main-layout { flex-direction: column !important; }
-  .iphone-frame { width: 220px; height: 450px; border-radius: 32px; }
-  .iphone-notch { width: 90px; height: 22px; border-radius: 0 0 14px 14px; }
-  .iphone-screen { border-radius: 26px; }
-  .iphone-screen iframe { border-radius: 26px; }
+/* File size indicator */
+.size-badge {
+  font-size: 10px; color: #94a3b8; font-weight: 500;
+  background: #f1f5f9; padding: 2px 8px; border-radius: 6px;
 }
+
+/* Help modal */
+.help-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  z-index: 1000; display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+.help-overlay.show { opacity: 1; pointer-events: all; }
+
+/* Confirm modal */
+.confirm-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  z-index: 1000; display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+.confirm-overlay.show { opacity: 1; pointer-events: all; }
 </style>
   <style>body { box-sizing: border-box; }</style>
   <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
  </head>
  <body class="h-full bg-white">
-  <div id="app-root" class="h-full flex flex-col overflow-auto" style="background: linear-gradient(180deg, #eff6ff 0%, #ffffff 40%);"><!-- Top Bar: API Key -->
-   <div class="w-full px-4 pt-3 pb-2" style="flex-shrink:0;">
-    <div class="flex items-center gap-2 max-w-7xl mx-auto">
-     <div class="flex items-center gap-2 bg-white border border-blue-200 rounded-xl px-3 py-2 flex-1 shadow-sm"><i data-lucide="key" style="width:16px;height:16px;color:#2563eb;flex-shrink:0;"></i> <input id="apiKeyInput" type="password" placeholder="Masukkan Groq API Key anda di sini..." class="flex-1 bg-transparent outline-none text-sm text-slate-700 font-mono placeholder:text-slate-400" autocomplete="off"> <button id="toggleKeyBtn" onclick="toggleKeyVisibility()" class="text-slate-400 hover:text-blue-600 transition" title="Tunjuk/Sembunyi"> <i data-lucide="eye" style="width:16px;height:16px;"></i> </button>
-     </div><a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" class="text-xs text-blue-500 hover:text-blue-700 font-semibold whitespace-nowrap">Dapatkan Key →</a>
+  <div id="app" class="h-full flex flex-col overflow-auto"><!-- API Key Bar -->
+   <div id="apiKeyBar" class="w-full bg-gradient-to-r from-brand-600 to-brand-800 px-4 py-2.5 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 flex-shrink-0">
+    <div class="flex items-center gap-2 text-white"><i data-lucide="key" style="width:16px;height:16px;"></i> <span class="text-xs font-semibold tracking-wide uppercase">Groq API Key</span>
+    </div>
+    <div class="w-full sm:flex-1 flex items-center gap-2"><input id="apiKeyInput" type="password" placeholder="Masukkan Groq API Key anda di sini..." class="flex-1 w-full bg-white/15 backdrop-blur text-white placeholder-white/50 text-sm px-3 py-1.5 rounded-lg border border-white/20 outline-none focus:bg-white/25 focus:border-white/40 transition"> <button onclick="toggleKeyVisibility()" id="eyeBtn" class="text-white/70 hover:text-white transition p-1"> <i id="eyeIcon" data-lucide="eye" style="width:16px;height:16px;"></i> </button> <button onclick="toggleKeyFreeze()" id="freezeBtn" class="text-white/70 hover:text-white transition p-1" title="Kekal API Key"> <i id="freezeIcon" data-lucide="lock-open" style="width:16px;height:16px;"></i> </button>
+     <div id="keyStatus" class="flex items-center gap-1 whitespace-nowrap">
+      <div id="keyDot" class="w-2 h-2 rounded-full bg-red-400"></div><span id="keyText" class="text-xs text-white/70">Tiada key</span>
+     </div>
     </div>
    </div><!-- Header -->
-   <header class="w-full px-4 pb-3" style="flex-shrink:0;">
-    <div class="max-w-7xl mx-auto flex items-center justify-between">
-     <div class="flex items-center gap-3">
-      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-md"><i data-lucide="smartphone" style="width:18px;height:18px;color:#fff;"></i>
-      </div>
-      <div>
-       <h1 id="appTitle" class="text-lg font-bold text-slate-800 leading-tight">PWA Generator Studio</h1>
-       <p class="text-xs text-slate-500">Penjana Aplikasi PWA Berkuasa AI</p>
-      </div>
+   <div class="w-full bg-white border-b border-blue-100 px-4 py-3 flex items-center justify-between flex-shrink-0">
+    <div class="flex items-center gap-3">
+     <div class="w-9 h-9 bg-gradient-to-br from-brand-500 to-brand-700 rounded-xl flex items-center justify-center shadow-md"><i data-lucide="smartphone" style="width:18px;height:18px;color:white;"></i>
      </div>
-     <div class="flex items-center gap-2"><span id="versionBadge" class="version-badge">v1.0</span> <button onclick="showHelp()" class="w-8 h-8 rounded-lg bg-blue-50 hover:bg-blue-100 flex items-center justify-center transition" title="Bantuan"> <i data-lucide="help-circle" style="width:16px;height:16px;color:#2563eb;"></i> </button>
+     <div>
+      <h1 id="appTitle" class="text-base font-bold text-gray-900 leading-tight">PWA Generator Studio</h1>
+      <p class="text-[10px] sm:text-xs text-gray-400 truncate">AI-Powered Progressive Web App Builder</p>
      </div>
     </div>
-   </header><!-- Mode Toggle -->
-   <div class="w-full px-4 pb-3" style="flex-shrink:0;">
-    <div class="max-w-7xl mx-auto">
-     <div class="mode-toggle inline-flex"><button class="mode-btn active" id="modeNew" onclick="setMode('new')"> <span class="flex items-center gap-1.5"><i data-lucide="plus-circle" style="width:14px;height:14px;"></i> Baru</span> </button> <button class="mode-btn" id="modeEditor" onclick="setMode('editor')"> <span class="flex items-center gap-1.5"><i data-lucide="wrench" style="width:14px;height:14px;"></i> Editor/Repair</span> </button>
-     </div>
+    <div class="flex items-center gap-2"><span id="versionBadge" class="version-badge hidden"> <i data-lucide="git-branch" style="width:10px;height:10px;"></i> <span id="versionText">v1.0</span> </span> <button onclick="showHelp()" id="helpBtn" class="hidden w-8 h-8 rounded-lg bg-blue-50 hover:bg-blue-100 flex items-center justify-center text-brand-600 transition"> <i data-lucide="help-circle" style="width:16px;height:16px;"></i> </button>
     </div>
    </div><!-- Main Content -->
-   <div class="flex-1 w-full px-4 pb-4 overflow-auto">
-    <div class="max-w-7xl mx-auto main-layout flex gap-4" style="height:100%;"><!-- Left: Prompt + Code -->
-     <div class="flex-1 flex flex-col gap-3 min-w-0" style="min-height:0;"><!-- Prompt Input -->
-      <div class="bg-white rounded-2xl border border-blue-100 shadow-sm p-4" style="flex-shrink:0;"><label class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 block">Prompt Arahan</label> <textarea id="promptInput" rows="3" class="w-full bg-blue-50/50 border border-blue-100 rounded-xl p-3 text-sm text-slate-700 outline-none resize-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition" placeholder="Huraikan aplikasi PWA yang anda mahu..."></textarea> <!-- Editor Mode: Paste Code -->
-       <div id="pasteCodeSection" class="hidden mt-3"><label class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 block">Tampal Kod Sedia Ada (untuk ubah suai/repair)</label> <textarea id="pasteCodeInput" rows="5" class="code-editor" style="height:120px;" placeholder="Tampal kod HTML/JS/CSS anda di sini untuk diperbaiki..."></textarea>
-       </div>
-       <div class="flex items-center gap-2 mt-3"><button id="generateBtn" onclick="generateCode()" class="gen-btn flex items-center gap-2"> <i data-lucide="zap" style="width:16px;height:16px;"></i> <span id="genBtnText">Jana PWA</span> </button> <button onclick="copyCurrentCode()" class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-semibold transition flex items-center gap-1.5" title="Salin Kod"> <i data-lucide="copy" style="width:14px;height:14px;"></i> Salin </button> <button onclick="downloadAllFiles()" class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-semibold transition flex items-center gap-1.5" title="Muat Turun Semua"> <i data-lucide="download" style="width:14px;height:14px;"></i> Muat Turun </button>
-       </div>
-      </div><!-- File Tabs -->
-      <div class="flex items-center gap-1.5 flex-wrap" style="flex-shrink:0;"><button class="tab-btn active" data-tab="index" onclick="switchTab('index')">index.html</button> <button class="tab-btn" data-tab="manifest" onclick="switchTab('manifest')">manifest.json</button> <button class="tab-btn" data-tab="sw" onclick="switchTab('sw')">sw.js</button> <button class="tab-btn" data-tab="gas" onclick="switchTab('gas')">Google Apps Script</button> <button class="tab-btn" data-tab="other" onclick="switchTab('other')">Other</button> <span id="fileSizeBadge" class="file-size-badge ml-auto">0 B</span>
-      </div><!-- Code Display -->
-      <div class="flex-1 relative rounded-2xl overflow-hidden border border-blue-100 shadow-sm bg-white" style="min-height:200px;"><textarea id="codeDisplay" class="code-editor" style="border:none;border-radius:16px;height:100%;" spellcheck="false" placeholder="Kod akan dipaparkan di sini selepas dijana..."></textarea>
+   <div class="flex-1 flex flex-col lg:flex-row overflow-auto lg:overflow-hidden"><!-- Left Panel: Controls -->
+    <div class="lg:w-[55%] w-full flex flex-col lg:overflow-auto p-4 gap-4"><!-- Mode Toggle -->
+     <div class="flex items-center justify-between">
+      <div class="mode-pill"><button id="modeNew" class="active" onclick="setMode('new')"> <span class="flex items-center gap-1.5"><i data-lucide="plus-circle" style="width:14px;height:14px;"></i> Baru</span> </button> <button id="modeEdit" onclick="setMode('edit')"> <span class="flex items-center gap-1.5"><i data-lucide="wrench" style="width:14px;height:14px;"></i> Editor</span> </button>
       </div>
-     </div><!-- Right: iPhone Mockup -->
-     <div class="flex flex-col items-center gap-3" style="flex-shrink:0;">
-      <p class="text-xs font-semibold text-slate-400 uppercase tracking-widest">Pratonton Langsung</p>
-      <div class="iphone-frame">
-       <div class="iphone-notch"></div>
-       <div class="iphone-screen"><iframe id="previewFrame" sandbox="allow-scripts allow-same-origin" srcdoc="<html><body style='display:flex;align-items:center;justify-content:center;height:100%;font-family:sans-serif;color:#94a3b8;background:#f8fafc;'><div style='text-align:center;'><p style='font-size:36px;margin:0;'>📱</p><p style='font-size:13px;margin-top:8px;'>Pratonton PWA</p></div></body></html>"></iframe>
+      <div id="genCounter" class="text-xs text-gray-400 hidden">
+       Generasi: <span id="genCount" class="font-bold text-brand-600">0</span>
+      </div>
+     </div><!-- Prompt Area -->
+     <div class="fade-up"><label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">Prompt Arahan</label> <textarea id="promptInput" rows="3" placeholder="Contoh: Buat PWA kalkulator tip restoran dengan tema gelap dan animasi smooth..." class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 resize-none transition placeholder-gray-300"></textarea>
+     </div><!-- Editor Code Input (only in edit mode) -->
+     <div id="editorSection" class="hidden fade-up"><label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">Kod Sedia Ada (Paste di sini)</label>
+      <div id="editorCode" contenteditable="true" class="code-editor" spellcheck="false"></div>
+      <div class="flex items-center justify-between mt-1.5"><span id="editorSize" class="size-badge">0 B</span> <button onclick="clearEditor()" class="text-xs text-red-400 hover:text-red-600 flex items-center gap-1 transition"> <i data-lucide="trash-2" style="width:11px;height:11px;"></i> Padam </button>
+      </div>
+     </div><!-- Generate Button --> <button id="generateBtn" onclick="handleGenerate()" class="w-full bg-gradient-to-r from-brand-500 to-brand-700 hover:from-brand-600 hover:to-brand-800 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-blue-200 flex items-center justify-center gap-2 text-sm"> <i data-lucide="sparkles" style="width:18px;height:18px;"></i> <span id="genBtnText">Jana PWA</span> </button> <!-- File Tabs & Code Output -->
+     <div id="outputSection" class="hidden fade-up flex-1 flex flex-col min-h-[400px] lg:min-h-0">
+      <div class="flex items-center gap-1 overflow-x-auto pb-0"><button class="tab-btn active" data-tab="index" onclick="switchTab('index')"> <i data-lucide="file-code" style="width:12px;height:12px;"></i> index.html </button> <button class="tab-btn" data-tab="manifest" onclick="switchTab('manifest')"> <i data-lucide="file-json" style="width:12px;height:12px;"></i> manifest.json </button> <button class="tab-btn" data-tab="sw" onclick="switchTab('sw')"> <i data-lucide="settings" style="width:12px;height:12px;"></i> sw.js </button> <button class="tab-btn" data-tab="gas" onclick="switchTab('gas')"> <i data-lucide="cloud" style="width:12px;height:12px;"></i> Apps Script </button> <button class="tab-btn" data-tab="other" onclick="switchTab('other')"> <i data-lucide="file-plus" style="width:12px;height:12px;"></i> Other </button>
+      </div>
+      <div class="border border-gray-200 border-t-0 rounded-b-xl bg-white flex-1 flex flex-col min-h-0">
+       <div class="flex items-center justify-between px-3 py-2 border-b border-gray-100">
+        <div class="flex items-center gap-2"><span id="currentFileName" class="text-xs font-semibold text-gray-600">index.html</span> <span id="currentFileSize" class="size-badge">0 B</span>
+        </div>
+        <div class="flex items-center gap-1.5"><button onclick="copyCurrentCode()" class="text-xs text-brand-500 hover:text-brand-700 flex items-center gap-1 font-medium transition"> <i data-lucide="copy" style="width:12px;height:12px;"></i> Salin </button> <button onclick="downloadCurrentCode()" class="text-xs text-brand-500 hover:text-brand-700 flex items-center gap-1 font-medium transition"> <i data-lucide="download" style="width:12px;height:12px;"></i> Muat turun </button>
+        </div>
        </div>
-       <div class="iphone-home"></div>
-      </div><button onclick="refreshPreview()" class="flex items-center gap-1.5 text-xs font-semibold text-blue-500 hover:text-blue-700 transition"> <i data-lucide="refresh-cw" style="width:12px;height:12px;"></i> Muat Semula </button>
+       <pre id="codeDisplay" class="flex-1 overflow-auto p-3 text-xs leading-relaxed text-gray-700 bg-gray-50/50 m-0" style="font-family:'JetBrains Mono','Fira Code',monospace; white-space:pre-wrap; word-wrap:break-word;"></pre>
+      </div>
+     </div>
+    </div><!-- Right Panel: iPhone Preview -->
+    <div class="lg:w-[45%] w-full flex flex-col items-center justify-center p-6 lg:p-8 bg-gradient-to-br from-blue-50/50 to-white border-t lg:border-t-0 lg:border-l border-blue-50 lg:overflow-auto">
+     <div class="text-center mb-4">
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest">Pratonton Peranti</p>
+     </div>
+     <div class="iphone-frame">
+      <div class="iphone-notch"></div>
+      <div class="iphone-screen"><iframe id="previewFrame" srcdoc="<html><body style='display:flex;align-items:center;justify-content:center;height:100%;margin:0;font-family:sans-serif;background:linear-gradient(135deg,#eff6ff,#dbeafe);'><div style='text-align:center;color:#94a3b8;'><div style='font-size:40px;margin-bottom:8px;'>📱</div><div style='font-size:13px;font-weight:600;'>Pratonton PWA</div><div style='font-size:11px;margin-top:4px;'>Jana kod untuk melihat pratonton</div></div></body></html>"></iframe>
+      </div>
+      <div class="iphone-home"></div>
+     </div>
+     <div class="mt-4 flex items-center gap-3"><button onclick="refreshPreview()" class="text-xs text-brand-500 hover:text-brand-700 flex items-center gap-1 font-medium transition"> <i data-lucide="refresh-cw" style="width:12px;height:12px;"></i> Muat semula </button> <button onclick="downloadAllFiles()" id="downloadAllBtn" class="hidden text-xs text-brand-500 hover:text-brand-700 flex items-center gap-1 font-medium transition"> <i data-lucide="package" style="width:12px;height:12px;"></i> Muat turun semua </button>
      </div>
     </div>
    </div>
-  </div><!-- Toast Container -->
-  <div id="toastContainer" class="toast-container"></div><!-- Help Overlay -->
-  <div id="helpOverlay" class="help-overlay" style="display:none;" onclick="if(event.target===this)closeHelp()">
-   <div class="help-modal">
-    <div class="flex items-center justify-between mb-4">
-     <h2 class="text-lg font-bold text-slate-800">📋 Log Perubahan &amp; Bantuan</h2><button onclick="closeHelp()" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition"> <i data-lucide="x" style="width:16px;height:16px;color:#64748b;"></i> </button>
+  </div><!-- Help Modal -->
+  <div id="helpOverlay" class="help-overlay" onclick="if(event.target===this)closeHelp()">
+   <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 max-h-[80%] overflow-hidden flex flex-col">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+     <h3 class="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="info" style="width:18px;height:18px;color:#3b82f6;"></i> Log Perubahan</h3><button onclick="closeHelp()" class="text-gray-400 hover:text-gray-600 transition"> <i data-lucide="x" style="width:18px;height:18px;"></i> </button>
     </div>
-    <div id="helpContent" class="text-sm text-slate-600 leading-relaxed space-y-3">
-     <p class="text-slate-400">Belum ada perubahan dijana lagi.</p>
+    <div id="helpContent" class="flex-1 overflow-auto p-5 text-sm text-gray-600 leading-relaxed"></div>
+   </div>
+  </div><!-- Confirm Modal -->
+  <div id="confirmOverlay" class="confirm-overlay" onclick="if(event.target===this)closeConfirm()">
+   <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 text-center">
+    <div class="w-12 h-12 bg-yellow-50 rounded-full flex items-center justify-center mx-auto mb-3"><i data-lucide="alert-triangle" style="width:24px;height:24px;color:#eab308;"></i>
+    </div>
+    <h3 id="confirmTitle" class="font-bold text-gray-800 mb-2"></h3>
+    <p id="confirmMsg" class="text-sm text-gray-500 mb-5"></p>
+    <div class="flex gap-3 justify-center"><button onclick="closeConfirm()" class="px-5 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition">Batal</button> <button id="confirmAction" class="px-5 py-2 rounded-lg bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition">Ya</button>
     </div>
    </div>
-  </div>
+  </div><!-- Toast -->
+  <div id="toast" class="toast bg-brand-600"></div>
   <script>
-// ========== STATE ==========
-const state = {
-  mode: 'new',
-  currentTab: 'index',
-  version: { major: 1, minor: 0 },
-  files: {
-    index: '',
-    manifest: '',
-    sw: '',
-    gas: '',
-    other: ''
-  },
-  changelog: [],
-  isGenerating: false
+// ====================== STATE ======================
+let currentMode = 'new';
+let currentTab = 'index';
+let generationCount = 0;
+let codeFiles = { index: '', manifest: '', sw: '', gas: '', other: '' };
+let changeLog = [];
+let isGenerating = false;
+
+const fileNames = {
+  index: 'index.html',
+  manifest: 'manifest.json',
+  sw: 'sw.js',
+  gas: 'Code.gs',
+  other: 'other.txt'
 };
 
-// ========== ELEMENT SDK ==========
+// ====================== API KEY ======================
+const apiKeyInput = document.getElementById('apiKeyInput');
+let keyVisible = false;
+let keyLocked = false;
+
+// Load key from localStorage on page load
+document.addEventListener('DOMContentLoaded', () => {
+  const savedKey = localStorage.getItem('groq_api_key');
+  const isLocked = localStorage.getItem('groq_api_locked') === 'true';
+  
+  if (savedKey) {
+    apiKeyInput.value = savedKey;
+    keyLocked = isLocked;
+    apiKeyInput.disabled = isLocked;
+    updateKeyUI();
+  }
+  lucide.createIcons();
+});
+
+apiKeyInput.addEventListener('input', () => {
+  const val = apiKeyInput.value.trim();
+  updateKeyStatus(val);
+});
+
+function updateKeyStatus(val) {
+  const dot = document.getElementById('keyDot');
+  const txt = document.getElementById('keyText');
+  if (val.length > 10) {
+    dot.className = 'w-2 h-2 rounded-full bg-green-400';
+    txt.textContent = keyLocked ? 'Terkunci ✓' : 'Aktif';
+  } else {
+    dot.className = 'w-2 h-2 rounded-full bg-red-400';
+    txt.textContent = val.length === 0 ? 'Tiada key' : 'Tidak sah';
+  }
+}
+
+function updateKeyUI() {
+  const freezeBtn = document.getElementById('freezeBtn');
+  
+  if (keyLocked) {
+    freezeBtn.innerHTML = '<i data-lucide="lock" style="width:16px;height:16px;"></i>';
+    freezeBtn.classList.remove('text-white/70');
+    freezeBtn.classList.add('text-white');
+    apiKeyInput.disabled = true;
+  } else {
+    freezeBtn.innerHTML = '<i data-lucide="lock-open" style="width:16px;height:16px;"></i>';
+    freezeBtn.classList.add('text-white/70');
+    freezeBtn.classList.remove('text-white');
+    apiKeyInput.disabled = false;
+  }
+  
+  updateKeyStatus(apiKeyInput.value.trim());
+  lucide.createIcons();
+}
+
+function toggleKeyVisibility() {
+  keyVisible = !keyVisible;
+  apiKeyInput.type = keyVisible ? 'text' : 'password';
+  const eyeBtn = document.getElementById('eyeBtn');
+  eyeBtn.innerHTML = keyVisible ? '<i data-lucide="eye-off" style="width:16px;height:16px;"></i>' : '<i data-lucide="eye" style="width:16px;height:16px;"></i>';
+  lucide.createIcons();
+}
+
+function toggleKeyFreeze() {
+  const val = apiKeyInput.value.trim();
+  
+  if (keyLocked) {
+    // Buka lock
+    showConfirm('Buka API Key?', 'Anda akan dapat menukar atau memadam key ini. Teruskan?', () => {
+      keyLocked = false;
+      localStorage.setItem('groq_api_locked', 'false');
+      apiKeyInput.disabled = false;
+      if (window.elementSdk) window.elementSdk.setConfig({ groq_api_key: '', groq_api_locked: false });
+      updateKeyUI();
+      showToast('API Key dibuka 🔓 - Anda boleh edit sekarang', 'bg-blue-500');
+    });
+  } else {
+    // Kunci key
+    if (val.length < 10) {
+      showToast('Sila masukkan API Key yang sah (min 10 karakter)', 'bg-yellow-500');
+      return;
+    }
+    
+    keyLocked = true;
+    localStorage.setItem('groq_api_key', val);
+    localStorage.setItem('groq_api_locked', 'true');
+    if (window.elementSdk) window.elementSdk.setConfig({ groq_api_key: val, groq_api_locked: true });
+    apiKeyInput.disabled = true;
+    updateKeyUI();
+    showToast('API Key dikunci untuk semua pengguna! 🔒', 'bg-green-500');
+  }
+}
+
+// ====================== MODE ======================
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById('modeNew').classList.toggle('active', mode === 'new');
+  document.getElementById('modeEdit').classList.toggle('active', mode === 'edit');
+  document.getElementById('editorSection').classList.toggle('hidden', mode !== 'edit');
+  document.getElementById('genBtnText').textContent = mode === 'new' ? 'Jana PWA' : 'Ubah Suai Kod';
+  updateEditorSize();
+}
+
+// ====================== TABS ======================
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+  document.getElementById('currentFileName').textContent = fileNames[tab];
+  renderCodeDisplay();
+}
+
+function renderCodeDisplay() {
+  const code = codeFiles[currentTab] || '';
+  const display = document.getElementById('codeDisplay');
+  display.textContent = code || '// Tiada kod dijana lagi...';
+  document.getElementById('currentFileSize').textContent = formatBytes(new Blob([code]).size);
+}
+
+// ====================== EDITOR ======================
+function clearEditor() {
+  showConfirm('Padam Kod?', 'Adakah anda pasti mahu memadam kod dalam editor?', () => {
+    document.getElementById('editorCode').textContent = '';
+    updateEditorSize();
+  });
+}
+
+function updateEditorSize() {
+  const text = document.getElementById('editorCode').textContent || '';
+  document.getElementById('editorSize').textContent = formatBytes(new Blob([text]).size);
+  
+  const frame = document.getElementById('previewFrame');
+  const defaultMsg = "<html><body style='display:flex;align-items:center;justify-content:center;height:100%;margin:0;font-family:sans-serif;background:linear-gradient(135deg,#eff6ff,#dbeafe);'><div style='text-align:center;color:#94a3b8;'><div style='font-size:40px;margin-bottom:8px;'>📱</div><div style='font-size:13px;font-weight:600;'>Pratonton PWA</div><div style='font-size:11px;margin-top:4px;'>Jana kod untuk melihat pratonton</div></div></body></html>";
+  
+  if (currentMode === 'edit') {
+    frame.srcdoc = text.trim().length > 0 ? text : defaultMsg;
+  } else {
+    frame.srcdoc = codeFiles.index ? codeFiles.index : defaultMsg;
+  }
+}
+
+document.getElementById('editorCode').addEventListener('input', updateEditorSize);
+
+// ====================== GENERATE ======================
+async function handleGenerate() {
+  const apiKey = apiKeyInput.value.trim();
+  if (apiKey.length < 10) {
+    showToast('Sila masukkan API Key Groq yang sah', 'bg-red-500');
+    return;
+  }
+
+  const prompt = document.getElementById('promptInput').value.trim();
+  if (!prompt) {
+    showToast('Sila masukkan prompt arahan', 'bg-yellow-500');
+    return;
+  }
+
+  if (isGenerating) return;
+  isGenerating = true;
+
+  const btn = document.getElementById('generateBtn');
+  btn.classList.add('generating');
+  btn.disabled = true;
+  document.getElementById('genBtnText').innerHTML = '<span class="spinner"></span> Menjana...';
+
+  try {
+    let systemPrompt, userPrompt;
+
+    if (currentMode === 'new') {
+      systemPrompt = buildNewSystemPrompt();
+      userPrompt = prompt;
+    } else {
+      const existingCode = document.getElementById('editorCode').textContent.trim();
+      systemPrompt = buildEditSystemPrompt();
+      userPrompt = `EXISTING CODE:\n\`\`\`\n${existingCode}\n\`\`\`\n\nCHANGES REQUESTED:\n${prompt}`;
+    }
+
+    const response = await callGroqAPI(apiKey, systemPrompt, userPrompt);
+
+    if (response) {
+      parseAndStoreResponse(response, prompt);
+      generationCount++;
+      document.getElementById('genCount').textContent = generationCount;
+      document.getElementById('genCounter').classList.remove('hidden');
+      document.getElementById('outputSection').classList.remove('hidden');
+      document.getElementById('versionBadge').classList.remove('hidden');
+      document.getElementById('helpBtn').classList.remove('hidden');
+      document.getElementById('downloadAllBtn').classList.remove('hidden');
+      document.getElementById('versionText').textContent = `v${generationCount}.0`;
+      switchTab('index');
+      updatePreview();
+      showToast('PWA berjaya dijana! ✨', 'bg-green-500');
+    }
+  } catch (err) {
+    showToast('Ralat: ' + (err.message || 'Gagal menjana'), 'bg-red-500');
+  } finally {
+    isGenerating = false;
+    btn.classList.remove('generating');
+    btn.disabled = false;
+    const icon = currentMode === 'new' ? 'sparkles' : 'wrench';
+    document.getElementById('genBtnText').innerHTML = `<i data-lucide="${icon}" style="width:18px;height:18px;"></i> ${currentMode === 'new' ? 'Jana PWA' : 'Ubah Suai Kod'}`;
+    lucide.createIcons();
+  }
+}
+
+function buildNewSystemPrompt() {
+  return `You are a world-class PWA architect. Create STUNNING, production-grade PWAs.
+
+RETURN ONLY VALID JSON (no markdown, no backticks):
+{
+  "index": "<!DOCTYPE html>...",
+  "manifest": "{...}",
+  "sw": "...",
+  "gas": "",
+  "other": "",
+  "summary": "Malay description"
+}
+
+PWA DESIGN STANDARDS:
+1. VISUAL EXCELLENCE
+   - Modern, trendy UI with premium aesthetics
+   - Smooth animations, micro-interactions
+   - Color gradients, shadows, depth
+   - Professional typography hierarchy
+   - Dark/light mode support
+   - Glassmorphism, neumorphism patterns where appropriate
+
+2. UX PERFECTION
+   - Intuitive navigation, zero confusion
+   - Clear CTAs, proper button hierarchy
+   - Form validation with instant feedback
+   - Loading states, skeleton screens
+   - Empty states with helpful guidance
+   - Accessibility: WCAG AA compliant
+
+3. PERFORMANCE
+   - Minimal bundle size, optimized CSS
+   - Inline critical CSS
+   - Lazy load images/content
+   - Service worker with smart caching
+   - Instant startup, smooth 60fps animations
+
+4. FUNCTIONALITY
+   - Offline-first approach
+   - Local storage for persistence
+   - Real-time sync capability
+   - Cross-browser compatibility
+   - Mobile-first responsive design
+
+5. POLISH
+   - Professional error handling
+   - Meaningful notifications
+   - Consistent spacing & alignment
+   - Brand-appropriate color palette
+   - Thought-out iconography
+
+Create PWAs that wow users immediately. NO generic templates. Each PWA must feel premium, purpose-built, delightful.`;
+}
+
+function buildEditSystemPrompt() {
+  return `You are a world-class PWA architect enhancing existing code.
+
+RETURN ONLY VALID JSON (no markdown):
+{
+  "index": "...",
+  "manifest": "...",
+  "sw": "...",
+  "gas": "",
+  "other": "",
+  "summary": "Malay changes"
+}
+
+ENHANCEMENT RULES:
+- Keep core functionality
+- Apply ONLY requested changes
+- Improve visual design where possible
+- Add micro-interactions, smooth transitions
+- Maintain performance optimization
+- Fix any bugs discovered
+- Enhance accessibility if needed
+- Ensure coherent file integration
+
+QUALITY CHECK:
+✓ Code is production-ready
+✓ No console errors
+✓ Responsive on all devices
+✓ Fast load time
+✓ Professional polish applied`;
+}
+
+async function callGroqAPI(apiKey, systemPrompt, userPrompt) {
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      temperature: 0.7,
+      max_tokens: 32000,
+      response_format: { type: 'json_object' }
+    })
+  });
+
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error?.message || `API Error ${res.status}`);
+  }
+
+  const data = await res.json();
+  const content = data.choices?.[0]?.message?.content;
+  if (!content) throw new Error('Tiada respons dari API');
+  return content;
+}
+
+function parseAndStoreResponse(raw, prompt) {
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (e) {
+    // Try to extract JSON from response
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (match) {
+      parsed = JSON.parse(match[0]);
+    } else {
+      throw new Error('Gagal memproses respons AI');
+    }
+  }
+
+  codeFiles.index = parsed.index || '';
+  codeFiles.manifest = parsed.manifest || '';
+  codeFiles.sw = parsed.sw || '';
+  codeFiles.gas = parsed.gas || '';
+  codeFiles.other = parsed.other || '';
+
+  const summary = parsed.summary || 'Kod berjaya dijana.';
+  changeLog.unshift({
+    version: `v${generationCount + 1}.0`,
+    mode: currentMode === 'new' ? 'Baru' : 'Ubah Suai',
+    prompt: prompt.substring(0, 100) + (prompt.length > 100 ? '...' : ''),
+    summary: summary,
+    timestamp: new Date().toLocaleString('ms-MY')
+  });
+}
+
+// ====================== PREVIEW ======================
+function updatePreview() {
+  const frame = document.getElementById('previewFrame');
+  const html = codeFiles.index;
+  if (html) {
+    frame.srcdoc = html;
+  }
+}
+
+function refreshPreview() {
+  updatePreview();
+  showToast('Pratonton dimuat semula', 'bg-brand-500');
+}
+
+// ====================== COPY & DOWNLOAD ======================
+function copyCurrentCode() {
+  const code = codeFiles[currentTab] || '';
+  if (!code) { showToast('Tiada kod untuk disalin', 'bg-yellow-500'); return; }
+  navigator.clipboard.writeText(code).then(() => {
+    showToast('Kod berjaya disalin! 📋', 'bg-green-500');
+  }).catch(() => {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = code;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('Kod berjaya disalin! 📋', 'bg-green-500');
+  });
+}
+
+function downloadCurrentCode() {
+  const code = codeFiles[currentTab] || '';
+  if (!code) { showToast('Tiada kod untuk dimuat turun', 'bg-yellow-500'); return; }
+  downloadFile(fileNames[currentTab], code);
+}
+
+function downloadAllFiles() {
+  let hasFiles = false;
+  Object.entries(codeFiles).forEach(([key, code]) => {
+    if (code && code.trim()) {
+      downloadFile(fileNames[key], code);
+      hasFiles = true;
+    }
+  });
+  if (hasFiles) showToast('Semua fail dimuat turun! 📦', 'bg-green-500');
+  else showToast('Tiada fail untuk dimuat turun', 'bg-yellow-500');
+}
+
+function downloadFile(name, content) {
+  const blob = new Blob([content], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ====================== HELP ======================
+function showHelp() {
+  const overlay = document.getElementById('helpOverlay');
+  const content = document.getElementById('helpContent');
+
+  if (changeLog.length === 0) {
+    content.innerHTML = '<p class="text-gray-400 text-center py-8">Tiada log perubahan lagi.</p>';
+  } else {
+    content.innerHTML = changeLog.map((log, i) => `
+      <div class="${i > 0 ? 'mt-4 pt-4 border-t border-gray-100' : ''}">
+        <div class="flex items-center gap-2 mb-1.5">
+          <span class="version-badge">${log.version}</span>
+          <span class="text-xs px-2 py-0.5 rounded-full font-medium ${log.mode === 'Baru' ? 'bg-green-50 text-green-600' : 'bg-yellow-50 text-yellow-600'}">${log.mode}</span>
+          <span class="text-xs text-gray-400 ml-auto">${log.timestamp}</span>
+        </div>
+        <p class="text-xs text-gray-400 italic mb-1">Prompt: "${log.prompt}"</p>
+        <p class="text-sm text-gray-700">${log.summary}</p>
+      </div>
+    `).join('');
+  }
+
+  overlay.classList.add('show');
+}
+
+function closeHelp() {
+  document.getElementById('helpOverlay').classList.remove('show');
+}
+
+// ====================== CONFIRM ======================
+let confirmCallback = null;
+function showConfirm(title, msg, cb) {
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMsg').textContent = msg;
+  confirmCallback = cb;
+  document.getElementById('confirmOverlay').classList.add('show');
+}
+function closeConfirm() {
+  document.getElementById('confirmOverlay').classList.remove('show');
+  confirmCallback = null;
+}
+document.getElementById('confirmAction').addEventListener('click', () => {
+  if (confirmCallback) confirmCallback();
+  closeConfirm();
+});
+
+// ====================== TOAST ======================
+function showToast(msg, bgClass) {
+  const toast = document.getElementById('toast');
+  toast.className = 'toast ' + (bgClass || 'bg-brand-600');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// ====================== UTILS ======================
+function formatBytes(bytes) {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+// ====================== ELEMENT SDK ======================
 const defaultConfig = {
   app_title: 'PWA Generator Studio',
-  background_color: '#eff6ff',
-  surface_color: '#ffffff',
+  background_color: '#ffffff',
+  surface_color: '#eff6ff',
   text_color: '#1e293b',
-  primary_action: '#2563eb',
-  secondary_action: '#64748b'
+  primary_action_color: '#2563eb',
+  secondary_action_color: '#3b82f6',
+  font_family: 'Plus Jakarta Sans',
+  font_size: 14,
+  groq_api_key: '',
+  groq_api_locked: false
 };
+
+function applyConfig(config) {
+  const bg = config.background_color || defaultConfig.background_color;
+  const surface = config.surface_color || defaultConfig.surface_color;
+  const text = config.text_color || defaultConfig.text_color;
+  const primary = config.primary_action_color || defaultConfig.primary_action_color;
+  const secondary = config.secondary_action_color || defaultConfig.secondary_action_color;
+  const font = config.font_family || defaultConfig.font_family;
+  const size = config.font_size || defaultConfig.font_size;
+
+  document.body.style.backgroundColor = bg;
+  document.body.style.color = text;
+  document.body.style.fontFamily = `${font}, Plus Jakarta Sans, sans-serif`;
+  document.body.style.fontSize = size + 'px';
+
+  const title = document.getElementById('appTitle');
+  if (title) {
+    title.textContent = config.app_title || defaultConfig.app_title;
+    title.style.color = text;
+    title.style.fontFamily = `${font}, Plus Jakarta Sans, sans-serif`;
+    title.style.fontSize = (size * 1.14) + 'px';
+  }
+
+  const genBtn = document.getElementById('generateBtn');
+  if (genBtn) {
+    genBtn.style.background = `linear-gradient(to right, ${secondary}, ${primary})`;
+  }
+
+  const rightPanel = document.querySelector('.lg\\:w-\\[45\\%\\]');
+  if (rightPanel) {
+    rightPanel.style.background = `linear-gradient(to bottom right, ${surface}, ${bg})`;
+  }
+
+  document.querySelectorAll('.tab-btn.active').forEach(el => {
+    el.style.color = primary;
+  });
+
+  if (config.groq_api_locked) {
+    keyLocked = true;
+    if (config.groq_api_key) apiKeyInput.value = config.groq_api_key;
+    apiKeyInput.disabled = true;
+    if (typeof updateKeyUI === 'function') updateKeyUI();
+  }
+}
 
 window.elementSdk.init({
   defaultConfig,
-  onConfigChange: async (config) => {
-    const title = config.app_title || defaultConfig.app_title;
-    const bg = config.background_color || defaultConfig.background_color;
-    const surface = config.surface_color || defaultConfig.surface_color;
-    const text = config.text_color || defaultConfig.text_color;
-    const primary = config.primary_action || defaultConfig.primary_action;
-    const secondary = config.secondary_action || defaultConfig.secondary_action;
-
-    const el = id => document.getElementById(id);
-    const appRoot = el('app-root');
-    if (appRoot) appRoot.style.background = `linear-gradient(180deg, ${bg} 0%, ${surface} 40%)`;
-
-    const titleEl = el('appTitle');
-    if (titleEl) { titleEl.textContent = title; titleEl.style.color = text; }
-
-    document.querySelectorAll('.gen-btn').forEach(b => {
-      b.style.background = `linear-gradient(135deg, ${primary}, ${primary})`;
-    });
-    document.querySelectorAll('.tab-btn.active').forEach(b => {
-      b.style.background = primary; b.style.borderColor = primary;
-    });
-    document.querySelectorAll('.version-badge').forEach(b => {
-      b.style.background = `linear-gradient(135deg, ${primary}, ${primary})`;
-    });
-  },
+  onConfigChange: async (config) => { applyConfig(config); },
   mapToCapabilities: (config) => ({
     recolorables: [
       { get: () => config.background_color || defaultConfig.background_color, set: (v) => { config.background_color = v; window.elementSdk.setConfig({ background_color: v }); } },
       { get: () => config.surface_color || defaultConfig.surface_color, set: (v) => { config.surface_color = v; window.elementSdk.setConfig({ surface_color: v }); } },
       { get: () => config.text_color || defaultConfig.text_color, set: (v) => { config.text_color = v; window.elementSdk.setConfig({ text_color: v }); } },
-      { get: () => config.primary_action || defaultConfig.primary_action, set: (v) => { config.primary_action = v; window.elementSdk.setConfig({ primary_action: v }); } },
-      { get: () => config.secondary_action || defaultConfig.secondary_action, set: (v) => { config.secondary_action = v; window.elementSdk.setConfig({ secondary_action: v }); } }
+      { get: () => config.primary_action_color || defaultConfig.primary_action_color, set: (v) => { config.primary_action_color = v; window.elementSdk.setConfig({ primary_action_color: v }); } },
+      { get: () => config.secondary_action_color || defaultConfig.secondary_action_color, set: (v) => { config.secondary_action_color = v; window.elementSdk.setConfig({ secondary_action_color: v }); } }
     ],
     borderables: [],
     fontEditable: {
-      get: () => config.font_family || 'DM Sans',
+      get: () => config.font_family || defaultConfig.font_family,
       set: (v) => { config.font_family = v; window.elementSdk.setConfig({ font_family: v }); }
     },
-    fontSizeable: undefined
+    fontSizeable: {
+      get: () => config.font_size || defaultConfig.font_size,
+      set: (v) => { config.font_size = v; window.elementSdk.setConfig({ font_size: v }); }
+    }
   }),
   mapToEditPanelValues: (config) => new Map([
     ['app_title', config.app_title || defaultConfig.app_title]
   ])
 });
 
-// ========== UTILITY FUNCTIONS ==========
-
-function showToast(message, type = 'info') {
-  const container = document.getElementById('toastContainer');
-  const toast = document.createElement('div');
-  toast.className = `toast ${type}`;
-  toast.textContent = message;
-  container.appendChild(toast);
-  setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; setTimeout(() => toast.remove(), 300); }, 3500);
-}
-
-function toggleKeyVisibility() {
-  const input = document.getElementById('apiKeyInput');
-  input.type = input.type === 'password' ? 'text' : 'password';
-}
-
-function formatFileSize(str) {
-  const bytes = new Blob([str || '']).size;
-  if (bytes === 0) return '0 B';
-  if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-  return (bytes / 1048576).toFixed(2) + ' MB';
-}
-
-function updateFileSizeBadge() {
-  const code = state.files[state.currentTab] || '';
-  document.getElementById('fileSizeBadge').textContent = formatFileSize(code);
-}
-
-function updateVersionBadge() {
-  document.getElementById('versionBadge').textContent = `v${state.version.major}.${state.version.minor}`;
-}
-
-// ========== MODE TOGGLE ==========
-function setMode(mode) {
-  state.mode = mode;
-  document.getElementById('modeNew').classList.toggle('active', mode === 'new');
-  document.getElementById('modeEditor').classList.toggle('active', mode === 'editor');
-  
-  // Properly show/hide paste code section
-  const pasteSection = document.getElementById('pasteCodeSection');
-  if (mode === 'editor') {
-    pasteSection.classList.remove('hidden');
-    pasteSection.style.display = 'block';
-  } else {
-    pasteSection.classList.add('hidden');
-    pasteSection.style.display = 'none';
-  }
-  
-  // Update button text and clear input on mode change
-  document.getElementById('genBtnText').textContent = mode === 'new' ? 'Jana PWA' : 'Repair / Ubah Suai';
-  if (mode === 'editor') {
-    document.getElementById('promptInput').placeholder = 'Terangkan perubahan yang anda mahu buat pada kod...';
-  } else {
-    document.getElementById('promptInput').placeholder = 'Huraikan aplikasi PWA yang anda mahu...';
-  }
-  
-  lucide.createIcons();
-}
-
-// ========== TAB SWITCHING ==========
-function switchTab(tab) {
-  state.currentTab = tab;
-  document.querySelectorAll('.tab-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.tab === tab);
-  });
-  document.getElementById('codeDisplay').value = state.files[tab] || '';
-  updateFileSizeBadge();
-}
-
-// ========== PREVIEW ==========
-function refreshPreview() {
-  const frame = document.getElementById('previewFrame');
-  let html = state.files.index || '';
-  if (!html.trim()) {
-    frame.srcdoc = "<html><body style='display:flex;align-items:center;justify-content:center;height:100%;font-family:sans-serif;color:#94a3b8;background:#f8fafc;'><div style='text-align:center;'><p style='font-size:36px;margin:0;'>📱</p><p style='font-size:13px;margin-top:8px;'>Pratonton PWA</p></div></body></html>";
-    return;
-  }
-  // Inject viewport meta for mobile preview
-  if (!html.includes('viewport')) {
-    html = html.replace('<head>', '<head><meta name="viewport" content="width=device-width,initial-scale=1.0">');
-  }
-  frame.srcdoc = html;
-}
-
-// ========== COPY & DOWNLOAD ==========
-function copyCurrentCode() {
-  const code = state.files[state.currentTab];
-  if (!code) { showToast('Tiada kod untuk disalin', 'error'); return; }
-  navigator.clipboard.writeText(code).then(() => showToast('Kod berjaya disalin!', 'success')).catch(() => showToast('Gagal menyalin', 'error'));
-}
-
-function downloadAllFiles() {
-  const fileNames = { index: 'index.html', manifest: 'manifest.json', sw: 'sw.js', gas: 'google-apps-script.gs', other: 'other.txt' };
-  let hasFile = false;
-  for (const [key, content] of Object.entries(state.files)) {
-    if (content && content.trim()) {
-      hasFile = true;
-      const blob = new Blob([content], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = fileNames[key]; a.click();
-      URL.revokeObjectURL(url);
-    }
-  }
-  if (!hasFile) showToast('Tiada fail untuk dimuat turun', 'error');
-  else showToast('Semua fail dimuat turun!', 'success');
-}
-
-// ========== ERROR DETECTION SYSTEM ==========
-const errorDetector = {
-  errors: [],
-  warnings: [],
-
-  validateJSON(str, type) {
-    try {
-      JSON.parse(str);
-      return { valid: true };
-    } catch (e) {
-      return { valid: false, error: `${type} JSON tidak sah: ${e.message}` };
-    }
-  },
-
-  validateHTML(str) {
-    const issues = [];
-    // Check for unclosed tags
-    const tagPattern = /<(\w+)[^>]*>/g;
-    const closedTags = new Set(['img', 'input', 'br', 'hr', 'meta', 'link']);
-    let match;
-    while ((match = tagPattern.exec(str)) !== null) {
-      const tag = match[1].toLowerCase();
-      if (!closedTags.has(tag) && !str.includes(`</${tag}>`)) {
-        issues.push(`Tag <${tag}> mungkin tidak ditutup`);
-      }
-    }
-    // Check for basic HTML structure
-    if (!str.includes('<html') && str.includes('<body')) issues.push('HTML structure tidak lengkap - tiada <html> tag');
-    if (!str.includes('<!doctype html') && !str.includes('<!DOCTYPE html')) issues.push('DOCTYPE declaration hilang');
-    // Check for meta viewport
-    if (!str.includes('viewport') && str.includes('<head')) issues.push('Meta viewport hilang - PWA mungkin tidak responsive');
-    return issues;
-  },
-
-  validateManifest(str) {
-    const issues = [];
-    try {
-      const manifest = JSON.parse(str);
-      if (!manifest.name) issues.push('Manifest: "name" diperlukan');
-      if (!manifest.short_name) issues.push('Manifest: "short_name" diperlukan');
-      if (!manifest.start_url) issues.push('Manifest: "start_url" diperlukan (sepatutnya "/" atau "./index.html")');
-      if (!manifest.display) issues.push('Manifest: "display" diperlukan (sepatutnya "standalone")');
-      if (!manifest.icons || manifest.icons.length === 0) issues.push('Manifest: sekurang-kurangnya 1 icon diperlukan');
-      if (!manifest.theme_color) issues.push('Manifest: "theme_color" diperlukan');
-      if (!manifest.background_color) issues.push('Manifest: "background_color" diperlukan');
-    } catch (e) {
-      issues.push(`Manifest JSON tidak sah: ${e.message}`);
-    }
-    return issues;
-  },
-
-  validateServiceWorker(str) {
-    const issues = [];
-    if (!str.includes('self.addEventListener')) issues.push('Service Worker: tiada event listener');
-    if (!str.includes('install') && !str.includes("'install'")) issues.push('Service Worker: tiada install event');
-    if (!str.includes('fetch') && !str.includes("'fetch'")) issues.push('Service Worker: tiada fetch event (caching tidak akan berfungsi)');
-    if (!str.includes('activate') && !str.includes("'activate'")) issues.push('Service Worker: tiada activate event');
-    return issues;
-  },
-
-  validateIndex(str) {
-    const issues = [];
-    if (!str.includes('navigator.serviceWorker') && !str.includes('serviceWorker')) {
-      issues.push('Index.html: Service Worker tidak didaftarkan');
-    }
-    if (!str.includes('manifest')) {
-      issues.push('Index.html: manifest.json tidak dirujuk');
-    }
-    if (!str.includes('charset') && !str.includes('utf-8')) {
-      issues.push('Index.html: Charset encoding tidak ditetapkan');
-    }
-    if (!str.includes('<title>')) {
-      issues.push('Index.html: Page title hilang');
-    }
-    return issues;
-  },
-
-  scan() {
-    this.errors = [];
-    this.warnings = [];
-
-    // Validate each file
-    if (state.files.index && state.files.index.trim()) {
-      const htmlIssues = this.validateHTML(state.files.index);
-      const indexIssues = this.validateIndex(state.files.index);
-      [...htmlIssues, ...indexIssues].forEach(issue => {
-        if (issue.includes('mungkin') || issue.includes('tidak akan')) {
-          this.warnings.push({ file: 'index.html', msg: issue });
-        } else {
-          this.errors.push({ file: 'index.html', msg: issue });
-        }
-      });
-    }
-
-    if (state.files.manifest && state.files.manifest.trim()) {
-      const manifestIssues = this.validateManifest(state.files.manifest);
-      manifestIssues.forEach(issue => {
-        if (issue.includes('diperlukan')) {
-          this.errors.push({ file: 'manifest.json', msg: issue });
-        } else {
-          this.warnings.push({ file: 'manifest.json', msg: issue });
-        }
-      });
-    }
-
-    if (state.files.sw && state.files.sw.trim()) {
-      const swIssues = this.validateServiceWorker(state.files.sw);
-      swIssues.forEach(issue => {
-        if (issue.includes('tidak akan')) {
-          this.warnings.push({ file: 'sw.js', msg: issue });
-        } else {
-          this.errors.push({ file: 'sw.js', msg: issue });
-        }
-      });
-    }
-
-    return { errors: this.errors, warnings: this.warnings };
-  }
-};
-
-// ========== HELP / CHANGELOG / DIAGNOSTICS ==========
-function showHelp() {
-  const content = document.getElementById('helpContent');
-  const { errors, warnings } = errorDetector.scan();
-
-  let html = '';
-
-  // Diagnostics Section
-  if (errors.length > 0 || warnings.length > 0) {
-    html += '<div class="mb-4">';
-    html += '<h3 class="font-bold text-slate-800 mb-2">🔍 Pengesan Ralat</h3>';
-
-    if (errors.length > 0) {
-      html += '<div class="mb-2">';
-      errors.forEach(err => {
-        html += `<div class="p-2 bg-red-50 border border-red-200 rounded-lg mb-2">
-          <p class="text-xs font-semibold text-red-700">❌ ${err.file}</p>
-          <p class="text-xs text-red-600 mt-1">${err.msg}</p>
-        </div>`;
-      });
-      html += '</div>';
-    }
-
-    if (warnings.length > 0) {
-      html += '<div>';
-      warnings.forEach(warn => {
-        html += `<div class="p-2 bg-yellow-50 border border-yellow-200 rounded-lg mb-2">
-          <p class="text-xs font-semibold text-yellow-700">⚠️ ${warn.file}</p>
-          <p class="text-xs text-yellow-600 mt-1">${warn.msg}</p>
-        </div>`;
-      });
-      html += '</div>';
-    }
-    html += '</div>';
-  } else if (Object.values(state.files).some(f => f && f.trim())) {
-    html += '<div class="p-3 bg-green-50 border border-green-200 rounded-xl mb-4"><p class="text-sm font-semibold text-green-700">✅ Semua fail terlihat baik!</p></div>';
-  }
-
-  // Changelog Section
-  html += '<h3 class="font-bold text-slate-800 mb-2">📋 Log Perubahan</h3>';
-  if (state.changelog.length === 0) {
-    html += '<p class="text-slate-400">Belum ada perubahan dijana lagi.</p>';
-  } else {
-    state.changelog.forEach(log => {
-      html += `
-        <div class="p-3 bg-blue-50 rounded-xl border border-blue-100 mb-2">
-          <div class="flex items-center gap-2 mb-1">
-            <span class="version-badge text-xs">v${log.version}</span>
-            <span class="text-xs text-slate-400">${log.timestamp}</span>
-          </div>
-          <p class="text-sm text-slate-700 font-medium">${log.mode === 'new' ? '🆕 Jana Baru' : '🔧 Repair/Ubah Suai'}</p>
-          <p class="text-xs text-slate-500 mt-1">${log.summary}</p>
-        </div>
-      `;
-    });
-  }
-
-  content.innerHTML = html;
-  document.getElementById('helpOverlay').style.display = 'flex';
-  lucide.createIcons();
-}
-
-function closeHelp() {
-  document.getElementById('helpOverlay').style.display = 'none';
-}
-
-// ========== AI GENERATION ==========
-async function generateCode() {
-  const apiKey = document.getElementById('apiKeyInput').value.trim();
-  if (!apiKey) { showToast('Sila masukkan Groq API Key', 'error'); return; }
-
-  const prompt = document.getElementById('promptInput').value.trim();
-  if (!prompt) { showToast('Sila masukkan arahan prompt', 'error'); return; }
-
-  if (state.isGenerating) return;
-  state.isGenerating = true;
-
-  const btn = document.getElementById('generateBtn');
-  const btnText = document.getElementById('genBtnText');
-  btn.disabled = true;
-  btnText.innerHTML = '<span class="spinner"></span> Menjana...';
-
-  const pastedCode = state.mode === 'editor' ? document.getElementById('pasteCodeInput').value.trim() : '';
-  const existingIndex = state.files.index || '';
-
-  let systemPrompt = '';
-  if (state.mode === 'new') {
-    systemPrompt = `You are an expert PWA developer. Generate a COMPLETE Progressive Web App based on the user's prompt.
-
-CRITICAL RULES:
-1. You MUST respond with a valid JSON object containing these keys: "index", "manifest", "sw", "gas", "other", "summary"
-2. "index" = complete index.html with inline CSS/JS, responsive, includes PWA meta tags and service worker registration
-3. "manifest" = valid manifest.json for PWA
-4. "sw" = service worker (sw.js) with caching strategy
-5. "gas" = Google Apps Script code if backend is needed, otherwise empty string
-6. "other" = any additional code/config needed, otherwise empty string
-7. "summary" = brief description in Malay of what was generated (2-3 sentences)
-8. All code must be production-ready, beautiful UI, mobile-first responsive design
-9. Use modern CSS, clean typography, and professional color schemes
-10. The index.html must be fully self-contained and functional
-11. Ensure manifest.json references correct icons and start_url
-12. Service worker must cache essential assets
-13. Do NOT wrap your response in markdown code blocks. Return ONLY the raw JSON object.`;
-  } else {
-    systemPrompt = `You are an expert PWA developer and code repair specialist. The user will provide existing code and instructions for modifications/repairs.
-
-CRITICAL RULES:
-1. You MUST respond with a valid JSON object containing these keys: "index", "manifest", "sw", "gas", "other", "summary"
-2. Repair, improve, or modify the provided code based on the user's prompt
-3. Keep all working functionality intact - only change what's requested
-4. Fix any bugs, accessibility issues, or performance problems mentioned
-5. "summary" = brief description in Malay of what changes were made (2-3 sentences)
-6. If code for a file type is not provided, generate appropriate code or return empty string
-7. Do NOT wrap your response in markdown code blocks. Return ONLY the raw JSON object.`;
-  }
-
-  let userMessage = '';
-  if (state.mode === 'new') {
-    userMessage = `Create a PWA app: ${prompt}`;
-  } else {
-    const codeToEdit = pastedCode || existingIndex;
-    userMessage = `Here is the existing code to repair/modify:\n\n${codeToEdit}\n\nInstructions: ${prompt}`;
-    if (state.files.manifest) userMessage += `\n\nExisting manifest.json:\n${state.files.manifest}`;
-    if (state.files.sw) userMessage += `\n\nExisting sw.js:\n${state.files.sw}`;
-  }
-
-  try {
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userMessage }
-        ],
-        temperature: 0.7,
-        max_tokens: 32000,
-        response_format: { type: 'json_object' }
-      })
-    });
-
-    if (!response.ok) {
-      const errData = await response.json().catch(() => ({}));
-      throw new Error(errData.error?.message || `API Error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
-
-    if (!content) throw new Error('Tiada respons dari AI');
-
-    let parsed;
-    try {
-      parsed = JSON.parse(content);
-    } catch (e) {
-      // Try to extract JSON from markdown code blocks
-      const jsonMatch = content.match(/</script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9de1844a43f335be',t:'MTc3MzgwODM4MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+// Init icons
+lucide.createIcons();
+</script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9de1c57222c8a559',t:'MTc3MzgxMTA0OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

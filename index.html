@@ -135,7 +135,7 @@
       if (isActive || offlinePending) {
         if(btnMasuk) btnMasuk.style.display = 'none'; // Sembunyikan daftar masuk sepenuhnya jika belum keluar
         if(formWarn) {
-          formWarn.innerHTML = "⚠️ ANDA BELUM DAFTAR KELUAR.<br><span style='font-size:10px; font-weight:normal;'>Sila Daftar Keluar (Check-Out) sebelum mendaftar masuk semula. <br>Sistem Auto Check-In ditutup sementara.</span>";
+          formWarn.innerHTML = "⚠️ ANDA BELUM DAFTAR KELUAR";
           formWarn.style.display = 'block';
         }
         localStorage.setItem('ehadir_auto_in_blocked', 'true');

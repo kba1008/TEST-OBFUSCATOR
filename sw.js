@@ -1,120 +1,1520 @@
-// sw.js - Versi Ultra-Hybrid v51 (Auto-Update Version)
-// Dibuat untuk: E-HADIR PWA
-// Strategi: Network First (Data Terkini) -> Fallback Cache (Offline)
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistem Pelawat & Kehadiran v25.0 (Anti-Double Active Block)</title>
+  
+  <!-- ====================================================================== -->
+  <!--                 RUANGAN EDIT PENGGUNA (mantap)                -->
+  <!-- ====================================================================== -->
+  <script>
+    // 1. Masukkan Link Google Apps Script (Web App URL) di sini
+    const API_URL = 'https://script.google.com/macros/s/AKfycbzH1AyoSXwERKmtKlBibCQrjXc7gS375Jvue_H7M3y94bjXCG820cMzGBB85GGHNc5mXw/exec'; 
+    
+    // 2. Kata Laluan untuk Admin / Manual Override
+    const PASSCODE = "101010";
+       
+    // 3. Koordinat Lokasi (Ambil dari Google Maps)
+    const SCHOOL_LAT = 5.250891554235944; 
+    const SCHOOL_LNG = 100.75591785106874; 
+     
+    // 4. Jarak Radius yang dibenarkan (dalam meter)
+    const RADIUS_METER = 300; 
 
-const CACHE_NAME = 'ehadir-hybrid-v51-autoupdate';
-const URLS_TO_CACHE = [
-  './',
-  './index.html',
-  './manifest.json',
-  './logo.png'
-];
+    // 5. Anti-Spam Check-Check: Berapa minit dalam kawasan baru auto-masuk?
+    const MINIT_ANTI_SPAM_MASUK = 1;
 
-// 1. INSTALL: Simpan 'kulit' aplikasi (fail asas) ke dalam telefon
-self.addEventListener('install', (event) => {
-  self.skipWaiting(); // Paksa SW baru ambil alih segera
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('Opened cache');
-        return cache.addAll(URLS_TO_CACHE);
-      })
-  );
-});
+    // 6. Auto Checkout Delay: Berapa minit luar kawasan baru auto-keluar?
+    const MINIT_DELAY_KELUAR = 1;
 
-// 2. ACTIVATE: Buang cache versi lama (bersihkan memori telefon)
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Memadam cache lama:', cacheName);
-            return caches.delete(cacheName);
-          }
+    // 7. Jarak Reset Auto-In: Pengguna perlu keluar sejauh ini (meter) untuk aktifkan semula auto-in selepas check-out
+    const RADIUS_RESET_AUTO_IN = 300;
+
+    // 8. KONFIGURASI JADUAL BERTUGAS & KATEGORI
+    const JADUAL_BERTUGAS = {
+      "GURU":       { masuk: "07:20:00 AM", keluar: "02:00:00 PM" },
+      "AKP":        { masuk: "07:00:00 AM", keluar: "05:00:00 PM" },
+      "KEBERSIHAN": { masuk: "07:00:00 AM", keluar: "04:00:00 PM" },
+      "PELAWAT":    { masuk: "BEBAS",       keluar: "BEBAS" }
+    };
+
+    // --------------------------------------------------------------------------------------- 
+    //       ZON KOD KRITIKAL & LOGIK PENTING 
+    // --------------------------------------------------------------------------------------- 
+    
+    let jamConfig = JADUAL_BERTUGAS; 
+    let isInZone = false; 
+    let currentDist = 0; 
+    let lastLat = 0, lastLng = 0;
+    let currentList = []; 
+    let isSubmitting = false; 
+    let hasNotifiedWake = false; 
+    let inZoneStart = 0; 
+    let outZoneStart = 0; 
+    let wakeLock = null;
+    let hasNotifiedEntry = false;
+    let hasNotifiedExit = false;
+
+    function sendData(data) {
+      return new Promise((resolve, reject) => {
+        if (!data.clientTime) { data.clientTime = new Date().toISOString(); }
+        if (!navigator.onLine) {
+          saveToQueue(data); resolve({ offline: true }); return;
+        }
+        fetch(API_URL + "?t=" + new Date().getTime(), { 
+          method: "POST", 
+          cache: "no-store", 
+          body: JSON.stringify(data) 
         })
-      );
-    })
-  );
-  return self.clients.claim();
-});
-
-// 3. FETCH: "Otak" yang menentukan guna Internet atau Cache
-self.addEventListener('fetch', (event) => {
-  const request = event.request;
-  const url = new URL(request.url);
-
-  // A. JIKA HANTAR DATA (POST) - Cth: Tekan Butang Masuk/Keluar
-  if (request.method === 'POST') {
-    event.respondWith(
-      fetch(request.clone())
-        .catch(() => {
-          // Jika internet tiada, pulangkan isyarat 'Offline'
-          // Kod di index.html akan terima ini dan simpan data dalam LocalStorage
-          return new Response(JSON.stringify({ offline: true }), {
-            headers: { 'Content-Type': 'application/json' }
-          });
-        })
-    );
-    return;
-  }
-
-  // B. JIKA MINTA DATA LIST (GET dari Google Script)
-  if (url.hostname.includes('script.google.com') || url.hostname.includes('googleusercontent.com')) {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          // Jika BERJAYA dapat internet:
-          const resClone = response.clone();
-          // Simpan copy data terkini dalam Cache (untuk backup masa depan)
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, resClone);
-          });
-          // Bagi data fresh kepada pengguna
-          return response;
-        })
-        .catch(() => {
-          // Jika GAGAL (Tiada Internet):
-          // Cari data lama dalam cache.
-          return caches.match(request).then((cachedRes) => {
-            if (cachedRes) return cachedRes;
-            
-            // Jika cache pun tiada, bagi JSON kosong supaya tak error
-            return new Response(JSON.stringify([]), {
-              headers: { 'Content-Type': 'application/json' }
-            });
-          });
-        })
-    );
-    return;
-  }
-
-  // C. JIKA MINTA FAIL HTML (Network First - Pastikan sentiasa dapat kod terkini)
-  if (request.mode === 'navigate' || request.url.includes('.html')) {
-    event.respondWith(
-      fetch(request).then((networkResponse) => {
-        return caches.open(CACHE_NAME).then((cache) => {
-          cache.put(request, networkResponse.clone());
-          return networkResponse;
-        });
-      }).catch(() => {
-        return caches.match('./index.html');
-      })
-    );
-    return;
-  }
-
-  // D. JIKA MINTA FAIL BIASA LAIN (Gambar, Logo dll - Cache First)
-  event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      return cachedResponse || fetch(request).then((networkResponse) => {
-         return caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, networkResponse.clone());
-            return networkResponse;
-         });
+        .then(response => response.json())
+        .then(result => { resolve({ offline: false, data: result }); })
+        .catch(error => { saveToQueue(data); resolve({ offline: true }); });
       });
-    }).catch(() => {
-       // Abaikan error untuk fail statik
+    }
+
+    function saveToQueue(data) {
+      if (!data.kategori) data.kategori = "PELAWAT";
+      let queue = JSON.parse(localStorage.getItem('ehadir_offline_queue') || "[]");
+      queue.push(data);
+      localStorage.setItem('ehadir_offline_queue', JSON.stringify(queue));
+    }
+
+    function fetchConfig() {
+      let loadEl = document.getElementById('loadingConfig');
+      if(loadEl) loadEl.style.display = 'none';
+      if(typeof updateScheduleInfo === 'function') updateScheduleInfo(); 
+    }
+
+    function checkAutoStatus(list) {
+      let currentSess = JSON.parse(localStorage.getItem('ehadir_session'));
+      let locked = localStorage.getItem('ehadir_locked_name');
+      
+      let checkName = locked || (currentSess ? currentSess.nama : null);
+      if(!checkName) return;
+      
+      let userRecord = list.find(item => item.nama === checkName);
+
+      if (userRecord) {
+        if (!currentSess || currentSess.nama !== checkName) {
+          localStorage.setItem('ehadir_session', JSON.stringify({
+            nama: userRecord.nama,
+            kategori: userRecord.kategori || "GURU", 
+            date: new Date().toISOString().slice(0,10),
+            avatar: userRecord.avatar || localStorage.getItem('ehadir_user_avatar') || ""
+          }));
+          location.reload(); 
+        }
+      } else {
+        let queue = JSON.parse(localStorage.getItem('ehadir_offline_queue') || "[]");
+        let isPending = queue.some(q => q.nama === checkName && q.action === "MASUK");
+        
+        if (currentSess && !isPending) {
+          localStorage.removeItem('ehadir_session');
+          location.reload();
+        }
+      }
+    }
+
+    function validateFormState() {
+      let nameInput = document.getElementById('nama');
+      if(!nameInput) return;
+      let checkName = nameInput.value.toUpperCase().trim();
+      let btnMasuk = document.getElementById('btnMainSubmit');
+      let formWarn = document.getElementById('formWarningMsg');
+      
+      if(!checkName) {
+        if(btnMasuk) btnMasuk.style.display = 'flex';
+        if(formWarn) formWarn.style.display = 'none';
+        return;
+      }
+
+      let isActive = currentList.some(i => i.nama === checkName && !i.isOffline);
+      let offlinePending = JSON.parse(localStorage.getItem('ehadir_offline_queue') || "[]").some(q => q.nama === checkName && q.action === "MASUK");
+
+      if (isActive || offlinePending) {
+        if(btnMasuk) btnMasuk.style.display = 'none'; 
+        if(formWarn) {
+          formWarn.innerHTML = "⚠️ ANDA BELUM DAFTAR KELUAR";
+          formWarn.style.display = 'block';
+        }
+        localStorage.setItem('ehadir_auto_in_blocked', 'true');
+      } else {
+        if(btnMasuk) btnMasuk.style.display = 'flex';
+        if(formWarn) formWarn.style.display = 'none';
+      }
+    }
+
+    async function hantarMasuk(isAuto = false) {
+      if(isSubmitting) return; 
+
+      let nama, kat;
+      if (isAuto) {
+        nama = localStorage.getItem('ehadir_locked_name');
+        kat = localStorage.getItem('ehadir_locked_kat');
+      } else {
+        nama = document.getElementById('nama').value.toUpperCase().trim();
+        kat = document.getElementById('kategori').value;
+      }
+
+      let isAlreadyActive = currentList.some(i => i.nama === nama && !i.isOffline);
+      if (isAlreadyActive) {
+        if (!isAuto) showModernAlert("Sesi Aktif", "Anda belum daftar keluar untuk sesi sebelum ini. Sila klik DAFTAR KELUAR.", "error");
+        return;
+      }
+
+      if(!isAuto) {
+        localStorage.removeItem('ehadir_session');
+        localStorage.removeItem('ehadir_auto_in_blocked');
+      }
+
+      if(!isInZone) { 
+        if(isAuto) return; 
+        showModernAlert("Luar Kawasan", "Anda berada di luar zon yang dibenarkan (" + Math.round(currentDist) + "m).", "error");
+        return;
+      }
+
+      let alasan = "AUTO CHECK-IN (GPS)";
+      let now = new Date();
+
+      if (!nama || !kat) { 
+        if(!isAuto) showModernAlert("Data Tidak Lengkap", "Isi Nama dan Kategori.", "error"); 
+        return; 
+      }
+
+      isSubmitting = true;
+      if(!isAuto) { 
+        document.getElementById('btnMainSubmit').disabled = true; 
+        document.getElementById('btnMainSubmit').innerHTML = 'MENYEMAK GPS...'; 
+
+        try {
+          await new Promise((resolve, reject) => {
+            let samples = [];
+            let required = 3; 
+            let w = navigator.geolocation.watchPosition(p => {
+              samples.push({lat: p.coords.latitude, lng: p.coords.longitude});
+              document.getElementById('btnMainSubmit').innerHTML = `ANALISIS INTEGRITI (${samples.length}/${required})...`;
+              
+              if(samples.length >= required) {
+                navigator.geolocation.clearWatch(w);
+                let first = JSON.stringify(samples[0]);
+                let isStatic = samples.every(s => JSON.stringify(s) === first);
+                let last = samples[samples.length-1];
+                let d = calcDist(last.lat, last.lng, SCHOOL_LAT, SCHOOL_LNG);
+                
+                if(d > RADIUS_METER) reject(`Lokasi tidak sah! Jarak: ${Math.round(d)}m`);
+                else if(isStatic) reject("GPS Statik Dikesan (Anti-Fake). Sila bergerak sedikit.");
+                else {
+                  lastLat = last.lat; lastLng = last.lng; 
+                  resolve();
+                }
+              }
+            }, err => {
+              navigator.geolocation.clearWatch(w); reject(err.message);
+            }, {enableHighAccuracy: true, maximumAge: 0, timeout: 5000});
+          });
+        } catch(e) {
+          showModernAlert("Gagal Masuk", e, "error");
+          isSubmitting = false;
+          document.getElementById('btnMainSubmit').disabled = false;
+          document.getElementById('btnMainSubmit').innerHTML = `<img src="https://cdn-icons-png.flaticon.com/128/9402/9402342.png" class="icon-3d-std"> DAFTAR MASUK (MANUAL)`;
+          return;
+        }
+        document.getElementById('btnMainSubmit').innerHTML = 'SEDANG HANTAR...'; 
+      }
+
+      try {
+        let savedAvatar = localStorage.getItem('ehadir_user_avatar') || "";
+        let uniqueID = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+        const payload = { action: "MASUK", passcode: PASSCODE, nama: nama, kategori: kat, alasan: alasan, lat: lastLat, lng: lastLng, clientTime: now.toISOString(), uuid: uniqueID, avatar: savedAvatar };
+        
+        const result = await sendData(payload);
+
+        if (result.offline) {
+          if(!isAuto) showModernAlert("Mod Offline", "Data disimpan dalam telefon.", "info");
+          localStorage.setItem('ehadir_session', JSON.stringify({nama: nama, kategori: kat, date: now.toISOString().slice(0,10), uuid: uniqueID, avatar: savedAvatar}));
+          localStorage.removeItem('ehadir_auto_in_blocked');
+          location.reload();
+        } else {
+          if (result.data && result.data.result === "success") {
+            if(isAuto) {
+              showSyncBar("MENGESAHKAN DATA DI PANGKALAN DATA...", "#f39c12");
+              await verifyAndFinalize(nama, kat, uniqueID, savedAvatar, 1, true);
+            } else {
+               document.getElementById('btnMainSubmit').innerHTML = 'SAHKAN DATA (DB)...';
+               await verifyAndFinalize(nama, kat, uniqueID, savedAvatar);
+            }
+          } else {
+             let msg = (result.data && result.data.msg) ? result.data.msg : "Data gagal masuk ke Google Sheet. Sila cuba lagi.";
+
+             if(!isAuto) showModernAlert("Gagal", msg, "error");
+             isSubmitting = false;
+             document.getElementById('btnMainSubmit').disabled = false;
+             document.getElementById('btnMainSubmit').innerHTML = `<img src="https://cdn-icons-png.flaticon.com/128/9402/9402342.png" class="icon-3d-std"> DAFTAR MASUK`;
+          }
+        }
+
+      } catch (error) {
+        console.error("Ralat:", error);
+        isSubmitting = false;
+        if(!isAuto) document.getElementById('btnMainSubmit').disabled = false;
+      }
+    }
+
+    async function verifyAndFinalize(nama, kat, uuid, avatar, attempt = 1, isAuto = false) {
+       if(attempt > 5) {
+         if(isAuto) {
+           showSyncBar("GAGAL SAHKAN DATA. AKAN CUBA SEMULA.", "#c0392b");
+           isSubmitting = false;
+         } else {
+           showModernAlert("Masa Tamat", "Data dihantar tetapi server lambat respon. Sila semak senarai manual.", "info");
+           isSubmitting = false;
+           document.getElementById('btnMainSubmit').disabled = false;
+           document.getElementById('btnMainSubmit').innerHTML = `<img src="https://cdn-icons-png.flaticon.com/128/9402/9402342.png" class="icon-3d-std"> DAFTAR MASUK`;
+         }
+         return;
+       }
+       
+       await new Promise(r => setTimeout(r, 2000));
+
+       try {
+         let response = await fetch(API_URL, { method: "POST", body: JSON.stringify({action: "GET_LIST", passcode: PASSCODE}) });
+         let json = await response.json();
+         let list = json.data || json;
+         let record = list.find(item => item.nama === nama && item.jam && item.jam !== "");
+         
+         if (record) {
+           if(isAuto) {
+             showSyncBar("BERJAYA: DATA DISAHKAN DALAM SISTEM", "#27ae60");
+             sendNotification("DAFTAR MASUK SAH", "Kehadiran anda telah direkodkan dalam pangkalan data.", "auto-success");
+           } else {
+             showModernAlert("Berjaya", "Data disahkan masuk dalam sistem!", "success");
+           }
+           localStorage.setItem('ehadir_session', JSON.stringify({nama: nama, kategori: kat, date: new Date().toISOString().slice(0,10), uuid: uuid, avatar: avatar}));
+           localStorage.removeItem('ehadir_auto_in_blocked');
+           setTimeout(() => location.reload(), 1500);
+         } else {
+           if(!isAuto) document.getElementById('btnMainSubmit').innerHTML = `SAHKAN DATA (${attempt}/5)...`;
+           else showSyncBar(`MENYEMAK PANGKALAN DATA (${attempt}/5)...`, "#e67e22");
+           
+           await verifyAndFinalize(nama, kat, uuid, avatar, attempt + 1, isAuto);
+         }
+       } catch(e) {
+         console.log("Verify Error", e);
+         await verifyAndFinalize(nama, kat, uuid, avatar, attempt + 1, isAuto);
+       }
+    }
+
+    async function hantarKeluar(isAuto = false) {
+      if(isSubmitting) return; 
+
+      let session = JSON.parse(localStorage.getItem('ehadir_session'));
+      let namaVal, katVal, uuidVal;
+
+      if (!isAuto && !session) {
+        let iName = document.getElementById('nama') ? document.getElementById('nama').value.toUpperCase().trim() : "";
+        if (!iName) { showModernAlert("Tiada Nama", "Sila isi Nama dahulu.", "error"); return; }
+        
+        let btn = document.getElementById('btnKeluarMain');
+        if(btn) btn.innerHTML = "MENYEMAK DATA...";
+        isSubmitting = true;
+
+        try {
+          let response = await fetch(API_URL, { method: "POST", body: JSON.stringify({action: "GET_LIST", passcode: PASSCODE}) });
+          let json = await response.json();
+          let list = json.data || json;
+          let record = list.find(item => item.nama === iName);
+          
+          if (record) {
+            localStorage.setItem('ehadir_session', JSON.stringify({
+               nama: record.nama,
+               kategori: record.kategori,
+               date: new Date().toISOString().slice(0,10),
+               avatar: record.foto || localStorage.getItem('ehadir_user_avatar') || ""
+             }));
+             
+            showModernAlert("Sesi Dipulihkan", "Rekod kehadiran ditemui. Sila tekan butang <b>DAFTAR KELUAR</b> di papan pemuka sekarang.", "success");
+            setTimeout(() => location.reload(), 2000);
+            return; 
+          } else {
+            showModernAlert("Gagal", "Tiada rekod masuk aktif untuk nama ini. Sila Daftar Masuk dahulu.", "error");
+            isSubmitting = false;
+            if(btn) btn.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/128/3580/3580154.png" class="icon-3d-std"> KELUAR`;
+            return;
+          }
+        } catch (e) {
+          showModernAlert("Ralat", "Gagal menyemak status. Pastikan internet ada.", "error");
+          isSubmitting = false;
+          if(btn) btn.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/128/3580/3580154.png" class="icon-3d-std"> KELUAR`;
+          return;
+        }
+      }
+
+      if (session && session.nama) {
+        namaVal = session.nama;
+        katVal = session.kategori;
+        uuidVal = session.uuid || "";
+      } else {
+        let lName = localStorage.getItem('ehadir_locked_name');
+        let lKat = localStorage.getItem('ehadir_locked_kat');
+        if (lName && lKat) { namaVal = lName; katVal = lKat; }
+        else {
+          if(!isAuto) showModernAlert("Tiada Maklumat", "Sila isi Nama & Kategori atau KUNCI nama dahulu untuk daftar keluar.", "error");
+          return;
+        }
+        uuidVal = "MANUAL_OUT_" + Date.now();
+      }
+      
+      let alasanValue = isAuto ? "AUTO CHECKOUT (KELUAR KAWASAN)" : "PULANG (MANUAL)";
+      let sessionUUID = uuidVal;
+
+      let proceed = async () => {
+        isSubmitting = true; 
+        if(!isAuto) { 
+          let btn = document.getElementById('btnKeluar') || document.getElementById('btnKeluarMain');
+          if(btn) { btn.disabled = true; btn.innerText = "PROSES RESET..."; }
+        }
+
+        try {
+          const payload = { action: "KELUAR", passcode: PASSCODE, nama: namaVal.toUpperCase(), alasan: alasanValue, lat: lastLat, lng: lastLng, clientTime: new Date().toISOString(), uuid: sessionUUID };
+          
+          await sendData(payload);
+          
+          if(isAuto) {
+            showSyncBar("SEMOGA SELAMAT DALAM PERJALANAN ANDA", "#c0392b");
+          } else {
+            showModernAlert("Selesai", "Daftar Keluar Berjaya.", "success");
+          }
+          
+          localStorage.setItem('ehadir_auto_in_blocked', 'true');
+          localStorage.removeItem('ehadir_session');
+          
+          setTimeout(() => location.reload(), 500);
+
+        } catch (error) {
+          console.error(error);
+          localStorage.removeItem('ehadir_session');
+          location.reload();
+        }
+      };
+
+      if(!isAuto) {
+        showModernAlert("Pengesahan", "Daftar keluar sekarang?", "confirm", proceed);
+      } else {
+        proceed();
+      }
+    }
+
+    function keluarManual(namaUser) {
+      let pass = prompt("ADMIN: Passcode untuk keluarkan " + namaUser + ":");
+      if (pass !== PASSCODE) { showModernAlert("Gagal", "Passcode salah.", "error"); return; }
+      
+      sendData({ action: "KELUAR", passcode: PASSCODE, nama: namaUser, alasan: "Manual Admin", lat: lastLat, lng: lastLng, clientTime: new Date().toISOString() })
+      .then(res => { 
+        loadList(); 
+      });
+    }
+
+    async function hantarPelawat() {
+      if(isSubmitting) return;
+      let foto = document.getElementById('base64Foto').value;
+      let namaPelawat = document.getElementById('namaPelawatInput').value.toUpperCase();
+      if (!foto) { showModernAlert("Tiada Gambar", "Ambil gambar dahulu.", "error"); return; }
+      if (!namaPelawat) { showModernAlert("Tiada Nama", "Isi nama pelawat.", "error"); return; }
+      isSubmitting = true;
+      document.getElementById('btnPelawatSubmit').disabled = true;
+      document.getElementById('btnPelawatSubmit').innerText = "SEDANG HANTAR...";
+      try {
+        const payload = { action: "MASUK", passcode: PASSCODE, kategori: "PELAWAT", nama: namaPelawat, fotoBase64: foto, lat: lastLat, lng: lastLng, clientTime: new Date().toISOString() };
+        let result = await sendData(payload);
+        if(result.offline || (result.data && result.data.result === "success")) {
+          showModernAlert("Berjaya", "Data pelawat diterima.", "success");
+          setTimeout(() => location.reload(), 1500);
+        } else {
+          showModernAlert("Gagal", "Server menolak data.", "error");
+          isSubmitting = false;
+          document.getElementById('btnPelawatSubmit').disabled = false;
+        }
+      } catch (error) {
+        console.error(error);
+        isSubmitting = false;
+      }
+    }
+
+    function monitorAutoLogic() {
+      let MS_IN_DELAY = (typeof MINIT_ANTI_SPAM_MASUK !== 'undefined' ? MINIT_ANTI_SPAM_MASUK : 5) * 60 * 1000;
+      let MS_OUT_DELAY = (typeof MINIT_DELAY_KELUAR !== 'undefined' ? MINIT_DELAY_KELUAR : 10) * 60 * 1000;
+
+      let session = JSON.parse(localStorage.getItem('ehadir_session'));
+      let locked = localStorage.getItem('ehadir_locked_name');
+      let lockedKat = localStorage.getItem('ehadir_locked_kat');
+      let now = Date.now();
+
+      let statusEl = document.getElementById('statusText');
+      let isBlocked = localStorage.getItem('ehadir_auto_in_blocked'); 
+
+      let checkName = locked || (session ? session.nama : null);
+      let isAlreadyActiveDB = false;
+      if (checkName) {
+        isAlreadyActiveDB = currentList.some(i => i.nama === checkName && !i.isOffline);
+      }
+
+      if (isInZone) {
+         let icon = "<img src='https://cdn-icons-png.flaticon.com/128/190/190411.png' class='icon-3d-mini'>";
+         if(statusEl) {
+           statusEl.innerHTML = icon + " DALAM KAWASAN (" + Math.round(currentDist) + "m)";
+           statusEl.style.color = "#27ae60";
+           statusEl.style.background = "#e8f5e9";
+         }
+         
+         if (isBlocked || isAlreadyActiveDB) {
+           if (statusEl) {
+             if (isAlreadyActiveDB) {
+               statusEl.innerHTML += `<br><span style="font-size:9px; color:#e67e22;">AUTO-IN DISABLE (ANDA BELUM DAFTAR KELUAR)</span>`;
+             } else {
+               statusEl.innerHTML += `<br><span style="font-size:9px; color:#e67e22;">AUTO-IN DISABLE (KELUAR > ${RADIUS_RESET_AUTO_IN}M UNTUK RESET)</span>`;
+             }
+           }
+           return; 
+         }
+      } else {
+         let icon = "<img src='https://cdn-icons-png.flaticon.com/128/190/190406.png' class='icon-3d-mini'>";
+         if(statusEl) {
+           statusEl.innerHTML = icon + " LUAR KAWASAN @ AKTIFKAN GPS (" + Math.round(currentDist) + "m)";
+           statusEl.style.color = "#c0392b";
+           statusEl.style.background = "#fdeea5";
+         }
+      }
+
+      if (isInZone) {
+        let wBox = document.getElementById('warningBox');
+        if(wBox) wBox.style.display = "none";
+        hasNotifiedExit = false; 
+        
+        if (!session && locked && lockedKat && !hasNotifiedEntry) {
+          hasNotifiedEntry = true;
+          sendNotification("ANDA SUDAH SAMPAI!", "Sila klik di sini untuk buka aplikasi", "wake-up-entry");
+        }
+
+        if (!session && locked && lockedKat && !isSubmitting && !isAlreadyActiveDB) {
+          if (inZoneStart > 0) {
+            let elapsed = now - inZoneStart;
+            let remainingSec = Math.ceil((MS_IN_DELAY - elapsed) / 1000);
+            
+            if(statusEl) statusEl.innerHTML += ` <br>[AUTO-PUNCH: ${remainingSec}s]`;
+            
+            if (remainingSec <= 0) {
+              hantarMasuk(true);
+              inZoneStart = 0; 
+            }
+          }
+        }
+      } 
+      else {
+        hasNotifiedEntry = false; 
+
+        if (session && !hasNotifiedExit) {
+          hasNotifiedExit = true;
+          sendNotification("ANDA TELAH KELUAR KAWASAN!", "Anda dikesan telah meninggalkan pejabat. Klik di sini untuk sahkan waktu balik (Punch Out).", "wake-up-exit");
+        }
+
+        if (session && !isSubmitting) {
+           if (outZoneStart > 0) {
+             let elapsed = now - outZoneStart;
+             let remainingSec = Math.ceil((MS_OUT_DELAY - elapsed) / 1000);
+             
+             let warnBox = document.getElementById('warningBox');
+             if(warnBox) {
+               warnBox.style.display = "block";
+               warnBox.innerHTML = `AMARAN! KELUAR ZON.<br>AUTO PUNCH-OUT DALAM <span style="font-size:1.5em">${remainingSec}</span> S`;
+             }
+
+             if (remainingSec <= 0) {
+               hantarKeluar(true);
+               outZoneStart = 0;
+             }
+           }
+        } else {
+           let wBox = document.getElementById('warningBox');
+           if(wBox) wBox.style.display = "none";
+        }
+      }
+    }
+
+    function handleGPSError(err) {
+      let statusEl = document.getElementById('statusText');
+      let msg = "Sila aktifkan GPS (Location) anda.";
+      if (err.code === 1) msg = "Sila benarkan akses Lokasi (GPS) browser.";
+      else if (err.code === 2) msg = "GPS tidak dikesan. Pastikan 'Location' dihidupkan.";
+      else if (err.code === 3) msg = "Pencarian GPS Timeout.";
+
+      if (statusEl) {
+         let icon = "<img src='https://cdn-icons-png.flaticon.com/128/190/190406.png' class='icon-3d-mini'>";
+         statusEl.innerHTML = icon + " " + msg;
+         statusEl.style.color = "#c0392b";
+         statusEl.style.background = "#fadbd8";
+      }
+
+      if (!sessionStorage.getItem('gps_warned')) {
+         showModernAlert(
+           "GPS Diperlukan", 
+           "Perhatian: GPS anda didapati <b>TIDAK AKTIF</b> atau tiada kebenaran. <br><br>Sila hidupkan 'Location/GPS' di tetapan telefon anda atau benarkan pelayar web ini mengakses lokasi, kemudian <b>Refresh</b> muka surat ini.", 
+           "error"
+         );
+         sessionStorage.setItem('gps_warned', 'true');
+      }
+    }
+
+    function startRadar() {
+      if (navigator.geolocation) {
+        navigator.geolocation.watchPosition(pos => {
+          lastLat = pos.coords.latitude; lastLng = pos.coords.longitude;
+          currentDist = calcDist(lastLat, lastLng, SCHOOL_LAT, SCHOOL_LNG);
+          isInZone = (currentDist <= RADIUS_METER);
+          if (currentDist > RADIUS_RESET_AUTO_IN) {
+            localStorage.removeItem('ehadir_auto_in_blocked');
+          }
+          if (isInZone) {
+            if (!inZoneStart) inZoneStart = Date.now();
+            outZoneStart = 0; 
+          } else {
+            if (!outZoneStart) outZoneStart = Date.now();
+            inZoneStart = 0; 
+          }
+        }, err => {
+          handleGPSError(err);
+        }, {enableHighAccuracy: true, maximumAge: 0, timeout: 5000});
+      } else {
+        showModernAlert("Ralat", "Peranti anda tidak menyokong fungsi GPS.", "error");
+      }
+    }
+
+    function calcDist(a, b, c, d) {
+      var R = 6371e3;
+      var x = a * Math.PI / 180;
+      var y = c * Math.PI / 180;
+      var k = (c - a) * Math.PI / 180;
+      var l = (d - b) * Math.PI / 180;
+      var z = Math.sin(k / 2) * Math.sin(k / 2) + Math.cos(x) * Math.cos(y) * Math.sin(l / 2) * Math.sin(l / 2);
+      return R * 2 * Math.atan2(Math.sqrt(z), Math.sqrt(1 - z));
+    }
+
+    async function initBackgroundService() {
+      if ("Notification" in window) {
+         if(Notification.permission !== "granted") {
+            await Notification.requestPermission();
+         }
+      }
+      if ('wakeLock' in navigator) {
+        const requestLock = async () => {
+          try {
+            wakeLock = await navigator.wakeLock.request('screen');
+            let am = document.getElementById('autoModeIndicator');
+            if(am) am.style.display = 'block';
+            wakeLock.addEventListener('release', () => { console.log('Wake Lock Released'); });
+          } catch (err) { console.error(`${err.name}, ${err.message}`); }
+        };
+        await requestLock();
+        document.addEventListener('visibilitychange', async () => {
+          if (wakeLock !== null && document.visibilityState === 'visible') {
+            await requestLock();
+          } else {
+             await requestLock();
+          }
+        });
+      }
+    }
+  </script>
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1e3c72">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    body { font-family: 'Poppins', sans-serif; background: #f0f2f5; color: #333; margin: 0; padding: 15px; display: flex; justify-content: center; min-height: 100vh; }
+    .container { background: white; padding: 0; border-radius: 25px; width: 100%; max-width: 420px; text-align: center; position: relative; box-shadow: 0 15px 35px rgba(0,0,0,0.1); overflow: hidden; padding-bottom: 30px; }
+    
+    .header-bg { background: linear-gradient(to right, #141e30, #243b55); padding: 15px 20px 30px 20px; color: white; border-radius: 0 0 25px 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); margin-bottom: 25px; position: relative; }
+    .top-bar-row { display: flex; justify-content: center; align-items: center; gap: 10px; font-size: 11px; color: #cfd8dc; font-weight: 400; letter-spacing: 0.5px; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; white-space: nowrap; text-transform: uppercase; }
+    
+    .main-title-block { display: flex; flex-direction: column; align-items: center; }
+    .title-small { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: #6dd5ed; margin-bottom: 5px; font-weight: 600; }
+    .title-big { font-size: 24px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; line-height: 1.1; background: -webkit-linear-gradient(#fff, #a8c0ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 2px 10px rgba(0,0,0,0.2); margin: 2px 0; }
+
+    .content-padding { padding: 0 20px; }
+    select, input, textarea { width: 100%; padding: 14px; margin-bottom: 12px; border: 2px solid #f1f3f5; background: #f8f9fa; border-radius: 12px; font-size: 14px; box-sizing: border-box; font-family: inherit; outline: none; transition: 0.3s; color: #333; }
+    select:focus, input:focus { border-color: #1e3c72; background: #fff; }
+    textarea { resize: vertical; min-height: 80px; display: none; border: 2px solid #f39c12; background: #fffcf5; }
+
+    .input-group { position: relative; display: flex; align-items: center; width: 100%; margin-bottom: 12px; }
+    .input-group input { margin-bottom: 0; padding-right: 90px; }
+    
+    .lock-btn { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); cursor: pointer; background: #ecf0f1; border: none; z-index: 5; padding: 6px; border-radius: 50%; transition: 0.2s; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; }
+    .lock-btn:hover { background: #dfe6e9; }
+    .lock-btn:active { transform: translateY(-50%) scale(0.9); }
+    .lock-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    
+    .avatar-btn { right: 48px; background: transparent; }
+
+    .btn-yellow { background: #f1c40f !important; box-shadow: 0 0 10px rgba(241, 196, 15, 0.5); border: 2px solid #f39c12; }
+
+    .avatar-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; max-height: 300px; overflow-y: auto; padding: 10px; }
+    .avatar-option { width: 100%; aspect-ratio: 1/1; cursor: pointer; border-radius: 50%; border: 2px solid transparent; transition: 0.2s; padding: 2px; background: #f8f9fa; }
+    .avatar-option:hover { border-color: #1e3c72; background: #e8f5e9; transform: scale(1.1); }
+    .avatar-option.selected { border-color: #27ae60; background: #d4edda; box-shadow: 0 0 10px rgba(39, 174, 96, 0.3); }
+    .avatar-option img { width: 100%; height: 100%; object-fit: contain; }
+
+    .btn { width: 100%; padding: 16px; background: #1e3c72; color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 8px; box-shadow: 0 4px 10px rgba(30, 60, 114, 0.2); transition: 0.2s; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { background: #bdc3c7; cursor: not-allowed; box-shadow: none; opacity: 0.7; }
+    .btn-keluar { background: linear-gradient(to right, #cb2d3e, #ef473a); }
+    .btn-pelawat { background: linear-gradient(to right, #11998e, #38ef7d); margin-top: 15px; }
+    .btn-cancel { background: #7f8c8d; margin-top: 10px; }
+    
+    #dashboardPanel { display: none; background: #fff; padding: 20px; border-radius: 15px; border: 1px solid #e1e4e8; margin-bottom: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.03); }
+    .user-welcome { font-size: 18px; font-weight: 700; color: #1e3c72; margin-bottom: 2px; display: flex; align-items: center; justify-content: center; gap: 8px;}
+    .locked-msg { font-size: 11px; color: #95a5a6; margin-bottom: 15px; }
+    
+    #dashboardSchedule { font-size:12px; color:#2c3e50; background:#fff3cd; padding:10px; border-radius:8px; margin-bottom:15px; display:none; border: 1px solid #ffeeba; }
+    .userExitTime { font-weight:bold; }
+
+    #pelawatPanel { display: none; border: 2px dashed #27ae60; padding: 15px; border-radius: 15px; background: #f0fdf4; margin-bottom: 20px; }
+    
+    .giant-cam-btn { 
+      width: 100%; height: 160px; 
+      background: linear-gradient(135deg, #134e5e, #71b280); 
+      border-radius: 20px; 
+      display: flex; flex-direction: column; align-items: center; justify-content: center; 
+      box-shadow: 0 10px 20px rgba(0,0,0,0.15); 
+      cursor: pointer; transition: 0.2s; border: 2px solid rgba(255,255,255,0.3);
+      position: relative; overflow: hidden;
+    }
+    .giant-cam-btn:active { transform: scale(0.96); }
+    .giant-cam-icon { width: 70px; height: 70px; margin-bottom: 10px; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2)); }
+    .giant-cam-text { font-size: 12px; font-weight: 800; color: white; letter-spacing: 1.5px; text-transform: uppercase; }
+    .giant-pulse { animation: pulseGlow 2s infinite; }
+    @keyframes pulseGlow { 0% { box-shadow: 0 0 0 0 rgba(113, 178, 128, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(113, 178, 128, 0); } 100% { box-shadow: 0 0 0 0 rgba(113, 178, 128, 0); } }
+
+    #previewImg { width: 100%; margin-top: 10px; border-radius: 10px; display: none; border: 2px solid #333; max-height: 250px; object-fit: cover; }
+    
+    .list-header { display: flex; justify-content: space-between; align-items: center; margin-top: 25px; border-bottom: 2px solid #f1f1f1; padding-bottom: 10px; margin-bottom: 10px; }
+    .list-header span { font-weight: 700; color: #1e3c72; font-size: 14px; display: flex; align-items: center; gap: 5px; }
+    .list-container { text-align: left; margin-top: 5px; max-height: 300px; overflow-y: auto; }
+    
+    .user-card { background: #fff; padding: 12px; border: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #1e3c72; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+    .user-card.offline-item { border-left: 4px solid #e67e22; background: #fffcf5; }
+    .user-info { flex-grow: 1; min-width: 0; padding-right: 8px; display: flex; flex-direction: column; justify-content: center; }
+    .user-info strong { font-size: 13px; color: #2c3e50; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-details { font-size: 11px; color: #7f8c8d; margin-top: 3px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+    
+    .live-timer { 
+      color: #d35400; 
+      font-weight: 700; 
+      font-family: 'Courier New', Courier, monospace; 
+      background: #fff5e6; 
+      padding: 2px 8px; 
+      border-radius: 4px; 
+      border: 1px solid #fae5d3; 
+      min-width: 70px; 
+      text-align: center; 
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px; 
+    }
+
+    .list-actions { display: flex; gap: 5px; align-items: center; flex-shrink: 0; }
+    .icon-btn { cursor: pointer; font-size: 14px; width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; background: #f8f9fa; border: 1px solid #eee; transition: background 0.2s; }
+    .icon-btn:hover { background: #e2e6ea; }
+
+    #scheduleInfo { display: none; background: transparent; padding: 0; margin-bottom: 15px; text-align: center; }
+    .schedule-minimal { display: flex; justify-content: center; gap: 10px; align-items: center; }
+    
+    .time-pill { 
+      background: rgba(255, 255, 255, 0.95); 
+      padding: 10px 18px; 
+      border-radius: 30px; 
+      font-size: 11px; 
+      font-weight: 700; 
+      display: flex; 
+      align-items: center; 
+      gap: 8px; 
+      border: 1px solid rgba(0,0,0,0.06); 
+      box-shadow: 0 5px 15px rgba(0,0,0,0.08); 
+      backdrop-filter: blur(5px);
+      transition: transform 0.2s;
+    }
+    .time-pill:hover { transform: translateY(-2px); }
+    
+    .pop-in { animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    @keyframes popIn { 
+      0% { opacity: 0; transform: scale(0.8) translateY(-10px); } 
+      100% { opacity: 1; transform: scale(1) translateY(0); } 
+    }
+
+    #imageModal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.9); align-items: center; justify-content: center; }
+    .modal-content { margin: auto; display: block; max-width: 90%; max-height: 80%; border-radius: 10px; border: 2px solid white; }
+    .close-modal { position: absolute; top: 20px; right: 35px; color: #f1f1f1; font-size: 40px; font-weight: bold; cursor: pointer; }
+
+    #warningBox { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: #c0392b; color: white; padding: 15px; text-align: center; z-index: 9999; font-weight: bold; box-shadow: 0 -5px 15px rgba(0,0,0,0.2); animation: pulseWarn 1s infinite; }
+    @keyframes pulseWarn { 0% { background: #c0392b; } 50% { background: #e74c3c; } 100% { background: #c0392b; } }
+    
+    #loadingConfig { font-size: 11px; color: #e67e22; display: none; margin-bottom: 5px; font-style: italic; }
+    #statusText { font-size: 11px; font-weight: 600; margin-bottom: 15px; color: #95a5a6; background: #f8f9fa; display: inline-block; padding: 4px 12px; border-radius: 15px; display: inline-flex; align-items: center; gap: 5px; }
+
+    .icon-3d-mini { width: 16px; height: 16px; vertical-align: middle; margin-right: 2px; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.2)); }
+    .icon-3d-std { width: 22px; height: 22px; vertical-align: middle; margin-right: 5px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1)); }
+    .icon-3d-lg { width: 32px; height: 32px; vertical-align: middle; }
+    .icon-3d-xl { width: 64px; height: 64px; margin-bottom: 10px; }
+    
+    @keyframes spin3d { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .spin-3d { animation: spin3d 2s linear infinite; }
+
+    #customModal, #avatarModalContainer { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(5px); align-items: center; justify-content: center; animation: fadeIn 0.3s; }
+    .custom-modal-content { background: white; padding: 30px 25px; border-radius: 20px; width: 85%; max-width: 350px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.3); transform: scale(0.9); animation: popUp 0.3s forwards; }
+    @keyframes popUp { to { transform: scale(1); } }
+    .modal-icon-top { font-size: 50px; margin-bottom: 15px; display: block; }
+    .modal-title { font-size: 18px; font-weight: 700; color: #2c3e50; margin-bottom: 10px; }
+    .modal-msg { font-size: 13px; color: #555; margin-bottom: 20px; line-height: 1.5; }
+    .modal-btn-row { display: flex; gap: 10px; justify-content: center; }
+    .modal-btn { flex: 1; padding: 12px; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; font-size: 13px; }
+    .btn-ok { background: #1e3c72; color: white; }
+    .btn-cancel-modal { background: #ecf0f1; color: #7f8c8d; }
+
+    #syncStatusBar { display: none; position: fixed; top: 0; left: 0; width: 100%; padding: 10px; text-align: center; z-index: 10001; font-size: 12px; font-weight: 600; color: white; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+    
+    #autoModeIndicator { background: linear-gradient(to right, #6a11cb, #2575fc); color: white; padding: 5px; font-size: 10px; font-weight: 700; text-align: center; margin-bottom: 15px; border-radius: 5px; box-shadow: 0 3px 6px rgba(0,0,0,0.1); display: none; }
+  </style>
+</head>
+<body oncontextmenu="return false;"> 
+
+  <div id="syncStatusBar"></div>
+  <div id="warningBox"> AMARAN! KELUAR ZON.<br>AUTO-CHECKOUT DALAM <span id="countDown">10</span>S</div>
+
+  <div id="customModal">
+    <div class="custom-modal-content">
+      <span id="modalIcon" class="modal-icon-top"></span>
+      <div id="modalTitle" class="modal-title">Tajuk</div>
+      <div id="modalMsg" class="modal-msg">Mesej di sini...</div>
+      <div class="modal-btn-row" id="modalBtnRow">
+        <button class="modal-btn btn-ok" onclick="closeCustomModal()">Faham</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="avatarModalContainer">
+    <div class="custom-modal-content">
+      <div class="modal-title">PILIH AVATAR ANDA</div>
+      <div class="modal-msg">Pilih ikon yang sesuai dengan gaya anda.</div>
+      <div id="avatarGrid" class="avatar-grid">
+      </div>
+      <div class="modal-btn-row" style="margin-top:15px;">
+        <button class="modal-btn btn-cancel-modal" onclick="closeAvatarModal()">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="imageModal">
+    <span class="close-modal" onclick="closeModal()">&times;</span>
+    <img class="modal-content" id="imgFull">
+  </div>
+
+  <div class="container">
+    
+    <div class="header-bg">
+      <div class="top-bar-row">
+        <span>
+          <img src="https://cdn-icons-png.flaticon.com/128/3652/3652191.png" class="icon-3d-mini"> 
+          <span id="dateDisplay">--/--/--</span>
+        </span> 
+        <span>|</span> 
+        <span>
+          <img src="https://cdn-icons-png.flaticon.com/128/2972/2972531.png" class="icon-3d-mini"> 
+          <span id="clockDisplay">--:--</span>
+        </span> 
+        <span>|</span> 
+        <span>
+        <span class="icon-3d-mini" style="font-size: 16px; vertical-align: middle; margin-right: 1px;">🕌</span>
+        <span id="hijriDisplay" style="vertical-align: middle;">...</span>
+        </span>
+      </div>
+
+      <div class="main-title-block">
+        <div class="title-small">SISTEM PENGURUSAN</div>
+        <div class="title-big">E-HADIR</div>
+        <div class="title-big">SMK SUNGAI BAYOR</div>
+      </div>
+    </div>
+
+    <div class="content-padding">
+      <div id="autoModeIndicator">Cara Guna: PILIH JAWATAN, NAMA PENUH, PILIH ICON AVATAR, LOCK, DAFTAR MASUK</div>
+      
+      <div id="statusText">
+        <img src="https://cdn-icons-png.flaticon.com/128/9357/9357448.png" class="icon-3d-mini spin-3d"> 
+        Mencari GPS...
+      </div>
+
+      <div id="dashboardPanel">
+        <span class="user-welcome">
+          <img id="userAvatarDash" src="https://cdn-icons-png.flaticon.com/128/4140/4140047.png" class="icon-3d-lg"> 
+          Hai, <span id="sessionName">--</span>
+        </span>
+        <div class="locked-msg">Sesi telah didaftarkan.</div>
+        
+        <div id="dashboardSchedule" style="font-size:12px; color:#2c3e50; background:#fff3cd; padding:10px; border-radius:8px; margin-bottom:15px; display:none; border: 1px solid #ffeeba;">
+          Waktu Pulang Rasmi: <span id="userExitTime" style="font-weight:bold;">--:--</span>
+        </div>
+
+        <p id="dynamicStatus" style="margin:0 0 15px 0; font-size:11px; color:#27ae60; font-weight:700; letter-spacing:0.5px; text-transform:uppercase;">STATUS: SEDANG BERTUGAS</p>
+        
+        <textarea id="alasanKeluar" style="display:none;" placeholder="Mohon nyatakan sebab pulang awal untuk makluman pentadbir..."></textarea>
+        
+        <button id="btnKeluar" class="btn btn-keluar" onclick="hantarKeluar(false)">
+          <img src="https://cdn-icons-png.flaticon.com/128/3580/3580154.png" class="icon-3d-std"> DAFTAR KELUAR 
+        </button>
+        
+        <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
+          <button class="btn btn-pelawat" onclick="showPelawatForm()" style="font-size:13px; padding: 12px;">
+            <img src="https://cdn-icons-png.flaticon.com/128/3135/3135768.png" class="icon-3d-std"> BANTU DAFTAR PELAWAT
+          </button>
+        </div>
+      </div>
+
+      <div id="defaultForm">
+        <div id="loadingConfig">
+          <img src="https://cdn-icons-png.flaticon.com/128/189/189792.png" class="icon-3d-mini spin-3d"> Sedang menyemak jadual terkini...
+        </div>
+        <div id="scheduleInfo"></div>
+        <select id="kategori" onchange="checkKategori(); updateScheduleInfo();">
+          <option value="" disabled selected>-- PILIH KATEGORI --</option>
+          <option value="GURU">GURU</option>
+          <option value="AKP">AKP</option>
+          <option value="KEBERSIHAN">KEBERSIHAN</option>
+          <option value="PELAWAT">PELAWAT (AWAM)</option>
+        </select>
+        
+        <div class="input-group">
+          <input type="text" id="nama" placeholder="NAMA PENUH (HURUF BESAR)" style="text-transform:uppercase">
+          
+          <button id="avatarBtn" class="lock-btn avatar-btn" onclick="openAvatarModal()" title="Pilih Avatar">
+            <img id="currentAvatarMini" src="https://cdn-icons-png.flaticon.com/128/4140/4140048.png" class="icon-3d-mini">
+          </button>
+
+          <button id="lockBtn" class="lock-btn" onclick="toggleLockName()" title="Kunci Nama">
+            <img src="https://cdn-icons-png.flaticon.com/128/2550/2550226.png" class="icon-3d-mini" id="lockIconImg" style="filter:opacity(0.6)">
+          </button>
+        </div>
+        
+        <textarea id="alasanMasuk" style="display:none;" placeholder="Maaf, anda lewat sedikit. Mohon nyatakan sebab:"></textarea>
+        
+        <div style="font-size:10px; color:#e67e22; margin-bottom:10px;">Sila tekan 'KUNCI' Nama & Kategori </div>
+
+        <div id="formWarningMsg" style="display:none; color:#c0392b; font-size:12px; font-weight:700; margin-bottom:10px; background:#fadbd8; padding:10px; border-radius:8px; text-align:center; border: 1px solid #e74c3c;"></div>
+
+        <button id="btnMainSubmit" class="btn" onclick="hantarMasuk(false)">
+          <img src="https://cdn-icons-png.flaticon.com/128/9402/9402342.png" class="icon-3d-std"> DAFTAR MASUK
+        </button>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
+          <button id="btnKeluarMain" class="btn btn-keluar" onclick="hantarKeluar(false)" style="margin-top:0;">
+            <img src="https://cdn-icons-png.flaticon.com/128/3580/3580154.png" class="icon-3d-std"> KELUAR
+          </button>
+          <button id="btnPelawatMain" class="btn btn-pelawat" onclick="showPelawatForm()" style="margin-top:0;">
+            <img src="https://cdn-icons-png.flaticon.com/128/3135/3135768.png" class="icon-3d-std"> PELAWAT
+          </button>
+        </div>
+
+      </div>
+
+      <div id="pelawatPanel">
+        <h3 style="color:#27ae60; margin:0 0 5px 0; display:flex; align-items:center; justify-content:center; gap:5px;">
+          <img src="https://cdn-icons-png.flaticon.com/128/3687/3687416.png" class="icon-3d-lg"> MOD PELAWAT
+        </h3>
+        <p style="font-size:11px; color:#666; margin-bottom:15px;">Sila ambil gambar & isi nama pelawat.</p>
+        
+        <div style="margin: 15px 0;">
+          <label class="giant-cam-btn giant-pulse" id="camBox" style="overflow:hidden;">
+            <div id="camContent" style="display:flex; flex-direction:column; align-items:center;">
+               <img src="https://cdn-icons-png.flaticon.com/128/3687/3687416.png" class="giant-cam-icon">
+               <span class="giant-cam-text">SNAP FOTO</span>
+            </div>
+            <img id="previewImg" style="display:none; position:absolute; width:100%; height:100%; object-fit:cover; top:0; left:0;">
+            <input type="file" accept="image/*" capture="environment" style="display:none" onchange="processImage(this)">
+          </label>
+        </div>
+
+        <input type="text" id="namaPelawatInput" placeholder="NAMA PENUH PELAWAT" style="text-transform:uppercase; margin-top:10px;">
+
+        <input type="hidden" id="base64Foto">
+        <button id="btnPelawatSubmit" class="btn btn-pelawat" onclick="hantarPelawat()">
+          <img src="https://cdn-icons-png.flaticon.com/128/9402/9402342.png" class="icon-3d-std"> HANTAR DATA
+        </button>
+        <button class="btn btn-cancel" onclick="cancelPelawat()">BATAL</button>
+      </div>
+
+      <div class="list-header">
+        <span>
+          <img src="https://cdn-icons-png.flaticon.com/128/942/942799.png" class="icon-3d-std"> 
+          <span id="recordTitleText">Rekod Hari Ini</span> (<span id="count">0</span>)
+        </span>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <div style="position:relative; display:inline-block; width:22px; height:22px;">
+            <input type="date" id="historyDate" onchange="loadList()" style="position:absolute; opacity:0; width:100%; height:100%; top:0; left:0; cursor:pointer;" title="Pilih Tarikh Sejarah">
+            <img src="https://cdn-icons-png.flaticon.com/128/3652/3652191.png" class="icon-3d-std" style="width:22px; height:22px; margin:0;">
+          </div>
+          <button onclick="loadList()" style="border:none; background:none; cursor:pointer; padding:0;">
+            <img src="https://cdn-icons-png.flaticon.com/128/3031/3031718.png" class="icon-3d-std" style="width:22px; height:22px; margin:0;">
+          </button>
+        </div>
+      </div>
+      <div id="listContainer" class="list-container">
+        <div style="padding:20px; color:#999; font-size:12px;">Memuatkan data...</div>
+      </div>
+      
+    </div>
+  </div>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').then(reg => {
+        console.log('SW Berjaya:', reg.scope);
+        reg.update();
+        if ('SyncManager' in window) {
+          reg.sync.register('sync-attendance').catch(err => console.log("Sync bg gagal", err));
+        }
+      }).catch(err => console.log('SW Gagal:', err));
+    });
+
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!refreshing) {
+        refreshing = true;
+        window.location.reload();
+      }
+    });
+  }
+
+  window.addEventListener('online', () => {
+    console.log("Internet dikesan! Memulakan sinkronisasi...");
+    showSyncBar("Internet Kembali Pulih. Menyegerakkan data...", "#2ecc71");
+    if ('serviceWorker' in navigator && 'SyncManager' in window) {
+      navigator.serviceWorker.ready.then(sw => { return sw.sync.register('sync-attendance'); });
+    } else {
+      fetch('/sw.js'); 
+    }
+    if(typeof syncOfflineData === 'function') syncOfflineData();
+  });
+
+  window.addEventListener('offline', () => {
+    showSyncBar("MOD OFFLINE: Data akan disimpan dalam telefon.", "#e74c3c");
+  });
+
+  function showSyncBar(msg, color) {
+    const bar = document.getElementById('syncStatusBar');
+    if(bar) {
+      bar.innerText = msg;
+      bar.style.background = color;
+      bar.style.display = 'block';
+      if(color === "#2ecc71") setTimeout(() => { bar.style.display = 'none'; }, 4000);
+    }
+  }
+
+  function syncOfflineData() {
+    if (!navigator.onLine) return;
+    let offlineQueue = JSON.parse(localStorage.getItem('ehadir_offline_queue') || "[]");
+    if (offlineQueue.length === 0) {
+      localStorage.removeItem('ehadir_offline_queue'); 
+      return; 
+    }
+
+    showSyncBar("Menghantar " + offlineQueue.length + " data tertangguh...", "#3498db");
+    let itemToSync = offlineQueue[0];
+    if (!itemToSync.kategori || itemToSync.kategori === "undefined" || itemToSync.kategori === null) {
+      itemToSync.kategori = "PELAWAT";
+    }
+
+    fetch(API_URL, { method: "POST", body: JSON.stringify(itemToSync) })
+    .then(response => response.json())
+    .then(res => {
+      offlineQueue.shift(); 
+      if (offlineQueue.length > 0) { 
+        localStorage.setItem('ehadir_offline_queue', JSON.stringify(offlineQueue));
+        syncOfflineData(); 
+      } else { 
+        localStorage.removeItem('ehadir_offline_queue'); 
+        showSyncBar("👍 Semua data offline telah berjaya dihantar!", "#27ae60"); 
+        loadList(); 
+        setTimeout(() => {
+          fetch(API_URL, { method: "POST", body: JSON.stringify({action: "GET_LIST", passcode: PASSCODE}) })
+          .then(r => r.json()).then(resData => { 
+            checkAutoStatus(resData.data || resData); 
+          });
+        }, 1500);
+      }
     })
-  );
-});
+    .catch(err => { showSyncBar("Ralat Network. Akan cuba sebentar lagi.", "#e67e22"); });
+  }
+
+  function showModernAlert(title, msg, type, callback) {
+    let modal = document.getElementById('customModal');
+    let mTitle = document.getElementById('modalTitle');
+    let mMsg = document.getElementById('modalMsg');
+    let mIcon = document.getElementById('modalIcon');
+    let mBtns = document.getElementById('modalBtnRow');
+
+    mTitle.innerText = title;
+    mMsg.innerHTML = msg; 
+    
+    if(type === 'error') {
+      mIcon.innerText = ""; mTitle.style.color = "#c0392b";
+      mBtns.innerHTML = `<button class="modal-btn btn-ok" onclick="closeCustomModal()">Faham</button>`;
+    } else if(type === 'success') {
+      mIcon.innerText = "👍"; mTitle.style.color = "#27ae60";
+      mBtns.innerHTML = `<button class="modal-btn btn-ok" onclick="closeCustomModal()">Terbaik</button>`;
+    } else if(type === 'info') {
+      mIcon.innerText = ""; mTitle.style.color = "#2980b9";
+      mBtns.innerHTML = `<button class="modal-btn btn-ok" onclick="closeCustomModal()">OK</button>`;
+    } else if(type === 'confirm') {
+      mIcon.innerText = ""; mTitle.style.color = "#1e3c72";
+      window.tempCallback = callback;
+      mBtns.innerHTML = `<button class="modal-btn btn-cancel-modal" onclick="closeCustomModal()">Batal</button><button class="modal-btn btn-ok" onclick="confirmAction()">Teruskan</button>`;
+    } else {
+      mIcon.innerText = ""; mTitle.style.color = "#2c3e50";
+      mBtns.innerHTML = `<button class="modal-btn btn-ok" onclick="closeCustomModal()">Tutup</button>`;
+    }
+    modal.style.display = "flex";
+  }
+
+  function closeCustomModal() { document.getElementById('customModal').style.display = "none"; }
+  function confirmAction() { closeCustomModal(); if(window.tempCallback) window.tempCallback(); }
+
+  function sendNotification(title, body, tag) {
+    if(Notification.permission === "granted") {
+      if('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then(reg => {
+          reg.showNotification(title, {
+            body: body,
+            icon: "https://cdn-icons-png.flaticon.com/128/9402/9402342.png",
+            tag: tag,
+            renotify: true,
+            vibrate: [200, 100, 200],
+            data: { url: location.href } 
+          });
+        });
+      } else {
+        new Notification(title, { body: body, tag: tag });
+      }
+    }
+  }
+
+  window.onload = function() {
+    startClock();
+    startRadar();
+    fetchConfig(); 
+    getHijriDate();
+    initLockName(); 
+    initAvatar(); 
+    initBackgroundService(); 
+    
+    document.getElementById('nama').addEventListener('input', validateFormState);
+
+    if(!navigator.onLine) showSyncBar("MOD OFFLINE: Data akan disimpan dalam telefon.", "#e74c3c");
+    else syncOfflineData(); 
+
+    setTimeout(() => {
+      checkSession();
+      setInterval(updateDashboardInfo, 5000); 
+    }, 2000);
+
+    loadList();
+    setInterval(updateLiveTimers, 1000);
+    
+    const workerBlob = new Blob(["self.onmessage = function() { setInterval(function(){ self.postMessage('tick'); }, 1000); }"], { type: "text/javascript" });
+    const worker = new Worker(URL.createObjectURL(workerBlob));
+    worker.onmessage = function(e) { monitorAutoLogic(); };
+    worker.postMessage("start");
+  };
+
+  const AVATARS = [
+    "https://cdn-icons-png.flaticon.com/128/4140/4140048.png", 
+    "https://cdn-icons-png.flaticon.com/128/4140/4140047.png", 
+    "https://cdn-icons-png.flaticon.com/128/4140/4140037.png", 
+    "https://cdn-icons-png.flaticon.com/128/4140/4140051.png", 
+    "https://cdn-icons-png.flaticon.com/128/4140/4140040.png", 
+    "https://cdn-icons-png.flaticon.com/128/4140/4140061.png", 
+    "https://cdn-icons-png.flaticon.com/128/4140/4140052.png", 
+    "https://cdn-icons-png.flaticon.com/128/4140/4140042.png", 
+    "https://cdn-icons-png.flaticon.com/128/4140/4140046.png", 
+    "https://cdn-icons-png.flaticon.com/128/4140/4140057.png"  
+  ];
+
+  function initAvatar() {
+    let saved = localStorage.getItem('ehadir_user_avatar');
+    if(saved) document.getElementById('currentAvatarMini').src = saved;
+    let grid = document.getElementById('avatarGrid');
+    grid.innerHTML = "";
+    AVATARS.forEach(url => {
+      let div = document.createElement('div');
+      div.className = "avatar-option";
+      if(url === saved) div.classList.add('selected');
+      div.innerHTML = `<img src="${url}">`;
+      div.onclick = () => selectAvatar(url);
+      grid.appendChild(div);
+    });
+  }
+
+  function openAvatarModal() { document.getElementById('avatarModalContainer').style.display = 'flex'; }
+  function closeAvatarModal() { document.getElementById('avatarModalContainer').style.display = 'none'; }
+
+  function selectAvatar(url) {
+    localStorage.setItem('ehadir_user_avatar', url);
+    document.getElementById('currentAvatarMini').src = url;
+    initAvatar(); 
+    closeAvatarModal();
+  }
+
+  function initLockName() {
+    let locked = localStorage.getItem('ehadir_locked_name');
+    let lockedKat = localStorage.getItem('ehadir_locked_kat'); 
+    let input = document.getElementById('nama');
+    let sel = document.getElementById('kategori');
+    let btnImg = document.getElementById('lockIconImg');
+    let btnLock = document.getElementById('lockBtn');
+    let avatarBtn = document.getElementById('avatarBtn'); 
+    
+    if (!locked || !lockedKat) {
+      if(locked || lockedKat) {
+        localStorage.removeItem('ehadir_locked_name');
+        localStorage.removeItem('ehadir_locked_kat');
+      }
+      locked = null; 
+      lockedKat = null;
+    }
+
+    if (locked && lockedKat) {
+      input.value = locked;
+      sel.value = lockedKat;
+      input.readOnly = true;
+      sel.disabled = true; 
+      avatarBtn.disabled = true; 
+      input.style.background = "#fff8e1"; 
+      sel.style.background = "#fff8e1";
+      
+      btnImg.src = "https://cdn-icons-png.flaticon.com/128/3064/3064155.png"; 
+      btnImg.style.filter = "opacity(1)";
+      btnLock.classList.add('btn-yellow');
+    } else {
+      input.readOnly = false;
+      sel.disabled = false;
+      avatarBtn.disabled = false; 
+      input.style.background = "#f8f9fa"; 
+      sel.style.background = "#f8f9fa";
+      
+      btnImg.src = "https://cdn-icons-png.flaticon.com/128/3064/3064197.png"; 
+      btnImg.style.filter = "opacity(0.6)";
+      btnLock.classList.remove('btn-yellow');
+    }
+    
+    validateFormState();
+  }
+
+  function toggleLockName() {
+    let input = document.getElementById('nama');
+    let sel = document.getElementById('kategori');
+    let avatarBtn = document.getElementById('avatarBtn');
+    let current = input.value.trim().toUpperCase();
+    let currentKat = sel.value;
+    let currentAvatar = localStorage.getItem('ehadir_user_avatar');
+    
+    if (input.readOnly) {
+      input.readOnly = false;
+      sel.disabled = false;
+      avatarBtn.disabled = false;
+      input.style.background = "#f8f9fa";
+      sel.style.background = "#f8f9fa";
+      localStorage.removeItem('ehadir_locked_name');
+      localStorage.removeItem('ehadir_locked_kat');
+      showModernAlert("Nyah-Kunci", "Auto Check-In Dibatalkan.", "info");
+      initLockName();
+      return;
+    }
+
+    if(!current) { showModernAlert("Tiada Nama", "Sila isi Nama anda dahulu.", "error"); return; }
+    if(!currentKat) { showModernAlert("Tiada Kategori", "Sila pilih Kategori dahulu.", "error"); return; }
+    if(!currentAvatar) { showModernAlert("Tiada Avatar", "Sila pilih Avatar anda dahulu.", "error"); return; }
+
+    input.readOnly = true;
+    sel.disabled = true;
+    avatarBtn.disabled = true;
+    input.style.background = "#fff8e1";
+    sel.style.background = "#fff8e1";
+    localStorage.setItem('ehadir_locked_name', current);
+    localStorage.setItem('ehadir_locked_kat', currentKat);
+    
+    showModernAlert("Berjaya Kunci", "Nama, Kategori & Avatar dikunci. <br>Sistem Auto Check-In sedia.", "success");
+    initLockName();
+  }
+
+  function cleanTimeDisplay(val) {
+    if (!val) return "--:--";
+    let d = parseTime(val, new Date());
+    return d ? d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : val;
+  }
+
+  function updateScheduleInfo() {
+    let kat = document.getElementById('kategori');
+    let infoBox = document.getElementById('scheduleInfo');
+    if (!jamConfig) return;
+    if (kat && jamConfig[kat.value]) {
+      let masuk = cleanTimeDisplay(jamConfig[kat.value].masuk);
+      let keluar = cleanTimeDisplay(jamConfig[kat.value].keluar);
+      infoBox.innerHTML = `<div class="schedule-minimal"><div class="time-pill" style="color:#27ae60; border-color:#d4edda;"><span><img src="https://cdn-icons-png.flaticon.com/128/3233/3233497.png" class="icon-3d-mini"> ${masuk}</span></div><div class="time-pill" style="color:#c0392b; border-color:#fadbd8;"><span><img src="https://cdn-icons-png.flaticon.com/128/3233/3233513.png" class="icon-3d-mini"> ${keluar}</span></div></div>`;
+      infoBox.style.display = "block";
+      
+      infoBox.classList.remove('pop-in');
+      void infoBox.offsetWidth; 
+      infoBox.classList.add('pop-in');
+    }
+  }
+
+  function updateDashboardInfo() {
+    let s = JSON.parse(localStorage.getItem('ehadir_session'));
+    let dashboardSchedule = document.getElementById('dashboardSchedule');
+    let userExitTime = document.getElementById('userExitTime');
+    if (s && jamConfig && jamConfig[s.kategori]) {
+      let displayKeluar = cleanTimeDisplay(jamConfig[s.kategori].keluar);
+      dashboardSchedule.style.display = "block";
+      userExitTime.innerText = displayKeluar;
+    }
+  }
+
+  function parseTime(t, r) {
+    if (!t || t.toString().toUpperCase() === "BEBAS") return null;
+    let d = new Date(r); let tStr = t.toString().trim();
+    let p = tStr.match(/(\d+)[:.](\d+)(?:[:.](\d+))?\s*(AM|PM)/i);
+    if(p) {
+      let h = parseInt(p[1]), m = parseInt(p[2]), ampm = p[4].toUpperCase();
+      if(ampm === "PM" && h < 12) h += 12; if(ampm === "AM" && h === 12) h = 0;
+      d.setHours(h, m, 0, 0); return d;
+    } 
+    let p2 = tStr.match(/(\d+)[:.](\d+)/);
+    if(p2) { d.setHours(parseInt(p2[1]), parseInt(p2[2]), 0, 0); return d; }
+    return null; 
+  }
+
+  function parseTimeLocal(timeStr) {
+    if (!timeStr) return null;
+    if (timeStr.toString().length > 15) { let tempD = new Date(timeStr); if(!isNaN(tempD.getTime())) { let now = new Date(); now.setHours(tempD.getHours(), tempD.getMinutes(), tempD.getSeconds(), 0); return now; } }
+    let parts = timeStr.match(/(\d+):(\d+)(?::(\d+))?\s*(AM|PM|am|pm)?/i);
+    if (!parts) return null;
+    let h = parseInt(parts[1]), m = parseInt(parts[2]), s = parts[3] ? parseInt(parts[3]) : 0, ampm = parts[4] ? parts[4].toUpperCase() : null;
+    if (ampm === "PM" && h < 12) h += 12; if (ampm === "AM" && h === 12) h = 0;
+    let d = new Date(); d.setHours(h, m, s, 0); return d;
+  }
+
+  function updateLiveTimers() {
+    let now = new Date();
+    document.querySelectorAll('.live-timer[data-masuk]').forEach(el => {
+      let masukStr = el.getAttribute('data-masuk');
+      if (!masukStr || masukStr === "undefined") { 
+        el.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/128/2972/2972531.png" style="width:12px;height:12px;vertical-align:middle"> Sedang Bertugas: --`; 
+        return; 
+      }
+      let masukDate = parseTimeLocal(masukStr);
+      if (masukDate) {
+        let diff = Math.floor((now - masukDate) / 1000); if (diff < 0) diff = 0;
+        let h = Math.floor(diff / 3600); let m = Math.floor((diff % 3600) / 60);
+        el.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/128/2972/2972531.png" style="width:12px;height:12px;vertical-align:middle"> Sedang Bertugas: ${h}J ${m}M`;
+      } else { 
+        el.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/128/2972/2972531.png" style="width:12px;height:12px;vertical-align:middle"> Sedang Bertugas: 0J 0M`; 
+      }
+    });
+  }
+
+  function startClock(){
+    setInterval(()=>{
+      let n = new Date();
+      document.getElementById('clockDisplay').innerText = n.toLocaleTimeString('en-US', { hour12: true, hour: "2-digit", minute: "2-digit", timeZone: 'Asia/Kuala_Lumpur' });
+      document.getElementById('dateDisplay').innerText = n.toLocaleDateString('ms-MY', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kuala_Lumpur' });
+    }, 1000);
+  }
+  
+  function getHijriDate(){
+    const monthNames = ["Muharram", "Safar", "Rabiulawal", "Rabiulakhir", "Jamadilawal", "Jamadilakhir", "Rejab", "Syaaban", "Ramadan", "Syawal", "Zulkaedah", "Zulhijjah"];
+    let t = new Date();
+    t.setDate(t.getDate() - 1); // Penyelarasan -1 hari untuk kalendar Hijrah Malaysia (JAKIM)
+    try {
+      let parts = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn', { day: 'numeric', month: 'numeric', year: 'numeric', timeZone: 'Asia/Kuala_Lumpur' }).formatToParts(t);
+      let hDay = parts.find(p => p.type === 'day').value;
+      let hMonthIndex = parseInt(parts.find(p => p.type === 'month').value) - 1; 
+      let hYear = parts.find(p => p.type === 'year').value.split(" ")[0];
+      document.getElementById('hijriDisplay').innerText = `${hDay} ${monthNames[hMonthIndex]||("")} ${hYear}`;
+    } catch(e) { document.getElementById('hijriDisplay').innerText = "Kalendar Islam"; }
+  }
+
+  function checkSession() { 
+    let s = JSON.parse(localStorage.getItem('ehadir_session')); 
+    if(s && s.date === new Date().toISOString().slice(0,10)) { 
+      document.getElementById('defaultForm').style.display = 'none'; 
+      document.getElementById('dashboardPanel').style.display = 'block'; 
+      document.getElementById('sessionName').innerText = s.nama; 
+      document.getElementById('dynamicStatus').innerText = "STATUS: " + s.kategori + " (SEDANG BERTUGAS)";
+      let savedAvatar = s.avatar || localStorage.getItem('ehadir_user_avatar');
+      if(savedAvatar) document.getElementById('userAvatarDash').src = savedAvatar;
+      updateDashboardInfo(); 
+    } 
+  }
+
+  function formatAppTime(val) {
+    if (!val || val === "" || val === "undefined") return "--:--";
+    if (typeof val === 'string' && val.includes('T') && val.length > 15) {
+      let d = new Date(val);
+      if (!isNaN(d.getTime())) return d.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12:true});
+    }
+    return val;
+  }
+  
+  function loadList() { 
+    let dateInput = document.getElementById('historyDate');
+    let dateVal = dateInput ? dateInput.value : "";
+    let todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' }); 
+    let isHistory = dateVal && dateVal !== todayStr;
+
+    let titleText = document.getElementById('recordTitleText');
+    if (titleText) {
+      if (isHistory) {
+        let parts = dateVal.split('-');
+        titleText.innerText = "Rekod (" + parts[2] + "/" + parts[1] + ")";
+      } else {
+        titleText.innerText = "Rekod Hari Ini";
+      }
+    }
+
+    let offlineQueue = JSON.parse(localStorage.getItem('ehadir_offline_queue') || "[]");
+    let offlineItems = isHistory ? [] : offlineQueue.filter(q => q.action === "MASUK").map(q => ({
+      nama: q.nama, kategori: q.kategori, jam: new Date(q.clientTime).toLocaleTimeString('en-US', {hour12:true, hour:'2-digit', minute:'2-digit', second:'2-digit'}), avatar: q.avatar, isOffline: true
+    }));
+    if(!navigator.onLine) { renderList(offlineItems); return; }
+    
+    let payload = {action: "GET_LIST", passcode: PASSCODE};
+    if (dateVal) payload.targetDate = dateVal;
+
+    fetch(API_URL, { method: "POST", body: JSON.stringify(payload) })
+    .then(r => r.json()).then(res => { 
+      let serverItems = res.data || res; 
+      currentList = [...offlineItems, ...serverItems];
+      renderList(currentList);
+      if (!isHistory) {
+        checkAutoStatus(currentList);
+        validateFormState();
+      }
+    }).catch(() => { renderList(offlineItems); });
+  }
+
+  function renderList(items) {
+    let dateInput = document.getElementById('historyDate');
+    let dateVal = dateInput ? dateInput.value : "";
+    let todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' });
+    let isHistory = dateVal && dateVal !== todayStr;
+
+    document.getElementById('count').innerText = items.length; 
+    let h = ""; 
+    
+    const catColors = {
+      "GURU": "#2980b9",      
+      "AKP": "#d35400",       
+      "KEBERSIHAN": "#27ae60", 
+      "PELAWAT": "#8e44ad"    
+    };
+
+    items.forEach((i, idx) => { 
+      let imgBtn = (i.kategori === "PELAWAT" && i.foto) ? `<span class="icon-btn" onclick="viewImage(${idx})"><img src="https://cdn-icons-png.flaticon.com/128/3342/3342137.png" class="icon-3d-mini"></span>` : "";
+      let xBtn = isHistory ? "" : `<span class="icon-btn" style="border-color:#fadbd8;" onclick="keluarManual('${i.nama}')"><img src="https://cdn-icons-png.flaticon.com/128/6861/6861362.png" class="icon-3d-mini"></span>`;
+      let offlineClass = i.isOffline ? "offline-item" : "";
+      let offlineIcon = i.isOffline ? `<img src="https://cdn-icons-png.flaticon.com/128/159/159604.png" class="icon-3d-mini" title="Menunggu Sync"> ` : "";
+      
+      let nameColor = catColors[i.kategori] || "#2c3e50";
+
+      let displayMasuk = formatAppTime(i.jam);
+      let displayKeluar = formatAppTime(i.keluar);
+
+      let durationHTML = "";
+      if (i.jam && i.keluar && i.keluar !== "" && i.keluar !== "undefined") {
+        let dMasuk = parseTimeLocal(i.jam);
+        let dKeluar = parseTimeLocal(i.keluar);
+        if (dMasuk && dKeluar) {
+          let diff = Math.floor((dKeluar - dMasuk) / 1000); 
+          if (diff < 0) diff += 86400; 
+          let h = Math.floor(diff / 3600); 
+          let m = Math.floor((diff % 3600) / 60);
+          durationHTML = `<span class="live-timer" style="background:#e8f5e9; color:#27ae60; border-color:#c3e6cb; margin-top:2px;"><img src="https://cdn-icons-png.flaticon.com/128/2972/2972531.png" style="width:12px;height:12px;vertical-align:middle"> Jumlah Bertugas: ${h}J ${m}M</span>`;
+        }
+      } else if (!isHistory && i.jam && i.jam !== "undefined") {
+        durationHTML = `<span class="live-timer" data-masuk="${i.jam}" style="margin-top:2px;"><img src="https://cdn-icons-png.flaticon.com/128/2972/2972531.png" style="width:12px;height:12px;vertical-align:middle"> Sedang Bertugas: 0J 0M</span>`;
+      }
+
+      let detailsHTML = `<div style="display:flex; align-items:center; gap:5px;"><span style="font-weight:600; color:#1e3c72;">${i.kategori}</span></div>
+               <div style="font-size:11px; color:#555; background:#f8f9fa; padding:2px 6px; border-radius:4px; border:1px solid #eee;">Masuk: <b>${displayMasuk}</b> | Keluar: <b>${displayKeluar}</b></div>
+               ${durationHTML}`;
+
+      h += `<div class="user-card ${offlineClass}">
+          <div style="display:flex; align-items:center; width:100%;">
+            <div class="user-info">
+              <strong style="color:${nameColor}">${offlineIcon}${i.nama}</strong>
+              <div class="user-details">${detailsHTML}</div>
+            </div>
+          </div>
+          <div class="list-actions">${imgBtn}${xBtn}</div>
+          </div>`; 
+    }); 
+    document.getElementById('listContainer').innerHTML = h || `<div style='padding:20px; color:#999; font-size:12px;'>Tiada rekod ${isHistory ? 'pada tarikh ini' : 'hari ini'}.</div>`; 
+    if (!isHistory) updateLiveTimers();
+  }
+
+  function viewImage(index) { 
+    let data = currentList[index]; 
+    if (data && data.foto) { 
+      document.getElementById('imgFull').src = data.foto; 
+      document.getElementById('imageModal').style.display = "flex"; 
+    } 
+  }
+  
+  function closeModal() { document.getElementById('imageModal').style.display = "none"; }
+  
+  function processImage(i) {
+    if (i.files && i.files[0]) {
+      let r = new FileReader();
+      r.onload = function(e) {
+        let im = new Image();
+        im.src = e.target.result;
+        im.onload = function() {
+          let cv = document.createElement("canvas");
+          let ctx = cv.getContext("2d");
+          cv.width = 400;
+          cv.height = 400 * (im.height / im.width);
+          ctx.drawImage(im, 0, 0, cv.width, cv.height);
+          let d = cv.toDataURL("image/jpeg", 0.7);
+          let p = document.getElementById('previewImg');
+          let c = document.getElementById('camContent');
+          if (p) {
+            p.src = d;
+            p.style.display = 'block';
+          }
+          if (c) {
+            c.style.display = 'none';
+          }
+          document.getElementById('base64Foto').value = d;
+        };
+      };
+      r.readAsDataURL(i.files[0]);
+    }
+  }
+  
+  function checkKategori() { if (document.getElementById('kategori').value === 'PELAWAT') showPelawatForm(); }
+  function showPelawatForm() { document.getElementById('defaultForm').style.display = 'none'; document.getElementById('pelawatPanel').style.display = 'block'; }
+  function cancelPelawat() { document.getElementById('pelawatPanel').style.display = 'none'; checkSession(); location.reload(); }
+  function resetSesi() { if (confirm("Reset sesi?")) { localStorage.removeItem('ehadir_session'); location.reload(); } }
+</script>
+</body>
+</html>

@@ -133,7 +133,7 @@
       let offlinePending = JSON.parse(localStorage.getItem('ehadir_offline_queue') || "[]").some(q => q.nama === checkName && q.action === "MASUK");
 
       if (isActive || offlinePending) {
-        if(btnMasuk) btnMasuk.style.display = 'none'; // Sembunyikan daftar masuk sepenuhnya jika belum keluar
+        if(btnMasuk) btnMasuk.style.display = 'none'; 
         if(formWarn) {
           formWarn.innerHTML = "⚠️ ANDA BELUM DAFTAR KELUAR";
           formWarn.style.display = 'block';
@@ -157,7 +157,6 @@
         kat = document.getElementById('kategori').value;
       }
 
-      // Double protection: Block logic execution if already active
       let isAlreadyActive = currentList.some(i => i.nama === nama && !i.isOffline);
       if (isAlreadyActive) {
         if (!isAuto) showModernAlert("Sesi Aktif", "Anda belum daftar keluar untuk sesi sebelum ini. Sila klik DAFTAR KELUAR.", "error");
@@ -542,6 +541,30 @@
       }
     }
 
+    function handleGPSError(err) {
+      let statusEl = document.getElementById('statusText');
+      let msg = "Sila aktifkan GPS (Location) anda.";
+      if (err.code === 1) msg = "Sila benarkan akses Lokasi (GPS) browser.";
+      else if (err.code === 2) msg = "GPS tidak dikesan. Pastikan 'Location' dihidupkan.";
+      else if (err.code === 3) msg = "Pencarian GPS Timeout.";
+
+      if (statusEl) {
+         let icon = "<img src='https://cdn-icons-png.flaticon.com/128/190/190406.png' class='icon-3d-mini'>";
+         statusEl.innerHTML = icon + " " + msg;
+         statusEl.style.color = "#c0392b";
+         statusEl.style.background = "#fadbd8";
+      }
+
+      if (!sessionStorage.getItem('gps_warned')) {
+         showModernAlert(
+           "GPS Diperlukan", 
+           "Perhatian: GPS anda didapati <b>TIDAK AKTIF</b> atau tiada kebenaran. <br><br>Sila hidupkan 'Location/GPS' di tetapan telefon anda atau benarkan pelayar web ini mengakses lokasi, kemudian <b>Refresh</b> muka surat ini.", 
+           "error"
+         );
+         sessionStorage.setItem('gps_warned', 'true');
+      }
+    }
+
     function startRadar() {
       if (navigator.geolocation) {
         navigator.geolocation.watchPosition(pos => {
@@ -558,11 +581,23 @@
             if (!outZoneStart) outZoneStart = Date.now();
             inZoneStart = 0; 
           }
-        }, null, {enableHighAccuracy: true, maximumAge: 0, timeout: 5000});
+        }, err => {
+          handleGPSError(err);
+        }, {enableHighAccuracy: true, maximumAge: 0, timeout: 5000});
+      } else {
+        showModernAlert("Ralat", "Peranti anda tidak menyokong fungsi GPS.", "error");
       }
     }
 
-    function calcDist(a,b,c,d){var R=6371e3,x=a*Math.PI/180,y=c*Math.PI/180,k=(c-a)*Math.PI/180,l=(d-b)*Math.PI/180,z=Math.sin(k/2)*Math.sin(k/2)+Math.cos(x)*Math.cos(y)*Math.sin(l/2)*Math.sin(l/2);return R*2*Math.atan2(Math.sqrt(z),Math.sqrt(1-z));}
+    function calcDist(a, b, c, d) {
+      var R = 6371e3;
+      var x = a * Math.PI / 180;
+      var y = c * Math.PI / 180;
+      var k = (c - a) * Math.PI / 180;
+      var l = (d - b) * Math.PI / 180;
+      var z = Math.sin(k / 2) * Math.sin(k / 2) + Math.cos(x) * Math.cos(y) * Math.sin(l / 2) * Math.sin(l / 2);
+      return R * 2 * Math.atan2(Math.sqrt(z), Math.sqrt(1 - z));
+    }
 
     async function initBackgroundService() {
       if ("Notification" in window) {
@@ -1437,13 +1472,49 @@
     if (!isHistory) updateLiveTimers();
   }
 
-  function viewImage(index) { let data = currentList[index]; if(data && data.foto) { document.getElementById('imgFull').src = data.foto; document.getElementById('imageModal').style.display = "flex"; } }
+  function viewImage(index) { 
+    let data = currentList[index]; 
+    if (data && data.foto) { 
+      document.getElementById('imgFull').src = data.foto; 
+      document.getElementById('imageModal').style.display = "flex"; 
+    } 
+  }
+  
   function closeModal() { document.getElementById('imageModal').style.display = "none"; }
-  function processImage(i){if(i.files&&i.files[0]){let r=new FileReader();r.onload=function(e){let im=new Image();im.src=e.target.result;im.onload=function(){let cv=document.createElement("canvas");let ctx=cv.getContext("2d");cv.width=400;cv.height=400*(im.height/im.width);ctx.drawImage(im,0,0,cv.width,cv.height);let d=cv.toDataURL("image/jpeg",0.7);let p=document.getElementById('previewImg');let c=document.getElementById('camContent');if(p){p.src=d;p.style.display='block';}if(c){c.style.display='none';}document.getElementById('base64Foto').value=d;};};r.readAsDataURL(i.files[0]);}}
-  function checkKategori(){ if(document.getElementById('kategori').value==='PELAWAT') showPelawatForm(); }
-  function showPelawatForm(){ document.getElementById('defaultForm').style.display='none'; document.getElementById('pelawatPanel').style.display='block'; }
-  function cancelPelawat(){ document.getElementById('pelawatPanel').style.display='none'; checkSession(); location.reload(); }
-  function resetSesi(){ if(confirm("Reset sesi?")){localStorage.removeItem('ehadir_session');location.reload();} }
+  
+  function processImage(i) {
+    if (i.files && i.files[0]) {
+      let r = new FileReader();
+      r.onload = function(e) {
+        let im = new Image();
+        im.src = e.target.result;
+        im.onload = function() {
+          let cv = document.createElement("canvas");
+          let ctx = cv.getContext("2d");
+          cv.width = 400;
+          cv.height = 400 * (im.height / im.width);
+          ctx.drawImage(im, 0, 0, cv.width, cv.height);
+          let d = cv.toDataURL("image/jpeg", 0.7);
+          let p = document.getElementById('previewImg');
+          let c = document.getElementById('camContent');
+          if (p) {
+            p.src = d;
+            p.style.display = 'block';
+          }
+          if (c) {
+            c.style.display = 'none';
+          }
+          document.getElementById('base64Foto').value = d;
+        };
+      };
+      r.readAsDataURL(i.files[0]);
+    }
+  }
+  
+  function checkKategori() { if (document.getElementById('kategori').value === 'PELAWAT') showPelawatForm(); }
+  function showPelawatForm() { document.getElementById('defaultForm').style.display = 'none'; document.getElementById('pelawatPanel').style.display = 'block'; }
+  function cancelPelawat() { document.getElementById('pelawatPanel').style.display = 'none'; checkSession(); location.reload(); }
+  function resetSesi() { if (confirm("Reset sesi?")) { localStorage.removeItem('ehadir_session'); location.reload(); } }
 </script>
 </body>
 </html>

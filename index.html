@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Pelawat & Kehadiran v23.0 (Manual Override Fix)</title>
+    <title>Sistem Pelawat & Kehadiran v24.0 (Anti-Double Active Fix)</title>
     
     <!-- ====================================================================== -->
     <!--                 RUANGAN EDIT PENGGUNA (mantap)                -->
@@ -116,15 +116,36 @@
             }
         }
 
-        async function hantarMasuk(isAuto = false) {
-            if(isSubmitting) return; 
-
-            // LOGIK BARU: Halang pendaftaran masuk kali kedua hari ini
-            let doneToday = localStorage.getItem('ehadir_done_today');
-            if (doneToday === new Date().toISOString().slice(0,10)) {
-                if(!isAuto) showModernAlert("Akses Ditolak", "Anda telah mendaftar masuk hari ini. Pendaftaran kali kedua tidak dibenarkan.", "error");
+        function validateFormState() {
+            let nameInput = document.getElementById('nama');
+            if(!nameInput) return;
+            let checkName = nameInput.value.toUpperCase().trim();
+            let btnMasuk = document.getElementById('btnMainSubmit');
+            let formWarn = document.getElementById('formWarningMsg');
+            
+            if(!checkName) {
+                if(btnMasuk) btnMasuk.style.display = 'flex';
+                if(formWarn) formWarn.style.display = 'none';
                 return;
             }
+
+            let isActive = currentList.some(i => i.nama === checkName && !i.isOffline);
+            let offlinePending = JSON.parse(localStorage.getItem('ehadir_offline_queue') || "[]").some(q => q.nama === checkName && q.action === "MASUK");
+
+            if (isActive || offlinePending) {
+                if(btnMasuk) btnMasuk.style.display = 'none';
+                if(formWarn) {
+                    formWarn.innerHTML = "⚠️ ANDA BELUM DAFTAR KELUAR.<br><span style='font-size:10px; font-weight:normal;'>Sila Daftar Keluar sebelum mendaftar masuk semula.</span>";
+                    formWarn.style.display = 'block';
+                }
+            } else {
+                if(btnMasuk) btnMasuk.style.display = 'flex';
+                if(formWarn) formWarn.style.display = 'none';
+            }
+        }
+
+        async function hantarMasuk(isAuto = false) {
+            if(isSubmitting) return; 
 
             if(!isAuto) {
                 localStorage.removeItem('ehadir_session');
@@ -218,11 +239,6 @@
                         }
                     } else {
                          let msg = (result.data && result.data.msg) ? result.data.msg : "Data gagal masuk ke Google Sheet. Sila cuba lagi.";
-                         
-                         // Halang spam jika rekod pendua dikesan oleh pelayan
-                         if (msg.includes("kali kedua tidak dibenarkan")) {
-                             localStorage.setItem('ehadir_done_today', new Date().toISOString().slice(0,10));
-                         }
 
                          if(!isAuto) showModernAlert("Gagal", msg, "error");
                          isSubmitting = false;
@@ -363,8 +379,6 @@
                         showModernAlert("Selesai", "Daftar Keluar Berjaya.", "success");
                     }
                     
-                    // LOGIK BARU: Tanda selesai hari ini untuk menghalang daftar masuk kali kedua
-                    localStorage.setItem('ehadir_done_today', new Date().toISOString().slice(0,10));
                     localStorage.setItem('ehadir_auto_in_blocked', 'true');
                     localStorage.removeItem('ehadir_session');
                     
@@ -390,7 +404,6 @@
             
             sendData({ action: "KELUAR", passcode: PASSCODE, nama: namaUser, alasan: "Manual Admin", lat: lastLat, lng: lastLng, clientTime: new Date().toISOString() })
             .then(res => { 
-                localStorage.setItem('ehadir_done_today', new Date().toISOString().slice(0,10));
                 loadList(); 
             });
         }
@@ -432,7 +445,6 @@
 
             let statusEl = document.getElementById('statusText');
             let isBlocked = localStorage.getItem('ehadir_auto_in_blocked'); 
-            let doneToday = localStorage.getItem('ehadir_done_today') === new Date().toISOString().slice(0,10);
 
             if (isInZone) {
                  let icon = "<img src='https://cdn-icons-png.flaticon.com/128/190/190411.png' class='icon-3d-mini'>";
@@ -442,10 +454,9 @@
                      statusEl.style.background = "#e8f5e9";
                  }
                  
-                 if (isBlocked || doneToday) {
+                 if (isBlocked) {
                      if(statusEl) {
-                         if (doneToday) statusEl.innerHTML += `<br><span style="font-size:9px; color:#e67e22;">SELESAI BERTUGAS HARI INI</span>`;
-                         else statusEl.innerHTML += `<br><span style="font-size:9px; color:#e67e22;">AUTO-IN DIGANTUNG (KELUAR > ${RADIUS_RESET_AUTO_IN}M UNTUK RESET)</span>`;
+                         statusEl.innerHTML += `<br><span style="font-size:9px; color:#e67e22;">AUTO-IN DIGANTUNG (KELUAR > ${RADIUS_RESET_AUTO_IN}M UNTUK RESET)</span>`;
                      }
                      return; 
                  }
@@ -463,12 +474,12 @@
                 if(wBox) wBox.style.display = "none";
                 hasNotifiedExit = false; 
                 
-                if (!session && locked && lockedKat && !hasNotifiedEntry && !doneToday) {
+                if (!session && locked && lockedKat && !hasNotifiedEntry) {
                     hasNotifiedEntry = true;
                     sendNotification("ANDA SUDAH SAMPAI!", "Sila klik di sini untuk buka aplikasi", "wake-up-entry");
                 }
 
-                if (!session && locked && lockedKat && !isSubmitting && !doneToday) {
+                if (!session && locked && lockedKat && !isSubmitting) {
                     if (inZoneStart > 0) {
                         let elapsed = now - inZoneStart;
                         let remainingSec = Math.ceil((MS_IN_DELAY - elapsed) / 1000);
@@ -846,6 +857,8 @@
                 
                 <div style="font-size:10px; color:#e67e22; margin-bottom:10px;">Sila tekan 'KUNCI' Nama & Kategori </div>
 
+                <div id="formWarningMsg" style="display:none; color:#c0392b; font-size:12px; font-weight:700; margin-bottom:10px; background:#fadbd8; padding:10px; border-radius:8px; text-align:center; border: 1px solid #e74c3c;"></div>
+
                 <button id="btnMainSubmit" class="btn" onclick="hantarMasuk(false)">
                     <img src="https://cdn-icons-png.flaticon.com/128/9402/9402342.png" class="icon-3d-std"> DAFTAR MASUK
                 </button>
@@ -1058,6 +1071,8 @@
         initAvatar(); 
         initBackgroundService(); 
         
+        document.getElementById('nama').addEventListener('input', validateFormState);
+
         if(!navigator.onLine) showSyncBar("MOD OFFLINE: Data akan disimpan dalam telefon.", "#e74c3c");
         else syncOfflineData(); 
 
@@ -1154,6 +1169,8 @@
             btnImg.style.filter = "opacity(0.6)";
             btnLock.classList.remove('btn-yellow');
         }
+        
+        validateFormState();
     }
 
     function toggleLockName() {
@@ -1342,7 +1359,10 @@
             let serverItems = res.data || res; 
             currentList = [...offlineItems, ...serverItems];
             renderList(currentList);
-            if (!isHistory) checkAutoStatus(currentList);
+            if (!isHistory) {
+                checkAutoStatus(currentList);
+                validateFormState();
+            }
         }).catch(() => { renderList(offlineItems); });
     }
 

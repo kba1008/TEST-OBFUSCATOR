@@ -20,7 +20,7 @@
     const SCHOOL_LNG = 100.75591785106874; 
      
     // 4. Jarak Radius yang dibenarkan (dalam meter)
-    const RADIUS_METER = 30000; 
+    const RADIUS_METER = 300; 
 
     // 5. Anti-Spam Check-Check: Berapa minit dalam kawasan baru auto-masuk?
     const MINIT_ANTI_SPAM_MASUK = 1;
@@ -56,6 +56,7 @@
     let hasNotifiedEntry = false;
     let hasNotifiedExit = false;
     let gpsWatchId = null; // ID Tracker GPS berterusan
+    let isCutiModeActive = false; // FLAG Modul Cuti Aktif
 
     function sendData(data) {
       return new Promise((resolve, reject) => {
@@ -443,6 +444,8 @@
     }
 
     function monitorAutoLogic() {
+      if (isCutiModeActive) return; // USER REQUEST: Disable auto cekin/out bila masuk modul cuti
+
       let MS_IN_DELAY = (typeof MINIT_ANTI_SPAM_MASUK !== 'undefined' ? MINIT_ANTI_SPAM_MASUK : 5) * 60 * 1000;
       let MS_OUT_DELAY = (typeof MINIT_DELAY_KELUAR !== 'undefined' ? MINIT_DELAY_KELUAR : 10) * 60 * 1000;
 
@@ -652,23 +655,26 @@
 
     // --- FUNGSI MODUL CUTI (TIDAK HADIR) ---
     function openCutiWorkflow() {
+      isCutiModeActive = true;
       showModernAlert(
         "Pengesahan Cuti", 
         "Sila rancang cuti anda dan maklumkan kepada Pentadbir terlebih dahulu untuk memastikan operasi berjalan lancar.", 
         "info",
-        function() {
-          document.getElementById('defaultForm').style.display = 'none';
-          document.getElementById('cutiMainPanel').style.display = 'block';
-          loadCutiHistory();
-        }
+        null
       );
-      // Temporary override info close button to proceed
-      document.getElementById('modalBtnRow').innerHTML = `<button class="modal-btn btn-ok" onclick="proceedToCuti()">Teruskan</button>`;
+      // Ganti butang asal supaya ada Batal & Teruskan
+      document.getElementById('modalBtnRow').innerHTML = `<button class="modal-btn btn-cancel-modal" onclick="batalOpenCuti()">Batal</button> <button class="modal-btn btn-ok" onclick="proceedToCuti()">Teruskan</button>`;
+    }
+
+    function batalOpenCuti() {
+      closeCustomModal();
+      isCutiModeActive = false;
     }
 
     function proceedToCuti() {
       closeCustomModal();
       document.getElementById('defaultForm').style.display = 'none';
+      document.getElementById('dashboardPanel').style.display = 'none';
       document.getElementById('cutiMainPanel').style.display = 'block';
       loadCutiHistory();
     }
@@ -691,8 +697,15 @@
     }
 
     function exitCutiModule() {
+      isCutiModeActive = false;
       document.getElementById('cutiMainPanel').style.display = 'none';
-      document.getElementById('defaultForm').style.display = 'block';
+      // Buka panel dashboard jika dah login, sebaliknya buka default
+      let s = JSON.parse(localStorage.getItem('ehadir_session'));
+      if(s && s.date === new Date().toISOString().slice(0,10)) {
+        document.getElementById('dashboardPanel').style.display = 'block';
+      } else {
+        document.getElementById('defaultForm').style.display = 'block';
+      }
     }
 
     function submitCutiForm() {
@@ -806,7 +819,7 @@
                 if(!res.offline && res.data && res.data.result === "success") {
                     showModernAlert("Berjaya", "Cuti dibatalkan.", "success");
                     loadCutiHistory();
-                    loadAbsentList(); // Refresh top list just in case
+                    loadAbsentList(); 
                 } else {
                     showModernAlert("Ralat", "Gagal batal.", "error");
                 }
@@ -1156,9 +1169,12 @@
           <img src="https://cdn-icons-png.flaticon.com/128/3580/3580154.png" class="icon-3d-std"> DAFTAR KELUAR 
         </button>
         
-        <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
-          <button class="btn btn-pelawat" onclick="showPelawatForm()" style="font-size:13px; padding: 12px;">
-            <img src="https://cdn-icons-png.flaticon.com/128/3135/3135768.png" class="icon-3d-std"> BANTU DAFTAR PELAWAT
+        <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+          <button id="btnCutiDash" class="btn btn-yellow" onclick="openCutiWorkflow()" style="margin-top:0; color:#333; font-size:12px;">
+            <img src="https://cdn-icons-png.flaticon.com/128/6861/6861362.png" class="icon-3d-std"> URUS CUTI
+          </button>
+          <button class="btn btn-pelawat" onclick="showPelawatForm()" style="margin-top:0; font-size:12px;">
+            <img src="https://cdn-icons-png.flaticon.com/128/3135/3135768.png" class="icon-3d-std"> PELAWAT
           </button>
         </div>
       </div>
@@ -1853,7 +1869,15 @@
   
   function checkKategori() { if (document.getElementById('kategori').value === 'PELAWAT') showPelawatForm(); }
   function showPelawatForm() { document.getElementById('defaultForm').style.display = 'none'; document.getElementById('pelawatPanel').style.display = 'block'; }
-  function cancelPelawat() { document.getElementById('pelawatPanel').style.display = 'none'; checkSession(); location.reload(); }
+  function cancelPelawat() { 
+    document.getElementById('pelawatPanel').style.display = 'none'; 
+    let s = JSON.parse(localStorage.getItem('ehadir_session'));
+    if (s && s.date === new Date().toISOString().slice(0,10)) {
+      document.getElementById('dashboardPanel').style.display = 'block';
+    } else {
+      document.getElementById('defaultForm').style.display = 'block';
+    }
+  }
   function resetSesi() { if (confirm("Reset sesi?")) { localStorage.removeItem('ehadir_session'); location.reload(); } }
 </script>
 </body>

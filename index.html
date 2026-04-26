@@ -5,33 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sistem Pelawat & Kehadiran v25.0 (Modul Cuti Bersepadu)</title>
   
-  <!-- ====================================================================== -->
-  <!--                 RUANGAN EDIT PENGGUNA (mantap)                -->
-  <!-- ====================================================================== -->
   <script>
-    // 1. Masukkan Link Google Apps Script (Web App URL) di sini
-    const API_URL = 'https://script.google.com/macros/s/AKfycbxJMMRg59H_2gLnBXndymx4QWzHKIZqmQcI-nrnInDEw0kot-NuHf16MK8p-EieJF1w/exec'; 
-    
-    // 2. Kata Laluan untuk Admin / Manual Override
+    const API_URL = 'https://script.google.com/macros/s/AKfycbzU9jJmQVB5jRSZgwQuafEw4Qg5J8_JrQQu9CuCUQ2VDC2YfPtr30vAkv47MQfGBblf/exec'; 
     const PASSCODE = "101010";
-       
-    // 3. Koordinat Lokasi (Ambil dari Google Maps)
     const SCHOOL_LAT = 5.250891554235944; 
     const SCHOOL_LNG = 100.75591785106874; 
-     
-    // 4. Jarak Radius yang dibenarkan (dalam meter)
     const RADIUS_METER = 30000; 
-
-    // 5. Anti-Spam Check-Check: Berapa minit dalam kawasan baru auto-masuk?
     const MINIT_ANTI_SPAM_MASUK = 1;
-
-    // 6. Auto Checkout Delay: Berapa minit luar kawasan baru auto-keluar?
     const MINIT_DELAY_KELUAR = 1;
-
-    // 7. Jarak Reset Auto-In: Pengguna perlu keluar sejauh ini (meter) untuk aktifkan semula auto-in selepas check-out
     const RADIUS_RESET_AUTO_IN = 300;
-
-    // 8. KONFIGURASI JADUAL BERTUGAS & KATEGORI
     const JADUAL_BERTUGAS = {
       "GURU":       { masuk: "07:20:00 AM", keluar: "02:00:00 PM" },
       "AKP":        { masuk: "07:00:00 AM", keluar: "05:00:00 PM" },
@@ -39,10 +21,6 @@
       "PELAWAT":    { masuk: "BEBAS",       keluar: "BEBAS" }
     };
 
-    // --------------------------------------------------------------------------------------- 
-    //       ZON KOD KRITIKAL & LOGIK PENTING 
-    // --------------------------------------------------------------------------------------- 
-    
     let jamConfig = JADUAL_BERTUGAS; 
     let isInZone = false; 
     let currentDist = 0; 
@@ -55,8 +33,8 @@
     let wakeLock = null;
     let hasNotifiedEntry = false;
     let hasNotifiedExit = false;
-    let gpsWatchId = null; // ID Tracker GPS berterusan
-    let isCutiModeActive = false; // FLAG Modul Cuti Aktif
+    let gpsWatchId = null;
+    let isCutiModeActive = false;
 
     function sendData(data) {
       return new Promise((resolve, reject) => {
@@ -91,7 +69,6 @@
     function checkAutoStatus(list) {
       let currentSess = JSON.parse(localStorage.getItem('ehadir_session'));
       let locked = localStorage.getItem('ehadir_locked_name');
-      
       let checkName = locked || (currentSess ? currentSess.nama : null);
       if(!checkName) return;
       
@@ -444,7 +421,7 @@
     }
 
     function monitorAutoLogic() {
-      if (isCutiModeActive) return; // USER REQUEST: Disable auto cekin/out bila masuk modul cuti
+      if (isCutiModeActive) return;
 
       let MS_IN_DELAY = (typeof MINIT_ANTI_SPAM_MASUK !== 'undefined' ? MINIT_ANTI_SPAM_MASUK : 5) * 60 * 1000;
       let MS_OUT_DELAY = (typeof MINIT_DELAY_KELUAR !== 'undefined' ? MINIT_DELAY_KELUAR : 10) * 60 * 1000;
@@ -569,7 +546,6 @@
            "gps",
            retryGPS
          );
-         // Set timeout to allow popup again after 15 seconds if it still fails
          sessionStorage.setItem('gps_warned_interval', 'true');
          setTimeout(() => { sessionStorage.removeItem('gps_warned_interval'); }, 15000);
       }
@@ -592,7 +568,6 @@
       if (navigator.geolocation) {
         if (gpsWatchId) navigator.geolocation.clearWatch(gpsWatchId);
         gpsWatchId = navigator.geolocation.watchPosition(pos => {
-          // Hide retry button on success
           let btnGps = document.getElementById('btnRetryGPS');
           if(btnGps) btnGps.style.display = 'none';
 
@@ -653,7 +628,6 @@
       }
     }
 
-    // --- FUNGSI MODUL CUTI (TIDAK HADIR) ---
     function openCutiWorkflow() {
       isCutiModeActive = true;
       showModernAlert(
@@ -662,7 +636,6 @@
         "info",
         null
       );
-      // Ganti butang asal supaya ada Batal & Teruskan
       document.getElementById('modalBtnRow').innerHTML = `<button class="modal-btn btn-cancel-modal" onclick="batalOpenCuti()">Batal</button> <button class="modal-btn btn-ok" onclick="proceedToCuti()">Teruskan</button>`;
     }
 
@@ -682,7 +655,6 @@
     function showBorangCuti() {
       document.getElementById('cutiMainPanel').style.display = 'none';
       document.getElementById('borangCutiPanel').style.display = 'block';
-      // Pre-fill nama & kategori if locked
       let lName = localStorage.getItem('ehadir_locked_name') || (document.getElementById('nama') ? document.getElementById('nama').value : "");
       let lKat = localStorage.getItem('ehadir_locked_kat') || (document.getElementById('kategori') ? document.getElementById('kategori').value : "");
       if(lName) {
@@ -699,7 +671,6 @@
     function exitCutiModule() {
       isCutiModeActive = false;
       document.getElementById('cutiMainPanel').style.display = 'none';
-      // Buka panel dashboard jika dah login, sebaliknya buka default
       let s = JSON.parse(localStorage.getItem('ehadir_session'));
       if(s && s.date === new Date().toISOString().slice(0,10)) {
         document.getElementById('dashboardPanel').style.display = 'block';
@@ -958,7 +929,6 @@
 
     #pelawatPanel { display: none; border: 2px dashed #27ae60; padding: 15px; border-radius: 15px; background: #f0fdf4; margin-bottom: 20px; }
     
-    /* CUTI PANELS CSS */
     .cuti-panel-box { display: none; background: #fff; padding: 20px; border-radius: 15px; border: 2px solid #e74c3c; margin-bottom: 20px; }
     .cuti-card { background: #fff; padding: 10px; border-left: 4px solid #e74c3c; border-radius: 8px; margin-bottom: 8px; font-size: 11px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: left; border-right:1px solid #eee; border-top:1px solid #eee; border-bottom:1px solid #eee;}
     .cuti-sah { border-left-color: #27ae60; }
@@ -1217,7 +1187,6 @@
 
       </div>
 
-      <!-- PANEL CUTI (TIDAK HADIR) -->
       <div id="cutiMainPanel" class="cuti-panel-box">
           <h3 style="color:#e74c3c; margin:0 0 10px 0; display:flex; align-items:center; justify-content:center; gap:5px;">
             <img src="https://cdn-icons-png.flaticon.com/128/6861/6861362.png" class="icon-3d-lg"> MODUL CUTI
@@ -1267,7 +1236,6 @@
           <div id="adminCutiList" style="max-height:300px; overflow-y:auto; text-align:left; border:1px solid #eee; padding:5px; border-radius:8px;"></div>
           <button class="btn btn-cancel" onclick="exitAdminCuti()">TUTUP MOD ADMIN</button>
       </div>
-      <!-- END PANEL CUTI -->
 
       <div id="pelawatPanel">
         <h3 style="color:#27ae60; margin:0 0 5px 0; display:flex; align-items:center; justify-content:center; gap:5px;">
@@ -1295,7 +1263,6 @@
         <button class="btn btn-cancel" onclick="cancelPelawat()">BATAL</button>
       </div>
 
-      <!-- RUANGAN SENARAI TIDAK HADIR BAWAH (Dipindah mengikut arahan pengguna) -->
       <div id="topAbsentContainer" style="display:none; margin-bottom: 20px;">
         <div style="font-size:12px; font-weight:bold; color:#c0392b; margin-bottom:8px; border-bottom: 2px solid #fadbd8; padding-bottom:5px; text-align:left;">
           <img src="https://cdn-icons-png.flaticon.com/128/6861/6861362.png" class="icon-3d-mini"> SENARAI TIDAK HADIR HARI INI
@@ -1471,7 +1438,7 @@
     initLockName(); 
     initAvatar(); 
     initBackgroundService(); 
-    loadAbsentList(); // Load Top Priority Absent list
+    loadAbsentList();
     
     document.getElementById('nama').addEventListener('input', validateFormState);
 
@@ -1699,7 +1666,7 @@
   function getHijriDate(){
     const monthNames = ["Muharram", "Safar", "Rabiulawal", "Rabiulakhir", "Jamadilawal", "Jamadilakhir", "Rejab", "Syaaban", "Ramadan", "Syawal", "Zulkaedah", "Zulhijjah"];
     let t = new Date();
-    t.setDate(t.getDate() - 1); // Penyelarasan -1 hari untuk kalendar Hijrah Malaysia (JAKIM)
+    t.setDate(t.getDate() - 1);
     try {
       let parts = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn', { day: 'numeric', month: 'numeric', year: 'numeric', timeZone: 'Asia/Kuala_Lumpur' }).formatToParts(t);
       let hDay = parts.find(p => p.type === 'day').value;

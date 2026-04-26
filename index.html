@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sistem Pelawat & Kehadiran v25.0 (Anti-Double Active Block)</title>
+  <title>Sistem Pelawat & Kehadiran v25.0 (Modul Cuti Bersepadu)</title>
   
   <!-- ====================================================================== -->
   <!--                 RUANGAN EDIT PENGGUNA (mantap)                -->
@@ -20,7 +20,7 @@
     const SCHOOL_LNG = 100.75591785106874; 
      
     // 4. Jarak Radius yang dibenarkan (dalam meter)
-    const RADIUS_METER = 300000; 
+    const RADIUS_METER = 300; 
 
     // 5. Anti-Spam Check-Check: Berapa minit dalam kawasan baru auto-masuk?
     const MINIT_ANTI_SPAM_MASUK = 1;
@@ -649,6 +649,246 @@
         });
       }
     }
+
+    // --- FUNGSI MODUL CUTI (TIDAK HADIR) ---
+    function openCutiWorkflow() {
+      showModernAlert(
+        "Pengesahan Cuti", 
+        "Sila rancang cuti anda dan maklumkan kepada Pentadbir terlebih dahulu untuk memastikan operasi berjalan lancar.", 
+        "info",
+        function() {
+          document.getElementById('defaultForm').style.display = 'none';
+          document.getElementById('cutiMainPanel').style.display = 'block';
+          loadCutiHistory();
+        }
+      );
+      // Temporary override info close button to proceed
+      document.getElementById('modalBtnRow').innerHTML = `<button class="modal-btn btn-ok" onclick="proceedToCuti()">Teruskan</button>`;
+    }
+
+    function proceedToCuti() {
+      closeCustomModal();
+      document.getElementById('defaultForm').style.display = 'none';
+      document.getElementById('cutiMainPanel').style.display = 'block';
+      loadCutiHistory();
+    }
+
+    function showBorangCuti() {
+      document.getElementById('cutiMainPanel').style.display = 'none';
+      document.getElementById('borangCutiPanel').style.display = 'block';
+      // Pre-fill nama & kategori if locked
+      let lName = localStorage.getItem('ehadir_locked_name') || (document.getElementById('nama') ? document.getElementById('nama').value : "");
+      let lKat = localStorage.getItem('ehadir_locked_kat') || (document.getElementById('kategori') ? document.getElementById('kategori').value : "");
+      if(lName) {
+          document.getElementById('cutiNama').value = lName;
+          if(lKat) document.getElementById('cutiKategori').value = lKat;
+      }
+    }
+
+    function cancelBorangCuti() {
+      document.getElementById('borangCutiPanel').style.display = 'none';
+      document.getElementById('cutiMainPanel').style.display = 'block';
+    }
+
+    function exitCutiModule() {
+      document.getElementById('cutiMainPanel').style.display = 'none';
+      document.getElementById('defaultForm').style.display = 'block';
+    }
+
+    function submitCutiForm() {
+      let nama = document.getElementById('cutiNama').value.toUpperCase().trim();
+      let kategori = document.getElementById('cutiKategori').value;
+      let tarikhMula = document.getElementById('cutiMula').value;
+      let tarikhTamat = document.getElementById('cutiTamat').value;
+      let jenisCuti = document.getElementById('cutiJenis').value.trim();
+      let alasan = document.getElementById('cutiAlasan').value.trim();
+
+      if(!nama || !kategori || !tarikhMula || !tarikhTamat || !jenisCuti || !alasan) {
+        showModernAlert("Tidak Lengkap", "Sila isi semua ruangan borang cuti.", "error");
+        return;
+      }
+      if(tarikhMula > tarikhTamat) {
+        showModernAlert("Ralat Tarikh", "Tarikh Tamat mestilah sama atau selepas Tarikh Mula.", "error");
+        return;
+      }
+
+      showModernAlert(
+        "Pengesahan Pentadbir", 
+        "Sila maklumkan kepada Ketua Jabatan anda terlebih dahulu sebelum memohon cuti ini. Teruskan?", 
+        "confirm", 
+        async function() {
+          let btn = document.getElementById('btnSubmitCuti');
+          btn.disabled = true;
+          btn.innerText = "Menghantar...";
+          try {
+            let payload = {
+              action: "MOHON_CUTI",
+              passcode: PASSCODE,
+              nama: nama,
+              kategori: kategori,
+              tarikhMula: tarikhMula,
+              tarikhTamat: tarikhTamat,
+              jenisCuti: jenisCuti,
+              alasan: alasan,
+              clientTime: new Date().toISOString()
+            };
+            let res = await sendData(payload);
+            if(!res.offline && res.data && res.data.result === "success") {
+              showModernAlert("Berjaya", "Permohonan cuti telah dihantar.", "success");
+              document.getElementById('borangCutiPanel').style.display = 'none';
+              document.getElementById('cutiMainPanel').style.display = 'block';
+              loadCutiHistory();
+            } else {
+              showModernAlert("Ralat", res.data ? res.data.msg : "Gagal hantar.", "error");
+            }
+          } catch(e) {
+            showModernAlert("Ralat", "Gagal menghubungi server.", "error");
+          } finally {
+            btn.disabled = false;
+            btn.innerText = "HANTAR PERMOHONAN CUTI";
+          }
+        }
+      );
+    }
+
+    async function loadCutiHistory() {
+      let container = document.getElementById('cutiHistoryList');
+      container.innerHTML = "<div style='padding:10px;text-align:center;font-size:12px;'>Memuatkan sejarah...</div>";
+      let lName = localStorage.getItem('ehadir_locked_name') || (document.getElementById('nama') ? document.getElementById('nama').value.toUpperCase().trim() : "");
+      if(!lName) {
+          container.innerHTML = "<div style='padding:10px;text-align:center;font-size:12px;'>Sila KUNCI nama anda terlebih dahulu di menu utama untuk melihat sejarah.</div>";
+          return;
+      }
+
+      try {
+        let res = await fetch(API_URL, { method: "POST", body: JSON.stringify({action: "GET_CUTI", mode: "history", nama: lName, passcode: PASSCODE}) });
+        let json = await res.json();
+        let list = json.data || json;
+        if(list.length === 0) {
+            container.innerHTML = "<div style='padding:10px;text-align:center;font-size:12px;color:#7f8c8d;'>Tiada rekod cuti ditemui.</div>";
+            return;
+        }
+        let html = "";
+        let todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' });
+        list.forEach(i => {
+            let isBatal = i.statusRekod.includes("BATAL");
+            let isSah = i.statusPengesahan === "DISAHKAN";
+            let iconSah = isSah ? "✔️" : "⏳";
+            let classCard = isBatal ? "cuti-batal" : (isSah ? "cuti-sah" : "");
+            let btnBatal = "";
+            if(!isBatal && i.tarikhMula > todayStr) {
+                btnBatal = `<button onclick="batalCutiAction('${i.uuid}', '${i.tarikhMula}')" style="margin-top:5px;background:#e74c3c;color:white;border:none;padding:5px 10px;border-radius:5px;font-size:10px;cursor:pointer;">Batal Cuti</button>`;
+            }
+            html += `<div class="cuti-card ${classCard}">
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                    <strong>${i.jenisCuti} ${iconSah}</strong>
+                    <span style="font-size:10px; color:#555;">${i.tarikhMula} hngga ${i.tarikhTamat}</span>
+                </div>
+                <div style="color:#666; margin-bottom:5px;">Status: ${i.statusRekod} | ${i.statusPengesahan}</div>
+                ${btnBatal}
+            </div>`;
+        });
+        container.innerHTML = html;
+      } catch(e) {
+          container.innerHTML = "<div style='padding:10px;text-align:center;font-size:12px;color:#c0392b;'>Gagal memuatkan rekod.</div>";
+      }
+    }
+
+    function batalCutiAction(uuid, tarikhMula) {
+        let todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' });
+        if(tarikhMula <= todayStr) {
+            showModernAlert("Dilarang", "Anda tidak boleh membatalkan cuti untuk tarikh hari ini atau yang lepas.", "error");
+            return;
+        }
+        showModernAlert("Pengesahan", "Adakah anda pasti untuk membatalkan cuti ini?", "confirm", async function() {
+            try {
+                let res = await sendData({action: "BATAL_CUTI", uuid: uuid, passcode: PASSCODE});
+                if(!res.offline && res.data && res.data.result === "success") {
+                    showModernAlert("Berjaya", "Cuti dibatalkan.", "success");
+                    loadCutiHistory();
+                    loadAbsentList(); // Refresh top list just in case
+                } else {
+                    showModernAlert("Ralat", "Gagal batal.", "error");
+                }
+            } catch(e) {}
+        });
+    }
+
+    async function loadAbsentList() {
+        let container = document.getElementById('topAbsentContainer');
+        let listEl = document.getElementById('topAbsentList');
+        try {
+            let res = await fetch(API_URL, { method: "POST", body: JSON.stringify({action: "GET_CUTI", mode: "public", passcode: PASSCODE}) });
+            let json = await res.json();
+            let list = json.data || json;
+            if(list.length > 0) {
+                container.style.display = 'block';
+                let html = "";
+                list.forEach(i => {
+                    let iconSah = (i.statusPengesahan === "DISAHKAN") ? "<span style='color:#27ae60;' title='Telah Disahkan'>✔️</span>" : "";
+                    html += `<div style="background:#fff; border-left:4px solid #e74c3c; padding:8px 12px; border-radius:6px; margin-bottom:6px; font-size:11px; box-shadow:0 2px 4px rgba(0,0,0,0.05); text-align:left;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <strong style="color:#c0392b; font-size:12px;">${i.nama} ${iconSah}</strong>
+                            <span style="background:#fadbd8; color:#c0392b; padding:2px 6px; border-radius:10px; font-size:9px; font-weight:bold;">Tidak Hadir Bertugas</span>
+                        </div>
+                        <div style="color:#555; margin-top:3px;">${i.pekerjaan} | ${i.jenisCuti}</div>
+                    </div>`;
+                });
+                listEl.innerHTML = html;
+            } else {
+                container.style.display = 'none';
+            }
+        } catch(e) { console.log("Error loading absent list"); }
+    }
+
+    function adminCutiLogin() {
+        let pass = prompt("ADMIN: Masukkan passcode untuk pengurusan cuti:");
+        if (pass !== PASSCODE) { showModernAlert("Akses Ditolak", "Passcode salah.", "error"); return; }
+        document.getElementById('cutiMainPanel').style.display = 'none';
+        document.getElementById('adminCutiPanel').style.display = 'block';
+        loadAdminCutiList();
+    }
+
+    function exitAdminCuti() {
+        document.getElementById('adminCutiPanel').style.display = 'none';
+        document.getElementById('cutiMainPanel').style.display = 'block';
+    }
+
+    async function loadAdminCutiList() {
+        let container = document.getElementById('adminCutiList');
+        container.innerHTML = "<div style='padding:10px;text-align:center;font-size:12px;'>Memuatkan senarai...</div>";
+        try {
+            let res = await fetch(API_URL, { method: "POST", body: JSON.stringify({action: "GET_CUTI", mode: "admin", passcode: PASSCODE}) });
+            let json = await res.json();
+            let list = json.data || json;
+            if(list.length === 0) {
+                container.innerHTML = "<div style='padding:10px;text-align:center;font-size:12px;color:#7f8c8d;'>Tiada rekod cuti aktif.</div>";
+                return;
+            }
+            let html = "";
+            list.forEach(i => {
+                let isSah = i.statusPengesahan === "DISAHKAN";
+                let btnSah = !isSah ? `<button onclick="sahkanCuti('${i.uuid}')" style="margin-top:5px;background:#27ae60;color:white;border:none;padding:5px 10px;border-radius:5px;font-size:10px;cursor:pointer;">Sahkan Cuti</button>` : "<span style='color:#27ae60;font-size:10px;font-weight:bold;'>DISAHKAN ✔️</span>";
+                html += `<div class="cuti-card ${isSah ? 'cuti-sah' : ''}">
+                    <div style="display:flex; justify-content:space-between;"><strong>${i.nama} (${i.pekerjaan})</strong></div>
+                    <div style="color:#555; margin:3px 0;">${i.jenisCuti} : ${i.tarikhMula} - ${i.tarikhTamat}</div>
+                    <div style="color:#888; font-style:italic; margin-bottom:5px;">Sebab: ${i.alasan}</div>
+                    ${btnSah}
+                </div>`;
+            });
+            container.innerHTML = html;
+        } catch(e) { container.innerHTML = "Ralat."; }
+    }
+
+    async function sahkanCuti(uuid) {
+        try {
+            let res = await sendData({action: "SAH_CUTI", uuid: uuid, passcode: PASSCODE});
+            if(!res.offline && res.data && res.data.result === "success") {
+                loadAdminCutiList();
+                loadAbsentList();
+            }
+        } catch(e) {}
+    }
   </script>
 
   <link rel="manifest" href="manifest.json">
@@ -705,6 +945,12 @@
 
     #pelawatPanel { display: none; border: 2px dashed #27ae60; padding: 15px; border-radius: 15px; background: #f0fdf4; margin-bottom: 20px; }
     
+    /* CUTI PANELS CSS */
+    .cuti-panel-box { display: none; background: #fff; padding: 20px; border-radius: 15px; border: 2px solid #e74c3c; margin-bottom: 20px; }
+    .cuti-card { background: #fff; padding: 10px; border-left: 4px solid #e74c3c; border-radius: 8px; margin-bottom: 8px; font-size: 11px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: left; border-right:1px solid #eee; border-top:1px solid #eee; border-bottom:1px solid #eee;}
+    .cuti-sah { border-left-color: #27ae60; }
+    .cuti-batal { border-left-color: #7f8c8d; opacity: 0.7; }
+
     .giant-cam-btn { 
       width: 100%; height: 160px; 
       background: linear-gradient(135deg, #134e5e, #71b280); 
@@ -883,6 +1129,14 @@
         <img src="https://cdn-icons-png.flaticon.com/128/1041/1041885.png" class="icon-3d-mini"> SEMAK & AKTIFKAN GPS SEKARANG
       </button>
 
+      <!-- RUANGAN SENARAI TIDAK HADIR TOP PRIORITY -->
+      <div id="topAbsentContainer" style="display:none; margin-bottom: 20px;">
+        <div style="font-size:12px; font-weight:bold; color:#c0392b; margin-bottom:8px; border-bottom: 2px solid #fadbd8; padding-bottom:5px; text-align:left;">
+          <img src="https://cdn-icons-png.flaticon.com/128/6861/6861362.png" class="icon-3d-mini"> SENARAI TIDAK HADIR HARI INI
+        </div>
+        <div id="topAbsentList"></div>
+      </div>
+
       <div id="dashboardPanel">
         <span class="user-welcome">
           <img id="userAvatarDash" src="https://cdn-icons-png.flaticon.com/128/4140/4140047.png" class="icon-3d-lg"> 
@@ -945,8 +1199,8 @@
         </button>
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
-          <button id="btnKeluarMain" class="btn btn-keluar" onclick="hantarKeluar(false)" style="margin-top:0;">
-            <img src="https://cdn-icons-png.flaticon.com/128/3580/3580154.png" class="icon-3d-std"> KELUAR
+          <button id="btnCutiMain" class="btn btn-keluar" onclick="openCutiWorkflow()" style="margin-top:0;">
+            <img src="https://cdn-icons-png.flaticon.com/128/6861/6861362.png" class="icon-3d-std"> TIDAK HADIR
           </button>
           <button id="btnPelawatMain" class="btn btn-pelawat" onclick="showPelawatForm()" style="margin-top:0;">
             <img src="https://cdn-icons-png.flaticon.com/128/3135/3135768.png" class="icon-3d-std"> PELAWAT
@@ -954,6 +1208,58 @@
         </div>
 
       </div>
+
+      <!-- PANEL CUTI (TIDAK HADIR) -->
+      <div id="cutiMainPanel" class="cuti-panel-box">
+          <h3 style="color:#e74c3c; margin:0 0 10px 0; display:flex; align-items:center; justify-content:center; gap:5px;">
+            <img src="https://cdn-icons-png.flaticon.com/128/6861/6861362.png" class="icon-3d-lg"> MODUL CUTI
+          </h3>
+          <div style="text-align:right; margin-bottom:10px;">
+              <span onclick="adminCutiLogin()" style="cursor:pointer; font-size:10px; color:#7f8c8d; text-decoration:underline;">Akses Admin</span>
+          </div>
+          <button class="btn" style="background:#34495e;" onclick="showBorangCuti()">
+              <img src="https://cdn-icons-png.flaticon.com/128/2921/2921222.png" class="icon-3d-std"> MOHON CUTI BAHARU
+          </button>
+          
+          <div style="margin-top:15px; border-top:1px solid #eee; padding-top:10px;">
+              <h4 style="margin:0 0 10px 0; font-size:13px; color:#2c3e50; text-align:left;">Sejarah Cuti Anda</h4>
+              <div id="cutiHistoryList" style="max-height:200px; overflow-y:auto;"></div>
+          </div>
+          <button class="btn btn-cancel" onclick="exitCutiModule()">KEMBALI</button>
+      </div>
+
+      <div id="borangCutiPanel" class="cuti-panel-box">
+          <h3 style="color:#e74c3c; margin:0 0 15px 0;">BORANG CUTI</h3>
+          <input type="text" id="cutiNama" placeholder="NAMA PENUH" style="text-transform:uppercase">
+          <select id="cutiKategori">
+              <option value="" disabled selected>-- PEKERJAAN --</option>
+              <option value="GURU">GURU</option>
+              <option value="AKP">AKP</option>
+              <option value="KEBERSIHAN">KEBERSIHAN</option>
+          </select>
+          <div style="display:flex; gap:10px;">
+              <div style="flex:1; text-align:left;">
+                  <label style="font-size:10px; color:#555;">Tarikh Mula</label>
+                  <input type="date" id="cutiMula">
+              </div>
+              <div style="flex:1; text-align:left;">
+                  <label style="font-size:10px; color:#555;">Tarikh Tamat</label>
+                  <input type="date" id="cutiTamat">
+              </div>
+          </div>
+          <input type="text" id="cutiJenis" placeholder="JENIS CUTI (Contoh: CRK / Cuti Sakit)" style="text-transform:uppercase">
+          <textarea id="cutiAlasan" style="display:block; min-height:60px; border-color:#e74c3c;" placeholder="Alasan / Catatan Cuti"></textarea>
+          
+          <button id="btnSubmitCuti" class="btn" style="background:#e74c3c;" onclick="submitCutiForm()">HANTAR PERMOHONAN CUTI</button>
+          <button class="btn btn-cancel" onclick="cancelBorangCuti()">BATAL</button>
+      </div>
+
+      <div id="adminCutiPanel" class="cuti-panel-box">
+          <h3 style="color:#2c3e50; margin:0 0 10px 0;">PENGURUSAN CUTI (ADMIN)</h3>
+          <div id="adminCutiList" style="max-height:300px; overflow-y:auto; text-align:left; border:1px solid #eee; padding:5px; border-radius:8px;"></div>
+          <button class="btn btn-cancel" onclick="exitAdminCuti()">TUTUP MOD ADMIN</button>
+      </div>
+      <!-- END PANEL CUTI -->
 
       <div id="pelawatPanel">
         <h3 style="color:#27ae60; margin:0 0 5px 0; display:flex; align-items:center; justify-content:center; gap:5px;">
@@ -1149,6 +1455,7 @@
     initLockName(); 
     initAvatar(); 
     initBackgroundService(); 
+    loadAbsentList(); // Load Top Priority Absent list
     
     document.getElementById('nama').addEventListener('input', validateFormState);
 

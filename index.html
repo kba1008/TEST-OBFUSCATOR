@@ -385,12 +385,13 @@
     }
 
     function keluarManual(namaUser) {
-      let pass = prompt("ADMIN: Passcode untuk keluarkan " + namaUser + ":");
-      if (pass !== PASSCODE) { showModernAlert("Gagal", "Passcode salah.", "error"); return; }
-      
-      sendData({ action: "KELUAR", passcode: PASSCODE, nama: namaUser, alasan: "Manual Admin", lat: lastLat, lng: lastLng, clientTime: new Date().toISOString() })
-      .then(res => { 
-        loadList(); 
+      showModernAlert("Pengesahan Admin", "Passcode untuk keluarkan " + namaUser + ":", "prompt", function(pass) {
+        if (pass !== PASSCODE) { showModernAlert("Gagal", "Passcode salah.", "error"); return; }
+        
+        sendData({ action: "KELUAR", passcode: PASSCODE, nama: namaUser, alasan: "Manual Admin", lat: lastLat, lng: lastLng, clientTime: new Date().toISOString() })
+        .then(res => { 
+          loadList(); 
+        });
       });
     }
 
@@ -923,14 +924,15 @@
             return;
         }
 
-        let pass = prompt("ADMIN: Masukkan passcode untuk pengurusan cuti:");
-        if (pass !== PASSCODE) { showModernAlert("Akses Ditolak", "Passcode salah.", "error"); return; }
-        
-        sessionStorage.setItem('adminNameCuti', lockedName.toUpperCase());
+        showModernAlert("Log Masuk Admin", "Masukkan passcode untuk pengurusan cuti:", "prompt", function(pass) {
+            if (pass !== PASSCODE) { showModernAlert("Akses Ditolak", "Passcode salah.", "error"); return; }
+            
+            sessionStorage.setItem('adminNameCuti', lockedName.toUpperCase());
 
-        document.getElementById('cutiMainPanel').style.display = 'none';
-        document.getElementById('adminCutiPanel').style.display = 'block';
-        loadAdminCutiList();
+            document.getElementById('cutiMainPanel').style.display = 'none';
+            document.getElementById('adminCutiPanel').style.display = 'block';
+            loadAdminCutiList();
+        });
     }
 
     function exitAdminCuti() {
@@ -1511,6 +1513,11 @@ GURU</option>
       mIcon.innerText = ""; mTitle.style.color = "#1e3c72";
       window.tempCallback = callback;
       mBtns.innerHTML = `<button class="modal-btn btn-cancel-modal" onclick="closeCustomModal()">Batal</button><button class="modal-btn btn-ok" onclick="confirmAction()">Teruskan</button>`;
+    } else if(type === 'prompt') {
+      mIcon.innerText = "🔐"; mTitle.style.color = "#1e3c72";
+      window.tempCallback = callback;
+      mMsg.innerHTML = msg + `<br><br><input type="password" id="customPromptInput" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; font-family:inherit; text-align:center;" placeholder="Masukkan Passcode">`;
+      mBtns.innerHTML = `<button class="modal-btn btn-cancel-modal" onclick="closeCustomModal()">Batal</button><button class="modal-btn btn-ok" onclick="submitPrompt()">Sahkan</button>`;
     } else if(type === 'gps') {
       mIcon.innerText = "📍"; mTitle.style.color = "#c0392b";
       window.tempCallback = callback;
@@ -1520,10 +1527,23 @@ GURU</option>
       mBtns.innerHTML = `<button class="modal-btn btn-ok" onclick="closeCustomModal()">Tutup</button>`;
     }
     modal.style.display = "flex";
+
+    if(type === 'prompt') {
+      setTimeout(() => {
+        let pInput = document.getElementById('customPromptInput');
+        if(pInput) pInput.focus();
+      }, 100);
+    }
   }
 
   function closeCustomModal() { document.getElementById('customModal').style.display = "none"; }
   function confirmAction() { closeCustomModal(); if(window.tempCallback) window.tempCallback(); }
+
+  function submitPrompt() {
+    let val = document.getElementById('customPromptInput').value;
+    closeCustomModal();
+    if(window.tempCallback) window.tempCallback(val);
+  }
 
   function sendNotification(title, body, tag) {
     if(Notification.permission === "granted") {
@@ -1959,7 +1979,12 @@ GURU</option>
       document.getElementById('defaultForm').style.display = 'block';
     }
   }
-  function resetSesi() { if (confirm("Reset sesi?")) { localStorage.removeItem('ehadir_session'); location.reload(); } }
+  function resetSesi() {
+    showModernAlert("Reset Sesi", "Adakah anda pasti untuk reset sesi anda?", "confirm", function() {
+      localStorage.removeItem('ehadir_session'); 
+      location.reload();
+    }); 
+  }
 </script>
 </body>
 </html>

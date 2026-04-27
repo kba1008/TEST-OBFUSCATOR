@@ -6,7 +6,7 @@
   <title>Sistem Pelawat & Kehadiran v25.0 (Modul Cuti Bersepadu)</title>
   
   <script>
-    const API_URL = 'https://script.google.com/macros/s/AKfycbzU9jJmQVB5jRSZgwQuafEw4Qg5J8_JrQQu9CuCUQ2VDC2YfPtr30vAkv47MQfGBblf/exec'; 
+    const API_URL = 'https://script.google.com/macros/s/AKfycbx0MssnUXDnlfFlTX0yzqrg96e172UK_8bD104HdfhZgWlENp0zk9wk8LGfaMyL4lba/exec'; 
     const PASSCODE = "101010";
     const SCHOOL_LAT = 5.250891554235944; 
     const SCHOOL_LNG = 100.75591785106874; 
@@ -661,11 +661,51 @@
           document.getElementById('cutiNama').value = lName;
           if(lKat) document.getElementById('cutiKategori').value = lKat;
       }
+      if (document.getElementById('cutiBuktiInput')) document.getElementById('cutiBuktiInput').value = "";
+      if (document.getElementById('cutiBuktiBase64')) document.getElementById('cutiBuktiBase64').value = "";
+      if (document.getElementById('cutiBuktiPreview')) document.getElementById('cutiBuktiPreview').style.display = 'none';
     }
 
     function cancelBorangCuti() {
       document.getElementById('borangCutiPanel').style.display = 'none';
       document.getElementById('cutiMainPanel').style.display = 'block';
+      if (document.getElementById('cutiBuktiInput')) document.getElementById('cutiBuktiInput').value = "";
+      if (document.getElementById('cutiBuktiBase64')) document.getElementById('cutiBuktiBase64').value = "";
+      if (document.getElementById('cutiBuktiPreview')) document.getElementById('cutiBuktiPreview').style.display = 'none';
+    }
+
+    function processCutiBukti(i) {
+      if (i.files && i.files[0]) {
+        let r = new FileReader();
+        r.onload = function(e) {
+          let im = new Image();
+          im.src = e.target.result;
+          im.onload = function() {
+            let cv = document.createElement("canvas");
+            let ctx = cv.getContext("2d");
+            cv.width = 600;
+            cv.height = 600 * (im.height / im.width);
+            ctx.drawImage(im, 0, 0, cv.width, cv.height);
+            let d = cv.toDataURL("image/jpeg", 0.7);
+            let p = document.getElementById('cutiBuktiPreview');
+            if (p) {
+              p.src = d;
+              p.style.display = 'block';
+            }
+            let base64Input = document.getElementById('cutiBuktiBase64');
+            if(base64Input) base64Input.value = d;
+          };
+        };
+        r.readAsDataURL(i.files[0]);
+      }
+    }
+
+    function viewCutiBukti(url) {
+      let img = document.getElementById('imgFull');
+      if(img) {
+        img.src = url;
+        document.getElementById('imageModal').style.display = "flex";
+      }
     }
 
     function exitCutiModule() {
@@ -686,6 +726,7 @@
       let tarikhTamat = document.getElementById('cutiTamat').value;
       let jenisCuti = document.getElementById('cutiJenis').value.trim();
       let alasan = document.getElementById('cutiAlasan').value.trim();
+      let buktiBase64 = document.getElementById('cutiBuktiBase64') ? document.getElementById('cutiBuktiBase64').value : "";
 
       if(!nama || !kategori || !tarikhMula || !tarikhTamat || !jenisCuti || !alasan) {
         showModernAlert("Tidak Lengkap", "Sila isi semua ruangan borang cuti.", "error");
@@ -714,6 +755,7 @@
               tarikhTamat: tarikhTamat,
               jenisCuti: jenisCuti,
               alasan: alasan,
+              fotoBase64: buktiBase64,
               clientTime: new Date().toISOString()
             };
             let res = await sendData(payload);
@@ -721,6 +763,9 @@
               showModernAlert("Berjaya", "Permohonan cuti telah dihantar.", "success");
               document.getElementById('borangCutiPanel').style.display = 'none';
               document.getElementById('cutiMainPanel').style.display = 'block';
+              if (document.getElementById('cutiBuktiInput')) document.getElementById('cutiBuktiInput').value = "";
+              if (document.getElementById('cutiBuktiBase64')) document.getElementById('cutiBuktiBase64').value = "";
+              if (document.getElementById('cutiBuktiPreview')) document.getElementById('cutiBuktiPreview').style.display = 'none';
               loadCutiHistory();
             } else {
               showModernAlert("Ralat", res.data ? res.data.msg : "Gagal hantar.", "error");
@@ -758,6 +803,7 @@
             let isBatal = i.statusRekod.includes("BATAL");
             let isSah = i.statusPengesahan === "DISAHKAN";
             let iconSah = isSah ? "✔️" : "⏳";
+            let pengesahText = isSah ? `(Oleh: ${i.adminPengesah || 'Admin'})` : "";
             let classCard = isBatal ? "cuti-batal" : (isSah ? "cuti-sah" : "");
             let btnBatal = "";
             if(!isBatal && i.tarikhMula > todayStr) {
@@ -768,7 +814,7 @@
                     <strong>${i.jenisCuti} ${iconSah}</strong>
                     <span style="font-size:10px; color:#555;">${i.tarikhMula} hngga ${i.tarikhTamat}</span>
                 </div>
-                <div style="color:#666; margin-bottom:5px;">Status: ${i.statusRekod} | ${i.statusPengesahan}</div>
+                <div style="color:#666; margin-bottom:5px;">Status: ${i.statusRekod} | ${i.statusPengesahan} ${pengesahText}</div>
                 ${btnBatal}
             </div>`;
         });
@@ -809,13 +855,18 @@
                 container.style.display = 'block';
                 let html = "";
                 list.forEach(i => {
-                    let iconSah = (i.statusPengesahan === "DISAHKAN") ? "<span style='color:#27ae60;' title='Telah Disahkan'>✔️</span>" : "";
-                    html += `<div style="background:#fff; border-left:4px solid #e74c3c; padding:8px 12px; border-radius:6px; margin-bottom:6px; font-size:11px; box-shadow:0 2px 4px rgba(0,0,0,0.05); text-align:left;">
+                    let isSah = (i.statusPengesahan === "DISAHKAN");
+                    let statusColor = isSah ? "#27ae60" : "#e67e22";
+                    
+                    let iconSah = isSah ? "<span style='color:#27ae60;' title='Telah Disahkan'>✔️</span>" : "<span style='color:#e67e22;' title='Belum Disahkan'>⏳</span>";
+                    let pengesahText = isSah ? `<div style="color:#27ae60; font-size:10px; font-weight:bold; margin-top:3px; background:#d4edda; display:inline-block; padding:2px 6px; border-radius:4px;">DISAHKAN OLEH: ${i.adminPengesah || "ADMIN"}</div>` : `<div style="color:#e67e22; font-size:10px; font-weight:bold; margin-top:3px; background:#fcf3cf; display:inline-block; padding:2px 6px; border-radius:4px;">BELUM DISAHKAN</div>`;
+
+                    html += `<div style="background:#fff; border-left:4px solid ${statusColor}; padding:8px 12px; border-radius:6px; margin-bottom:6px; font-size:11px; box-shadow:0 2px 4px rgba(0,0,0,0.05); text-align:left;">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <strong style="color:#c0392b; font-size:12px;">${i.nama} ${iconSah}</strong>
-                            <span style="background:#fadbd8; color:#c0392b; padding:2px 6px; border-radius:10px; font-size:9px; font-weight:bold;">Tidak Hadir Bertugas</span>
+                            <strong style="color:#333; font-size:12px;">${i.nama} ${iconSah}</strong>
                         </div>
-                        <div style="color:#555; margin-top:3px;">${i.pekerjaan} | ${i.jenisCuti}</div>
+                        ${pengesahText}
+                        <div style="color:#555; margin-top:4px;">${i.pekerjaan} | ${i.jenisCuti}</div>
                     </div>`;
                 });
                 listEl.innerHTML = html;
@@ -826,8 +877,17 @@
     }
 
     function adminCutiLogin() {
+        let lockedName = localStorage.getItem('ehadir_locked_name');
+        if (!lockedName) {
+            showModernAlert("Akses Ditolak", "Sila KUNCI nama anda di menu utama terlebih dahulu untuk menjadi Admin Pengesah.", "error");
+            return;
+        }
+
         let pass = prompt("ADMIN: Masukkan passcode untuk pengurusan cuti:");
         if (pass !== PASSCODE) { showModernAlert("Akses Ditolak", "Passcode salah.", "error"); return; }
+        
+        sessionStorage.setItem('adminNameCuti', lockedName.toUpperCase());
+
         document.getElementById('cutiMainPanel').style.display = 'none';
         document.getElementById('adminCutiPanel').style.display = 'block';
         loadAdminCutiList();
@@ -852,12 +912,17 @@
             let html = "";
             list.forEach(i => {
                 let isSah = i.statusPengesahan === "DISAHKAN";
-                let btnSah = !isSah ? `<button onclick="sahkanCuti('${i.uuid}')" style="margin-top:5px;background:#27ae60;color:white;border:none;padding:5px 10px;border-radius:5px;font-size:10px;cursor:pointer;">Sahkan Cuti</button>` : "<span style='color:#27ae60;font-size:10px;font-weight:bold;'>DISAHKAN ✔️</span>";
+                let btnSah = !isSah ? `<button onclick="sahkanCuti('${i.uuid}')" style="margin-top:5px;background:#27ae60;color:white;border:none;padding:5px 10px;border-radius:5px;font-size:10px;cursor:pointer;">Sahkan Cuti</button>` : `<span style='color:#27ae60;font-size:10px;font-weight:bold;'>DISAHKAN OLEH: ${i.adminPengesah} ✔️</span>`;
+                
+                let btnBukti = (i.buktiUrl && i.buktiUrl.length > 10) ? `<button onclick="viewCutiBukti('${i.buktiUrl}')" style="margin-top:5px; margin-left:5px; background:#3498db;color:white;border:none;padding:5px 10px;border-radius:5px;font-size:10px;cursor:pointer;">📷 Lihat Bukti</button>` : `<span style="font-size:10px; color:#999; margin-left:5px;">Tiada Bukti</span>`;
+
                 html += `<div class="cuti-card ${isSah ? 'cuti-sah' : ''}">
                     <div style="display:flex; justify-content:space-between;"><strong>${i.nama} (${i.pekerjaan})</strong></div>
                     <div style="color:#555; margin:3px 0;">${i.jenisCuti} : ${i.tarikhMula} - ${i.tarikhTamat}</div>
                     <div style="color:#888; font-style:italic; margin-bottom:5px;">Sebab: ${i.alasan}</div>
-                    ${btnSah}
+                    <div style="display:flex; align-items:center; flex-wrap:wrap; gap:5px;">
+                        ${btnSah} ${btnBukti}
+                    </div>
                 </div>`;
             });
             container.innerHTML = html;
@@ -865,8 +930,9 @@
     }
 
     async function sahkanCuti(uuid) {
+        let adminName = sessionStorage.getItem('adminNameCuti') || "ADMIN";
         try {
-            let res = await sendData({action: "SAH_CUTI", uuid: uuid, passcode: PASSCODE});
+            let res = await sendData({action: "SAH_CUTI", uuid: uuid, passcode: PASSCODE, adminName: adminName});
             if(!res.offline && res.data && res.data.result === "success") {
                 loadAdminCutiList();
                 loadAbsentList();
@@ -1210,7 +1276,8 @@
           <input type="text" id="cutiNama" placeholder="NAMA PENUH" style="text-transform:uppercase">
           <select id="cutiKategori">
               <option value="" disabled selected>-- PEKERJAAN --</option>
-              <option value="GURU">GURU</option>
+              <option value="GURU">
+GURU</option>
               <option value="AKP">AKP</option>
               <option value="KEBERSIHAN">KEBERSIHAN</option>
           </select>
@@ -1225,7 +1292,14 @@
               </div>
           </div>
           <input type="text" id="cutiJenis" placeholder="JENIS CUTI (Contoh: CRK / Cuti Sakit)" style="text-transform:uppercase">
-          <textarea id="cutiAlasan" style="display:block; min-height:60px; border-color:#e74c3c;" placeholder="Alasan / Catatan Cuti"></textarea>
+          <textarea id="cutiAlasan" style="display:block; min-height:60px; border-color:#e74c3c; margin-bottom:10px;" placeholder="Alasan / Catatan Cuti"></textarea>
+          
+          <div style="margin-bottom:15px; text-align:left;">
+            <label style="font-size:11px; color:#555; font-weight:600;">Muat Naik Bukti (Cth: Sijil Cuti Sakit) - Pilihan</label>
+            <input type="file" id="cutiBuktiInput" accept="image/*" style="display:block; padding:8px; font-size:11px; width:100%; box-sizing:border-box; margin-top:5px; border-radius:8px;" onchange="processCutiBukti(this)">
+            <input type="hidden" id="cutiBuktiBase64">
+            <img id="cutiBuktiPreview" style="display:none; width:100%; max-height:150px; object-fit:contain; border:1px solid #ccc; border-radius:5px; margin-top:5px; background:#f9f9f9;">
+          </div>
           
           <button id="btnSubmitCuti" class="btn" style="background:#e74c3c;" onclick="submitCutiForm()">HANTAR PERMOHONAN CUTI</button>
           <button class="btn btn-cancel" onclick="cancelBorangCuti()">BATAL</button>

@@ -6,7 +6,7 @@
   <title>Sistem Pelawat & Kehadiran v25.0 (Modul Cuti Bersepadu)</title>
   
   <script>
-    const API_URL = 'https://script.google.com/macros/s/AKfycbx0MssnUXDnlfFlTX0yzqrg96e172UK_8bD104HdfhZgWlENp0zk9wk8LGfaMyL4lba/exec'; 
+    const API_URL = 'https://script.google.com/macros/s/AKfycbx8MpZTpPV2lbvFtWxFKdsPrcHygvsFkh77xMjlnGg_Ezn5fv_pelVwT5h5XpWMZEZ3/exec'; 
     const PASSCODE = "101010";
     const SCHOOL_LAT = 5.250891554235944; 
     const SCHOOL_LNG = 100.75591785106874; 
@@ -664,6 +664,7 @@
       if (document.getElementById('cutiBuktiInput')) document.getElementById('cutiBuktiInput').value = "";
       if (document.getElementById('cutiBuktiBase64')) document.getElementById('cutiBuktiBase64').value = "";
       if (document.getElementById('cutiBuktiPreview')) document.getElementById('cutiBuktiPreview').style.display = 'none';
+      if (document.getElementById('cutiBuktiFilename')) document.getElementById('cutiBuktiFilename').style.display = 'none';
     }
 
     function cancelBorangCuti() {
@@ -672,40 +673,74 @@
       if (document.getElementById('cutiBuktiInput')) document.getElementById('cutiBuktiInput').value = "";
       if (document.getElementById('cutiBuktiBase64')) document.getElementById('cutiBuktiBase64').value = "";
       if (document.getElementById('cutiBuktiPreview')) document.getElementById('cutiBuktiPreview').style.display = 'none';
+      if (document.getElementById('cutiBuktiFilename')) document.getElementById('cutiBuktiFilename').style.display = 'none';
     }
 
     function processCutiBukti(i) {
+      let p = document.getElementById('cutiBuktiPreview');
+      let fnSpan = document.getElementById('cutiBuktiFilename');
+      if(!fnSpan) {
+        fnSpan = document.createElement('div');
+        fnSpan.id = 'cutiBuktiFilename';
+        fnSpan.style.fontSize = '11px';
+        fnSpan.style.marginTop = '5px';
+        fnSpan.style.color = '#2980b9';
+        fnSpan.style.fontWeight = 'bold';
+        if(p) p.parentNode.insertBefore(fnSpan, p.nextSibling);
+      }
+
       if (i.files && i.files[0]) {
-        let r = new FileReader();
-        r.onload = function(e) {
-          let im = new Image();
-          im.src = e.target.result;
-          im.onload = function() {
-            let cv = document.createElement("canvas");
-            let ctx = cv.getContext("2d");
-            cv.width = 600;
-            cv.height = 600 * (im.height / im.width);
-            ctx.drawImage(im, 0, 0, cv.width, cv.height);
-            let d = cv.toDataURL("image/jpeg", 0.7);
-            let p = document.getElementById('cutiBuktiPreview');
-            if (p) {
-              p.src = d;
-              p.style.display = 'block';
-            }
+        let file = i.files[0];
+        
+        if (file.type.startsWith('image/')) {
+          let r = new FileReader();
+          r.onload = function(e) {
+            let im = new Image();
+            im.src = e.target.result;
+            im.onload = function() {
+              let cv = document.createElement("canvas");
+              let ctx = cv.getContext("2d");
+              let maxW = 800;
+              let scale = 1;
+              if (im.width > maxW) scale = maxW / im.width;
+              cv.width = maxW;
+              cv.height = im.height * scale;
+              ctx.drawImage(im, 0, 0, cv.width, cv.height);
+              let d = cv.toDataURL("image/jpeg", 0.7);
+              
+              let base64Input = document.getElementById('cutiBuktiBase64');
+              if(base64Input) base64Input.value = d;
+              if (p) {
+                p.src = d;
+                p.style.display = 'block';
+              }
+              fnSpan.style.display = 'none';
+            };
+          };
+          r.readAsDataURL(file);
+        } else {
+          let r = new FileReader();
+          r.onload = function(e) {
+            let d = e.target.result;
             let base64Input = document.getElementById('cutiBuktiBase64');
             if(base64Input) base64Input.value = d;
+            
+            if (p) p.style.display = 'none';
+            fnSpan.innerText = "📄 Fail dilampirkan: " + file.name;
+            fnSpan.style.display = 'block';
           };
-        };
-        r.readAsDataURL(i.files[0]);
+          r.readAsDataURL(file);
+        }
+      } else {
+        if(p) p.style.display = 'none';
+        if(fnSpan) fnSpan.style.display = 'none';
+        let base64Input = document.getElementById('cutiBuktiBase64');
+        if(base64Input) base64Input.value = "";
       }
     }
 
     function viewCutiBukti(url) {
-      let img = document.getElementById('imgFull');
-      if(img) {
-        img.src = url;
-        document.getElementById('imageModal').style.display = "flex";
-      }
+      window.open(url, '_blank');
     }
 
     function exitCutiModule() {
@@ -727,6 +762,9 @@
       let jenisCuti = document.getElementById('cutiJenis').value.trim();
       let alasan = document.getElementById('cutiAlasan').value.trim();
       let buktiBase64 = document.getElementById('cutiBuktiBase64') ? document.getElementById('cutiBuktiBase64').value : "";
+      
+      let fileInput = document.getElementById('cutiBuktiInput');
+      let fileName = (fileInput && fileInput.files && fileInput.files.length > 0) ? fileInput.files[0].name : "";
 
       if(!nama || !kategori || !tarikhMula || !tarikhTamat || !jenisCuti || !alasan) {
         showModernAlert("Tidak Lengkap", "Sila isi semua ruangan borang cuti.", "error");
@@ -756,6 +794,7 @@
               jenisCuti: jenisCuti,
               alasan: alasan,
               fotoBase64: buktiBase64,
+              fileName: fileName,
               clientTime: new Date().toISOString()
             };
             let res = await sendData(payload);
@@ -766,6 +805,7 @@
               if (document.getElementById('cutiBuktiInput')) document.getElementById('cutiBuktiInput').value = "";
               if (document.getElementById('cutiBuktiBase64')) document.getElementById('cutiBuktiBase64').value = "";
               if (document.getElementById('cutiBuktiPreview')) document.getElementById('cutiBuktiPreview').style.display = 'none';
+              if (document.getElementById('cutiBuktiFilename')) document.getElementById('cutiBuktiFilename').style.display = 'none';
               loadCutiHistory();
             } else {
               showModernAlert("Ralat", res.data ? res.data.msg : "Gagal hantar.", "error");
@@ -914,7 +954,7 @@
                 let isSah = i.statusPengesahan === "DISAHKAN";
                 let btnSah = !isSah ? `<button onclick="sahkanCuti('${i.uuid}')" style="margin-top:5px;background:#27ae60;color:white;border:none;padding:5px 10px;border-radius:5px;font-size:10px;cursor:pointer;">Sahkan Cuti</button>` : `<span style='color:#27ae60;font-size:10px;font-weight:bold;'>DISAHKAN OLEH: ${i.adminPengesah} ✔️</span>`;
                 
-                let btnBukti = (i.buktiUrl && i.buktiUrl.length > 10) ? `<button onclick="viewCutiBukti('${i.buktiUrl}')" style="margin-top:5px; margin-left:5px; background:#3498db;color:white;border:none;padding:5px 10px;border-radius:5px;font-size:10px;cursor:pointer;">📷 Lihat Bukti</button>` : `<span style="font-size:10px; color:#999; margin-left:5px;">Tiada Bukti</span>`;
+                let btnBukti = (i.buktiUrl && i.buktiUrl.length > 10) ? `<button onclick="viewCutiBukti('${i.buktiUrl}')" style="margin-top:5px; margin-left:5px; background:#3498db;color:white;border:none;padding:5px 10px;border-radius:5px;font-size:10px;cursor:pointer;">📎 Lihat Lampiran</button>` : `<span style="font-size:10px; color:#999; margin-left:5px;">Tiada Lampiran</span>`;
 
                 html += `<div class="cuti-card ${isSah ? 'cuti-sah' : ''}">
                     <div style="display:flex; justify-content:space-between;"><strong>${i.nama} (${i.pekerjaan})</strong></div>
@@ -1295,8 +1335,8 @@ GURU</option>
           <textarea id="cutiAlasan" style="display:block; min-height:60px; border-color:#e74c3c; margin-bottom:10px;" placeholder="Alasan / Catatan Cuti"></textarea>
           
           <div style="margin-bottom:15px; text-align:left;">
-            <label style="font-size:11px; color:#555; font-weight:600;">Muat Naik Bukti (Cth: Sijil Cuti Sakit) - Pilihan</label>
-            <input type="file" id="cutiBuktiInput" accept="image/*" style="display:block; padding:8px; font-size:11px; width:100%; box-sizing:border-box; margin-top:5px; border-radius:8px;" onchange="processCutiBukti(this)">
+            <label style="font-size:11px; color:#555; font-weight:600;">Muat Naik Bukti (Cth: Sijil Sakit / Dokumen) - Pilihan</label>
+            <input type="file" id="cutiBuktiInput" style="display:block; padding:8px; font-size:11px; width:100%; box-sizing:border-box; margin-top:5px; border-radius:8px;" onchange="processCutiBukti(this)">
             <input type="hidden" id="cutiBuktiBase64">
             <img id="cutiBuktiPreview" style="display:none; width:100%; max-height:150px; object-fit:contain; border:1px solid #ccc; border-radius:5px; margin-top:5px; background:#f9f9f9;">
           </div>

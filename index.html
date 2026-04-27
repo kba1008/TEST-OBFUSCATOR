@@ -6,7 +6,7 @@
   <title>Sistem Pelawat & Kehadiran v25.0 (Modul Cuti Bersepadu)</title>
   
   <script>
-    const API_URL = 'https://script.google.com/macros/s/AKfycbw8U62nzUuKUMlTY5MIOcvweJI1c_RZdd2Q129CXri38sdGNsXWR1B-Tb20PXmxhMI/exec'; 
+    const API_URL = 'https://script.google.com/macros/s/AKfycbyNYqRx_-UHPBiy_RVTSm_sCgXNd8n13MDJ6QJES3m7l-3z8i-6qxuFXUy8gtcClVIX/exec'; 
     const PASSCODE = "101010";
     const SCHOOL_LAT = 5.250891554235944; 
     const SCHOOL_LNG = 100.75591785106874; 
@@ -1318,8 +1318,7 @@
           <input type="text" id="cutiNama" placeholder="NAMA PENUH" style="text-transform:uppercase">
           <select id="cutiKategori">
               <option value="" disabled selected>-- PEKERJAAN --</option>
-              <option value="GURU">
-GURU</option>
+              <option value="GURU">GURU</option>
               <option value="AKP">AKP</option>
               <option value="KEBERSIHAN">KEBERSIHAN</option>
           </select>
@@ -1392,12 +1391,12 @@ GURU</option>
           <span id="recordTitleText">Rekod Hari Ini</span> (<span id="count">0</span>)
         </span>
         <div style="display:flex; gap:10px; align-items:center;">
-          <div style="position:relative; display:inline-block; width:22px; height:22px;">
-            <input type="date" id="historyDate" onchange="loadList()" style="position:absolute; opacity:0; width:100%; height:100%; top:0; left:0; cursor:pointer;" title="Pilih Tarikh Sejarah">
-            <img src="https://cdn-icons-png.flaticon.com/128/3652/3652191.png" class="icon-3d-std" style="width:22px; height:22px; margin:0;">
+          <div style="position:relative; display:inline-block; width:28px; height:28px;" onclick="var d=document.getElementById('historyDate'); if(d.showPicker) d.showPicker(); else d.click();">
+            <input type="date" id="historyDate" onchange="loadList()" onclick="if(this.showPicker)this.showPicker();" style="position:absolute; z-index:10; opacity:0; width:100%; height:100%; top:0; left:0; cursor:pointer; background:transparent;" title="Pilih Tarikh Sejarah">
+            <img src="https://cdn-icons-png.flaticon.com/128/3652/3652191.png" class="icon-3d-std" style="width:24px; height:24px; margin:0; position:absolute; top:2px; left:2px; pointer-events:none;">
           </div>
-          <button onclick="loadList()" style="border:none; background:none; cursor:pointer; padding:0;">
-            <img src="https://cdn-icons-png.flaticon.com/128/3031/3031718.png" class="icon-3d-std" style="width:22px; height:22px; margin:0;">
+          <button onclick="document.getElementById('historyDate').value=''; loadList();" style="border:none; background:none; cursor:pointer; padding:0; width:28px; height:28px; display:flex; align-items:center; justify-content:center;">
+            <img src="https://cdn-icons-png.flaticon.com/128/3031/3031718.png" class="icon-3d-std" style="width:24px; height:24px; margin:0;" title="Reset ke Hari Ini">
           </button>
         </div>
       </div>
@@ -1882,7 +1881,8 @@ GURU</option>
       "GURU": "#2980b9",      
       "AKP": "#d35400",       
       "KEBERSIHAN": "#27ae60", 
-      "PELAWAT": "#8e44ad"    
+      "PELAWAT": "#8e44ad",
+      "CUTI": "#e74c3c"
     };
 
     items.forEach((i, idx) => { 
@@ -1897,23 +1897,31 @@ GURU</option>
       let displayKeluar = formatAppTime(i.keluar);
 
       let durationHTML = "";
-      if (i.jam && i.keluar && i.keluar !== "" && i.keluar !== "undefined") {
-        let dMasuk = parseTimeLocal(i.jam);
-        let dKeluar = parseTimeLocal(i.keluar);
-        if (dMasuk && dKeluar) {
-          let diff = Math.floor((dKeluar - dMasuk) / 1000); 
-          if (diff < 0) diff += 86400; 
-          let h = Math.floor(diff / 3600); 
-          let m = Math.floor((diff % 3600) / 60);
-          durationHTML = `<span class="live-timer" style="background:#e8f5e9; color:#27ae60; border-color:#c3e6cb; margin-top:2px;"><img src="https://cdn-icons-png.flaticon.com/128/2972/2972531.png" style="width:12px;height:12px;vertical-align:middle"> Jumlah Bertugas: ${h}J ${m}M</span>`;
-        }
-      } else if (!isHistory && i.jam && i.jam !== "undefined") {
-        durationHTML = `<span class="live-timer" data-masuk="${i.jam}" style="margin-top:2px;"><img src="https://cdn-icons-png.flaticon.com/128/2972/2972531.png" style="width:12px;height:12px;vertical-align:middle"> Sedang Bertugas: 0J 0M</span>`;
+      if (i.kategori !== "CUTI") {
+          if (i.jam && i.keluar && i.keluar !== "" && i.keluar !== "undefined") {
+            let dMasuk = parseTimeLocal(i.jam);
+            let dKeluar = parseTimeLocal(i.keluar);
+            if (dMasuk && dKeluar) {
+              let diff = Math.floor((dKeluar - dMasuk) / 1000); 
+              if (diff < 0) diff += 86400; 
+              let h = Math.floor(diff / 3600); 
+              let m = Math.floor((diff % 3600) / 60);
+              durationHTML = `<span class="live-timer" style="background:#e8f5e9; color:#27ae60; border-color:#c3e6cb; margin-top:2px;"><img src="https://cdn-icons-png.flaticon.com/128/2972/2972531.png" style="width:12px;height:12px;vertical-align:middle"> Jumlah Bertugas: ${h}J ${m}M</span>`;
+            }
+          } else if (!isHistory && i.jam && i.jam !== "undefined") {
+            durationHTML = `<span class="live-timer" data-masuk="${i.jam}" style="margin-top:2px;"><img src="https://cdn-icons-png.flaticon.com/128/2972/2972531.png" style="width:12px;height:12px;vertical-align:middle"> Sedang Bertugas: 0J 0M</span>`;
+          }
       }
 
-      let detailsHTML = `<div style="display:flex; align-items:center; gap:5px;"><span style="font-weight:600; color:#1e3c72;">${i.kategori}</span></div>
+      let detailsHTML = "";
+      if (i.kategori === "CUTI") {
+          detailsHTML = `<div style="display:flex; align-items:center; gap:5px;"><span style="font-weight:600; color:#e74c3c;">TIDAK HADIR / CUTI</span></div>
+               <div style="font-size:11px; color:#555; background:#fadbd8; padding:2px 6px; border-radius:4px; border:1px solid #e74c3c;">Sebab / Jenis: <b>${i.jam}</b></div>`;
+      } else {
+          detailsHTML = `<div style="display:flex; align-items:center; gap:5px;"><span style="font-weight:600; color:#1e3c72;">${i.kategori}</span></div>
                <div style="font-size:11px; color:#555; background:#f8f9fa; padding:2px 6px; border-radius:4px; border:1px solid #eee;">Masuk: <b>${displayMasuk}</b> | Keluar: <b>${displayKeluar}</b></div>
                ${durationHTML}`;
+      }
 
       h += `<div class="user-card ${offlineClass}">
           <div style="display:flex; align-items:center; width:100%;">

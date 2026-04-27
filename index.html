@@ -6,7 +6,7 @@
   <title>Sistem Pelawat & Kehadiran v25.0 (Modul Cuti Bersepadu)</title>
   
   <script>
-    const API_URL = 'https://script.google.com/macros/s/AKfycbyNYqRx_-UHPBiy_RVTSm_sCgXNd8n13MDJ6QJES3m7l-3z8i-6qxuFXUy8gtcClVIX/exec'; 
+    const API_URL = 'https://script.google.com/macros/s/AKfycbze5CFCvBDtTMMtjRuQZgk3v136yugskZZpWaGkjnKusDX2E1OzTcIniO2R_nxtwgA/exec'; 
     const PASSCODE = "101010";
     const SCHOOL_LAT = 5.250891554235944; 
     const SCHOOL_LNG = 100.75591785106874; 
@@ -877,44 +877,12 @@
                 if(!res.offline && res.data && res.data.result === "success") {
                     showModernAlert("Berjaya", "Cuti dibatalkan.", "success");
                     loadCutiHistory();
-                    loadAbsentList(); 
+                    loadList(); 
                 } else {
                     showModernAlert("Ralat", "Gagal batal.", "error");
                 }
             } catch(e) {}
         });
-    }
-
-    async function loadAbsentList() {
-        let container = document.getElementById('topAbsentContainer');
-        let listEl = document.getElementById('topAbsentList');
-        try {
-            let res = await fetch(API_URL, { method: "POST", body: JSON.stringify({action: "GET_CUTI", mode: "public", passcode: PASSCODE}) });
-            let json = await res.json();
-            let list = json.data || json;
-            if(list.length > 0) {
-                container.style.display = 'block';
-                let html = "";
-                list.forEach(i => {
-                    let isSah = (i.statusPengesahan === "DISAHKAN");
-                    let statusColor = isSah ? "#27ae60" : "#e67e22";
-                    
-                    let iconSah = isSah ? "<span style='color:#27ae60;' title='Telah Disahkan'>✔️</span>" : "<span style='color:#e67e22;' title='Belum Disahkan'>⏳</span>";
-                    let pengesahText = isSah ? `<div style="color:#27ae60; font-size:10px; font-weight:bold; margin-top:3px; background:#d4edda; display:inline-block; padding:2px 6px; border-radius:4px;">DISAHKAN OLEH: ${i.adminPengesah || "ADMIN"}</div>` : `<div style="color:#e67e22; font-size:10px; font-weight:bold; margin-top:3px; background:#fcf3cf; display:inline-block; padding:2px 6px; border-radius:4px;">BELUM DISAHKAN</div>`;
-
-                    html += `<div style="background:#fff; border-left:4px solid ${statusColor}; padding:8px 12px; border-radius:6px; margin-bottom:6px; font-size:11px; box-shadow:0 2px 4px rgba(0,0,0,0.05); text-align:left;">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <strong style="color:#333; font-size:12px;">${i.nama} ${iconSah}</strong>
-                        </div>
-                        ${pengesahText}
-                        <div style="color:#555; margin-top:4px;">${i.pekerjaan} | ${i.jenisCuti}</div>
-                    </div>`;
-                });
-                listEl.innerHTML = html;
-            } else {
-                container.style.display = 'none';
-            }
-        } catch(e) { console.log("Error loading absent list"); }
     }
 
     function adminCutiLogin() {
@@ -977,7 +945,7 @@
             let res = await sendData({action: "SAH_CUTI", uuid: uuid, passcode: PASSCODE, adminName: adminName});
             if(!res.offline && res.data && res.data.result === "success") {
                 loadAdminCutiList();
-                loadAbsentList();
+                loadList();
             }
         } catch(e) {}
     }
@@ -1378,13 +1346,6 @@
         <button class="btn btn-cancel" onclick="cancelPelawat()">BATAL</button>
       </div>
 
-      <div id="topAbsentContainer" style="display:none; margin-bottom: 20px;">
-        <div style="font-size:12px; font-weight:bold; color:#c0392b; margin-bottom:8px; border-bottom: 2px solid #fadbd8; padding-bottom:5px; text-align:left;">
-          <img src="https://cdn-icons-png.flaticon.com/128/6861/6861362.png" class="icon-3d-mini"> SENARAI TIDAK HADIR HARI INI
-        </div>
-        <div id="topAbsentList"></div>
-      </div>
-
       <div class="list-header">
         <span>
           <img src="https://cdn-icons-png.flaticon.com/128/942/942799.png" class="icon-3d-std"> 
@@ -1571,7 +1532,6 @@
     initLockName(); 
     initAvatar(); 
     initBackgroundService(); 
-    loadAbsentList();
     
     document.getElementById('nama').addEventListener('input', validateFormState);
 
@@ -1835,11 +1795,11 @@
     let dateInput = document.getElementById('historyDate');
     let dateVal = dateInput ? dateInput.value : "";
     let todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' }); 
-    let isHistory = dateVal && dateVal !== todayStr;
+    let isNotToday = dateVal && dateVal !== todayStr;
 
     let titleText = document.getElementById('recordTitleText');
     if (titleText) {
-      if (isHistory) {
+      if (isNotToday) {
         let parts = dateVal.split('-');
         titleText.innerText = "Rekod (" + parts[2] + "/" + parts[1] + ")";
       } else {
@@ -1848,7 +1808,7 @@
     }
 
     let offlineQueue = JSON.parse(localStorage.getItem('ehadir_offline_queue') || "[]");
-    let offlineItems = isHistory ? [] : offlineQueue.filter(q => q.action === "MASUK").map(q => ({
+    let offlineItems = isNotToday ? [] : offlineQueue.filter(q => q.action === "MASUK").map(q => ({
       nama: q.nama, kategori: q.kategori, jam: new Date(q.clientTime).toLocaleTimeString('en-US', {hour12:true, hour:'2-digit', minute:'2-digit', second:'2-digit'}), avatar: q.avatar, isOffline: true
     }));
     if(!navigator.onLine) { renderList(offlineItems); return; }
@@ -1861,7 +1821,7 @@
       let serverItems = res.data || res; 
       currentList = [...offlineItems, ...serverItems];
       renderList(currentList);
-      if (!isHistory) {
+      if (!isNotToday) {
         checkAutoStatus(currentList);
         validateFormState();
       }
@@ -1872,9 +1832,16 @@
     let dateInput = document.getElementById('historyDate');
     let dateVal = dateInput ? dateInput.value : "";
     let todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' });
-    let isHistory = dateVal && dateVal !== todayStr;
+    let isNotToday = dateVal && dateVal !== todayStr;
 
     document.getElementById('count').innerText = items.length; 
+    
+    items.sort((a, b) => {
+      if (a.kategori === "CUTI" && b.kategori !== "CUTI") return -1;
+      if (a.kategori !== "CUTI" && b.kategori === "CUTI") return 1;
+      return 0;
+    });
+
     let h = ""; 
     
     const catColors = {
@@ -1887,7 +1854,7 @@
 
     items.forEach((i, idx) => { 
       let imgBtn = (i.kategori === "PELAWAT" && i.foto) ? `<span class="icon-btn" onclick="viewImage(${idx})"><img src="https://cdn-icons-png.flaticon.com/128/3342/3342137.png" class="icon-3d-mini"></span>` : "";
-      let xBtn = isHistory ? "" : `<span class="icon-btn" style="border-color:#fadbd8;" onclick="keluarManual('${i.nama}')"><img src="https://cdn-icons-png.flaticon.com/128/6861/6861362.png" class="icon-3d-mini"></span>`;
+      let xBtn = isNotToday ? "" : `<span class="icon-btn" style="border-color:#fadbd8;" onclick="keluarManual('${i.nama}')"><img src="https://cdn-icons-png.flaticon.com/128/6861/6861362.png" class="icon-3d-mini"></span>`;
       let offlineClass = i.isOffline ? "offline-item" : "";
       let offlineIcon = i.isOffline ? `<img src="https://cdn-icons-png.flaticon.com/128/159/159604.png" class="icon-3d-mini" title="Menunggu Sync"> ` : "";
       
@@ -1908,14 +1875,17 @@
               let m = Math.floor((diff % 3600) / 60);
               durationHTML = `<span class="live-timer" style="background:#e8f5e9; color:#27ae60; border-color:#c3e6cb; margin-top:2px;"><img src="https://cdn-icons-png.flaticon.com/128/2972/2972531.png" style="width:12px;height:12px;vertical-align:middle"> Jumlah Bertugas: ${h}J ${m}M</span>`;
             }
-          } else if (!isHistory && i.jam && i.jam !== "undefined") {
+          } else if (!isNotToday && i.jam && i.jam !== "undefined") {
             durationHTML = `<span class="live-timer" data-masuk="${i.jam}" style="margin-top:2px;"><img src="https://cdn-icons-png.flaticon.com/128/2972/2972531.png" style="width:12px;height:12px;vertical-align:middle"> Sedang Bertugas: 0J 0M</span>`;
           }
       }
 
       let detailsHTML = "";
       if (i.kategori === "CUTI") {
-          detailsHTML = `<div style="display:flex; align-items:center; gap:5px;"><span style="font-weight:600; color:#e74c3c;">TIDAK HADIR / CUTI</span></div>
+          let isSah = (i.statusSah === "DISAHKAN");
+          let iconSah = isSah ? "✔️ DISAHKAN" : "⏳ BELUM DISAHKAN";
+          let colorSah = isSah ? "#27ae60" : "#e67e22";
+          detailsHTML = `<div style="display:flex; align-items:center; gap:5px;"><span style="font-weight:600; color:#e74c3c;">TIDAK HADIR / CUTI</span> <span style="font-size:9px; background:${colorSah}; color:white; padding:2px 4px; border-radius:3px;">${iconSah}</span></div>
                <div style="font-size:11px; color:#555; background:#fadbd8; padding:2px 6px; border-radius:4px; border:1px solid #e74c3c;">Sebab / Jenis: <b>${i.jam}</b></div>`;
       } else {
           detailsHTML = `<div style="display:flex; align-items:center; gap:5px;"><span style="font-weight:600; color:#1e3c72;">${i.kategori}</span></div>
@@ -1933,8 +1903,8 @@
           <div class="list-actions">${imgBtn}${xBtn}</div>
           </div>`; 
     }); 
-    document.getElementById('listContainer').innerHTML = h || `<div style='padding:20px; color:#999; font-size:12px;'>Tiada rekod ${isHistory ? 'pada tarikh ini' : 'hari ini'}.</div>`; 
-    if (!isHistory) updateLiveTimers();
+    document.getElementById('listContainer').innerHTML = h || `<div style='padding:20px; color:#999; font-size:12px;'>Tiada rekod ${isNotToday ? 'pada tarikh ini' : 'hari ini'}.</div>`; 
+    if (!isNotToday) updateLiveTimers();
   }
 
   function viewImage(index) { 

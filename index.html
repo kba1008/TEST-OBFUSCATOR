@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sistem Pelawat & Kehadiran v25.0 (Modul Cuti Bersepadu)</title>
+  <title>Sistem Pelawat & Kehadiran v38.0 (Daftar Keluar Manual & GPS)</title>
   
   <script>
-    const API_URL = 'https://script.google.com/macros/s/AKfycbwJR6ZLSk2149XYmpwoz-yEXRyYiQDMLte1Qd9I467ZD_aUAvzrKHesahUW2DfuP-BF/exec'; 
+    const API_URL = 'https://script.google.com/macros/s/AKfycbz160hDfjdx_aTruNurrderTIGtmEXD8ljbNEXAMxVahjhn7y8MvAyAgzoNEYa9bQjAew/exec'; 
     const PASSCODE = "101010";
     const SCHOOL_LAT = 5.250891554235944; 
     const SCHOOL_LNG = 100.75591785106874; 
-    const RADIUS_METER = 30000; 
+    const RADIUS_METER = 200; 
     const MINIT_ANTI_SPAM_MASUK = 1;
     const MINIT_DELAY_KELUAR = 1;
-    const RADIUS_RESET_AUTO_IN = 300;
+    const RADIUS_RESET_AUTO_IN = 200;
     const JADUAL_BERTUGAS = {
       "GURU":       { masuk: "07:20:00 AM", keluar: "02:00:00 PM" },
       "AKP":        { masuk: "07:00:00 AM", keluar: "05:00:00 PM" },
@@ -108,7 +108,7 @@
         return;
       }
 
-      let isActive = currentList.some(i => i.nama === checkName && !i.isOffline);
+      let isActive = currentList.some(i => i.nama === checkName && !i.isOffline && (!i.keluar || i.keluar === ""));
       let offlinePending = JSON.parse(localStorage.getItem('ehadir_offline_queue') || "[]").some(q => q.nama === checkName && q.action === "MASUK");
 
       if (isActive || offlinePending) {
@@ -136,7 +136,7 @@
         kat = document.getElementById('kategori').value;
       }
 
-      let isAlreadyActive = currentList.some(i => i.nama === nama && !i.isOffline);
+      let isAlreadyActive = currentList.some(i => i.nama === nama && !i.isOffline && (!i.keluar || i.keluar === ""));
       if (isAlreadyActive) {
         if (!isAuto) showModernAlert("Sesi Aktif", "Anda belum daftar keluar untuk sesi sebelum ini. Sila klik DAFTAR KELUAR.", "error");
         return;
@@ -196,7 +196,7 @@
           showModernAlert("Gagal Masuk", e, "error");
           isSubmitting = false;
           document.getElementById('btnMainSubmit').disabled = false;
-          document.getElementById('btnMainSubmit').innerHTML = `<img src="https://cdn-icons-png.flaticon.com/128/9402/9402342.png" class="icon-3d-std"> DAFTAR MASUK (MANUAL)`;
+          document.getElementById('btnMainSubmit').innerHTML = `<img src="https://cdn-icons-png.flaticon.com/128/9402/9402342.png" class="icon-3d-std"> DAFTAR MASUK`;
           return;
         }
         document.getElementById('btnMainSubmit').innerHTML = 'SEDANG HANTAR...'; 
@@ -292,7 +292,9 @@
 
       if (!isAuto && !session) {
         let iName = document.getElementById('nama') ? document.getElementById('nama').value.toUpperCase().trim() : "";
-        if (!iName) { showModernAlert("Tiada Nama", "Sila isi Nama dahulu.", "error"); return; }
+        if(!iName) iName = localStorage.getItem('ehadir_locked_name') || "";
+
+        if (!iName) { showModernAlert("Tiada Nama", "Sila isi Nama atau Kunci Nama dahulu untuk daftar keluar.", "error"); return; }
         
         let btn = document.getElementById('btnKeluarMain');
         if(btn) btn.innerHTML = "MENYEMAK DATA...";
@@ -302,34 +304,27 @@
           let response = await fetch(API_URL, { method: "POST", body: JSON.stringify({action: "GET_LIST", passcode: PASSCODE}) });
           let json = await response.json();
           let list = json.data || json;
-          let record = list.find(item => item.nama === iName);
+          let record = list.find(item => item.nama === iName && item.jam && (!item.keluar || item.keluar === ""));
           
           if (record) {
-            localStorage.setItem('ehadir_session', JSON.stringify({
-               nama: record.nama,
-               kategori: record.kategori,
-               date: new Date().toISOString().slice(0,10),
-               avatar: record.foto || localStorage.getItem('ehadir_user_avatar') || ""
-             }));
-             
-            showModernAlert("Sesi Dipulihkan", "Rekod kehadiran ditemui. Sila tekan butang <b>DAFTAR KELUAR</b> di papan pemuka sekarang.", "success");
-            setTimeout(() => location.reload(), 2000);
-            return; 
+             namaVal = record.nama;
+             katVal = record.kategori;
+             uuidVal = record.uuid || ("MANUAL_OUT_" + Date.now());
+             isSubmitting = false; 
+             if(btn) btn.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/128/3580/3580154.png" class="icon-3d-std"> DAFTAR KELUAR`;
           } else {
-            showModernAlert("Gagal", "Tiada rekod masuk aktif untuk nama ini. Sila Daftar Masuk dahulu.", "error");
+            showModernAlert("Gagal", "Tiada rekod masuk aktif untuk nama ini.", "error");
             isSubmitting = false;
-            if(btn) btn.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/128/3580/3580154.png" class="icon-3d-std"> KELUAR`;
+            if(btn) btn.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/128/3580/3580154.png" class="icon-3d-std"> DAFTAR KELUAR`;
             return;
           }
         } catch (e) {
           showModernAlert("Ralat", "Gagal menyemak status. Pastikan internet ada.", "error");
           isSubmitting = false;
-          if(btn) btn.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/128/3580/3580154.png" class="icon-3d-std"> KELUAR`;
+          if(btn) btn.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/128/3580/3580154.png" class="icon-3d-std"> DAFTAR KELUAR`;
           return;
         }
-      }
-
-      if (session && session.nama) {
+      } else if (session && session.nama) {
         namaVal = session.nama;
         katVal = session.kategori;
         uuidVal = session.uuid || "";
@@ -351,7 +346,7 @@
         isSubmitting = true; 
         if(!isAuto) { 
           let btn = document.getElementById('btnKeluar') || document.getElementById('btnKeluarMain');
-          if(btn) { btn.disabled = true; btn.innerText = "PROSES RESET..."; }
+          if(btn) { btn.disabled = true; btn.innerText = "SEDANG HANTAR..."; }
         }
 
         try {
@@ -368,7 +363,7 @@
           localStorage.setItem('ehadir_auto_in_blocked', 'true');
           localStorage.removeItem('ehadir_session');
           
-          setTimeout(() => location.reload(), 500);
+          setTimeout(() => location.reload(), 1500);
 
         } catch (error) {
           console.error(error);
@@ -438,7 +433,7 @@
       let checkName = locked || (session ? session.nama : null);
       let isAlreadyActiveDB = false;
       if (checkName) {
-        isAlreadyActiveDB = currentList.some(i => i.nama === checkName && !i.isOffline);
+        isAlreadyActiveDB = currentList.some(i => i.nama === checkName && !i.isOffline && (!i.keluar || i.keluar === ""));
       }
 
       if (isInZone) {
@@ -633,7 +628,7 @@
       isCutiModeActive = true;
       showModernAlert(
         "Pengesahan Cuti", 
-        "Sila rancang cuti anda dan maklumkan kepada Pentadbir terlebih dahulu untuk memastikan operasi berjalan lancar.", 
+        "Sila rancang cuti anda, maklumkan pada Pentadbir, dan jangan lupa terus kemaskini di HRMIS.", 
         "info",
         null
       );
@@ -877,44 +872,12 @@
                 if(!res.offline && res.data && res.data.result === "success") {
                     showModernAlert("Berjaya", "Cuti dibatalkan.", "success");
                     loadCutiHistory();
-                    loadAbsentList(); 
+                    loadList(); 
                 } else {
                     showModernAlert("Ralat", "Gagal batal.", "error");
                 }
             } catch(e) {}
         });
-    }
-
-    async function loadAbsentList() {
-        let container = document.getElementById('topAbsentContainer');
-        let listEl = document.getElementById('topAbsentList');
-        try {
-            let res = await fetch(API_URL, { method: "POST", body: JSON.stringify({action: "GET_CUTI", mode: "public", passcode: PASSCODE}) });
-            let json = await res.json();
-            let list = json.data || json;
-            if(list.length > 0) {
-                container.style.display = 'block';
-                let html = "";
-                list.forEach(i => {
-                    let isSah = (i.statusPengesahan === "DISAHKAN");
-                    let statusColor = isSah ? "#27ae60" : "#e67e22";
-                    
-                    let iconSah = isSah ? "<span style='color:#27ae60;' title='Telah Disahkan'>✔️</span>" : "<span style='color:#e67e22;' title='Belum Disahkan'>⏳</span>";
-                    let pengesahText = isSah ? `<div style="color:#27ae60; font-size:10px; font-weight:bold; margin-top:3px; background:#d4edda; display:inline-block; padding:2px 6px; border-radius:4px;">DISAHKAN OLEH: ${i.adminPengesah || "ADMIN"}</div>` : `<div style="color:#e67e22; font-size:10px; font-weight:bold; margin-top:3px; background:#fcf3cf; display:inline-block; padding:2px 6px; border-radius:4px;">BELUM DISAHKAN</div>`;
-
-                    html += `<div style="background:#fff; border-left:4px solid ${statusColor}; padding:8px 12px; border-radius:6px; margin-bottom:6px; font-size:11px; box-shadow:0 2px 4px rgba(0,0,0,0.05); text-align:left;">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <strong style="color:#333; font-size:12px;">${i.nama} ${iconSah}</strong>
-                        </div>
-                        ${pengesahText}
-                        <div style="color:#555; margin-top:4px;">${i.pekerjaan} | ${i.jenisCuti}</div>
-                    </div>`;
-                });
-                listEl.innerHTML = html;
-            } else {
-                container.style.display = 'none';
-            }
-        } catch(e) { console.log("Error loading absent list"); }
     }
 
     function adminCutiLogin() {
@@ -977,7 +940,7 @@
             let res = await sendData({action: "SAH_CUTI", uuid: uuid, passcode: PASSCODE, adminName: adminName});
             if(!res.offline && res.data && res.data.result === "success") {
                 loadAdminCutiList();
-                loadAbsentList();
+                loadList();
             }
         } catch(e) {}
     }
@@ -1061,7 +1024,7 @@
     
     .list-header { display: flex; justify-content: space-between; align-items: center; margin-top: 25px; border-bottom: 2px solid #f1f1f1; padding-bottom: 10px; margin-bottom: 10px; }
     .list-header span { font-weight: 700; color: #1e3c72; font-size: 14px; display: flex; align-items: center; gap: 5px; }
-    .list-container { text-align: left; margin-top: 5px; max-height: 300px; overflow-y: auto; }
+    .list-container { text-align: left; margin-top: 5px; max-height: 400px; overflow-y: auto; }
     
     .user-card { background: #fff; padding: 12px; border: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #1e3c72; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
     .user-card.offline-item { border-left: 4px solid #e67e22; background: #fffcf5; }
@@ -1284,6 +1247,10 @@
           <img src="https://cdn-icons-png.flaticon.com/128/9402/9402342.png" class="icon-3d-std"> DAFTAR MASUK
         </button>
 
+        <button id="btnKeluarMain" class="btn btn-keluar" onclick="hantarKeluar(false)" style="margin-top:10px; display:flex;">
+          <img src="https://cdn-icons-png.flaticon.com/128/3580/3580154.png" class="icon-3d-std"> DAFTAR KELUAR
+        </button>
+
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
           <button id="btnCutiMain" class="btn btn-keluar" onclick="openCutiWorkflow()" style="margin-top:0;">
             <img src="https://cdn-icons-png.flaticon.com/128/6861/6861362.png" class="icon-3d-std"> TIDAK HADIR
@@ -1378,13 +1345,7 @@
         <button class="btn btn-cancel" onclick="cancelPelawat()">BATAL</button>
       </div>
 
-  <div id="topAbsentContainer" style="display:none; margin-bottom: 20px;">
-  <div style="font-size:12px; font-weight:bold; color:#c0392b; margin-bottom:8px; border-bottom: 2px solid #fadbd8; padding-bottom:5px; text-align:left;">
-    <span style="font-size: 16px; vertical-align: middle; margin-right: 5px;">💐</span> SENARAI TIDAK HADIR HARI INI
-  </div>
-  </div>
-        <div id="topAbsentList"></div>
-      </div>
+    </div>
 
       <div class="list-header">
         <span>
@@ -1571,8 +1532,7 @@
     getHijriDate();
     initLockName(); 
     initAvatar(); 
-    initBackgroundService(); 
-    loadAbsentList();
+    initBackgroundService();
     
     document.getElementById('nama').addEventListener('input', validateFormState);
 
@@ -1886,55 +1846,110 @@
       "CUTI": "#e74c3c"
     };
 
-    items.forEach((i, idx) => { 
-      let imgBtn = (i.kategori === "PELAWAT" && i.foto) ? `<span class="icon-btn" onclick="viewImage(${idx})"><img src="https://cdn-icons-png.flaticon.com/128/3342/3342137.png" class="icon-3d-mini"></span>` : "";
-      let xBtn = isHistory ? "" : `<span class="icon-btn" style="border-color:#fadbd8;" onclick="keluarManual('${i.nama}')"><img src="https://cdn-icons-png.flaticon.com/128/6861/6861362.png" class="icon-3d-mini"></span>`;
-      let offlineClass = i.isOffline ? "offline-item" : "";
-      let offlineIcon = i.isOffline ? `<img src="https://cdn-icons-png.flaticon.com/128/159/159604.png" class="icon-3d-mini" title="Menunggu Sync"> ` : "";
-      
-      let nameColor = catColors[i.kategori] || "#2c3e50";
+    let hadirAktif = [];
+    let daftarKeluar = [];
+    let tidakHadir = [];
 
-      let displayMasuk = formatAppTime(i.jam);
-      let displayKeluar = formatAppTime(i.keluar);
-
-      let durationHTML = "";
-      if (i.kategori !== "CUTI") {
-          if (i.jam && i.keluar && i.keluar !== "" && i.keluar !== "undefined") {
-            let dMasuk = parseTimeLocal(i.jam);
-            let dKeluar = parseTimeLocal(i.keluar);
-            if (dMasuk && dKeluar) {
-              let diff = Math.floor((dKeluar - dMasuk) / 1000); 
-              if (diff < 0) diff += 86400; 
-              let h = Math.floor(diff / 3600); 
-              let m = Math.floor((diff % 3600) / 60);
-              durationHTML = `<span class="live-timer" style="background:#e8f5e9; color:#27ae60; border-color:#c3e6cb; margin-top:2px;"><img src="https://cdn-icons-png.flaticon.com/128/2972/2972531.png" style="width:12px;height:12px;vertical-align:middle"> Jumlah Bertugas: ${h}J ${m}M</span>`;
-            }
-          } else if (!isHistory && i.jam && i.jam !== "undefined") {
-            durationHTML = `<span class="live-timer" data-masuk="${i.jam}" style="margin-top:2px;"><img src="https://cdn-icons-png.flaticon.com/128/2972/2972531.png" style="width:12px;height:12px;vertical-align:middle"> Sedang Bertugas: 0J 0M</span>`;
-          }
-      }
-
-      let detailsHTML = "";
+    items.forEach((i, globalIdx) => {
+      i._globalIdx = globalIdx; 
       if (i.kategori === "CUTI") {
-          detailsHTML = `<div style="display:flex; align-items:center; gap:5px;"><span style="font-weight:600; color:#e74c3c;">TIDAK HADIR / CUTI</span></div>
-               <div style="font-size:11px; color:#555; background:#fadbd8; padding:2px 6px; border-radius:4px; border:1px solid #e74c3c;">Sebab / Jenis: <b>${i.jam}</b></div>`;
+         tidakHadir.push(i);
+      } else if (!i.keluar || i.keluar === "" || i.keluar === "undefined") {
+         hadirAktif.push(i);
       } else {
-          detailsHTML = `<div style="display:flex; align-items:center; gap:5px;"><span style="font-weight:600; color:#1e3c72;">${i.kategori}</span></div>
-               <div style="font-size:11px; color:#555; background:#f8f9fa; padding:2px 6px; border-radius:4px; border:1px solid #eee;">Masuk: <b>${displayMasuk}</b> | Keluar: <b>${displayKeluar}</b></div>
-               ${durationHTML}`;
+         daftarKeluar.push(i);
       }
+    });
 
-      h += `<div class="user-card ${offlineClass}">
-          <div style="display:flex; align-items:center; width:100%;">
-            <div class="user-info">
-              <strong style="color:${nameColor}">${offlineIcon}${i.nama}</strong>
-              <div class="user-details">${detailsHTML}</div>
-            </div>
-          </div>
-          <div class="list-actions">${imgBtn}${xBtn}</div>
-          </div>`; 
-    }); 
-    document.getElementById('listContainer').innerHTML = h || `<div style='padding:20px; color:#999; font-size:12px;'>Tiada rekod ${isHistory ? 'pada tarikh ini' : 'hari ini'}.</div>`; 
+    const generateCards = (list) => {
+       let html = "";
+       list.forEach(i => {
+          let idx = i._globalIdx;
+          let imgBtn = (i.kategori === "PELAWAT" && i.foto) ? `<span class="icon-btn" onclick="viewImage(${idx})"><img src="https://cdn-icons-png.flaticon.com/128/3342/3342137.png" class="icon-3d-mini"></span>` : "";
+          let xBtn = (isHistory || i.kategori === "CUTI" || i.keluar) ? "" : `<span class="icon-btn" style="border-color:#fadbd8;" onclick="keluarManual('${i.nama}')"><img src="https://cdn-icons-png.flaticon.com/128/6861/6861362.png" class="icon-3d-mini"></span>`;
+          let offlineClass = i.isOffline ? "offline-item" : "";
+          let offlineIcon = i.isOffline ? `<img src="https://cdn-icons-png.flaticon.com/128/159/159604.png" class="icon-3d-mini" title="Menunggu Sync"> ` : "";
+          
+          let nameColor = catColors[i.kategori] || "#2c3e50";
+
+          let displayMasuk = formatAppTime(i.jam);
+          let displayKeluar = formatAppTime(i.keluar);
+
+          let durationHTML = "";
+          if (i.kategori !== "CUTI") {
+              if (i.jam && i.keluar && i.keluar !== "" && i.keluar !== "undefined") {
+                let dMasuk = parseTimeLocal(i.jam);
+                let dKeluar = parseTimeLocal(i.keluar);
+                if (dMasuk && dKeluar) {
+                  let diff = Math.floor((dKeluar - dMasuk) / 1000); 
+                  if (diff < 0) diff += 86400; 
+                  let hrs = Math.floor(diff / 3600); 
+                  let mns = Math.floor((diff % 3600) / 60);
+                  durationHTML = `<span class="live-timer" style="background:#e8f5e9; color:#27ae60; border-color:#c3e6cb; margin-top:2px;"><img src="https://cdn-icons-png.flaticon.com/128/2972/2972531.png" style="width:12px;height:12px;vertical-align:middle"> Jumlah Bertugas: ${hrs}J ${mns}M</span>`;
+                }
+              } else if (!isHistory && i.jam && i.jam !== "undefined") {
+                durationHTML = `<span class="live-timer" data-masuk="${i.jam}" style="margin-top:2px;"><img src="https://cdn-icons-png.flaticon.com/128/2972/2972531.png" style="width:12px;height:12px;vertical-align:middle"> Sedang Bertugas: 0J 0M</span>`;
+              }
+          }
+
+          let detailsHTML = "";
+          if (i.kategori === "CUTI") {
+              let isSah = i.statusSah === "DISAHKAN";
+              let iconSah = isSah ? "<span style='color:#27ae60;' title='Telah Disahkan'>✔️</span>" : "<span style='color:#e67e22;' title='Belum Disahkan'>⏳</span>";
+              let pengesahText = isSah ? `<div style="color:#27ae60; font-size:10px; font-weight:bold; margin-top:3px; background:#d4edda; display:inline-block; padding:2px 6px; border-radius:4px;">DISAHKAN: ${i.admin || "ADMIN"}</div>` : `<div style="color:#e67e22; font-size:10px; font-weight:bold; margin-top:3px; background:#fcf3cf; display:inline-block; padding:2px 6px; border-radius:4px;">BELUM DISAHKAN</div>`;
+
+              detailsHTML = `<div style="display:flex; align-items:center; gap:5px;"><span style="font-weight:600; color:#e74c3c;">TIDAK HADIR / CUTI ${iconSah}</span></div>
+                   <div style="font-size:11px; color:#555; background:#fadbd8; padding:2px 6px; border-radius:4px; border:1px solid #e74c3c; margin-top:3px;">Sebab / Jenis: <b>${i.jam}</b></div>
+                   ${pengesahText}`;
+          } else {
+              detailsHTML = `<div style="display:flex; align-items:center; gap:5px;"><span style="font-weight:600; color:#1e3c72;">${i.kategori}</span></div>
+                   <div style="font-size:11px; color:#555; background:#f8f9fa; padding:2px 6px; border-radius:4px; border:1px solid #eee;">Masuk: <b>${displayMasuk}</b> | Keluar: <b>${displayKeluar}</b></div>
+                   ${durationHTML}`;
+          }
+
+          html += `<div class="user-card ${offlineClass}">
+              <div style="display:flex; align-items:center; width:100%;">
+                <div class="user-info">
+                  <strong style="color:${nameColor}">${offlineIcon}${i.nama}</strong>
+                  <div class="user-details">${detailsHTML}</div>
+                </div>
+              </div>
+              <div class="list-actions">${imgBtn}${xBtn}</div>
+              </div>`; 
+       });
+       return html;
+    };
+
+    if (tidakHadir.length > 0) {
+       h += `<div style="font-size:12px; font-weight:bold; color:#c0392b; margin-top:10px; margin-bottom:8px; border-bottom: 2px solid #fadbd8; padding-bottom:5px; text-align:left;">
+          <span style="font-size: 16px; vertical-align: middle; margin-right: 5px;">💐</span> SENARAI TIDAK HADIR (${tidakHadir.length})
+        </div>`;
+       h += generateCards(tidakHadir);
+    }
+
+    if (hadirAktif.length > 0) {
+       h += `<div style="font-size:12px; font-weight:bold; color:#27ae60; margin-top:15px; margin-bottom:8px; border-bottom: 2px solid #c3e6cb; padding-bottom:5px; text-align:left;">
+          <span style="font-size: 16px; vertical-align: middle; margin-right: 5px;">🟢</span> SEDANG HADIR (${hadirAktif.length})
+        </div>`;
+       h += generateCards(hadirAktif);
+    } else if (!isHistory) {
+       h += `<div style="font-size:12px; font-weight:bold; color:#27ae60; margin-top:15px; margin-bottom:8px; border-bottom: 2px solid #c3e6cb; padding-bottom:5px; text-align:left;">
+          <span style="font-size: 16px; vertical-align: middle; margin-right: 5px;">🟢</span> SEDANG HADIR (0)
+        </div><div style='padding:10px; color:#999; font-size:11px; text-align:center;'>Tiada rekod sedang hadir.</div>`;
+    }
+
+    if (daftarKeluar.length > 0) {
+       h += `<div style="font-size:12px; font-weight:bold; color:#f39c12; margin-top:15px; margin-bottom:8px; border-bottom: 2px solid #ffeeba; padding-bottom:5px; text-align:left;">
+          <span style="font-size: 16px; vertical-align: middle; margin-right: 5px;">🔴</span> SUDAH DAFTAR KELUAR (${daftarKeluar.length})
+        </div>`;
+       h += generateCards(daftarKeluar);
+    }
+
+    if (items.length === 0) {
+        h = `<div style='padding:20px; color:#999; font-size:12px; text-align:center;'>Tiada rekod ${isHistory ? 'pada tarikh ini' : 'hari ini'}.</div>`;
+    }
+
+    document.getElementById('listContainer').innerHTML = h; 
     if (!isHistory) updateLiveTimers();
   }
 

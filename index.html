@@ -6,11 +6,11 @@
   <title>Sistem Pelawat & Kehadiran v38.0 (Daftar Keluar Manual & GPS)</title>
   
   <script>
-    const API_URL = 'https://script.google.com/macros/s/AKfycbyVk8WYcz0zMcVlmH7ONRX0a29U0gyj66K6mSBKqKt81DMRUaf9Pje9TNpUILAHWIuz/exec'; 
+    const API_URL = 'https://script.google.com/macros/s/AKfycbyyG3qNeLrXGb-t_EAdsz_fu_TKQcfHnKZY5YTpTJamsP0GfaV74JVkJ66PLGX9JyHO/exec'; 
     const PASSCODE = "101010";
     const SCHOOL_LAT = 5.250891554235944; 
     const SCHOOL_LNG = 100.75591785106874; 
-    const RADIUS_METER = 200; 
+    const RADIUS_METER = 20000; 
     const MINIT_ANTI_SPAM_MASUK = 1;
     const MINIT_DELAY_KELUAR = 1;
     const RADIUS_RESET_AUTO_IN = 200;
@@ -72,17 +72,18 @@
       let checkName = locked || (currentSess ? currentSess.nama : null);
       if(!checkName) return;
       
-      let userRecord = list.find(item => item.nama === checkName);
+      // PENGUBAHSUAIAN KHAS: Cari hanya rekod yang benar-benar aktif (SEDANG HADIR)
+      let activeRecord = list.find(item => item.nama === checkName && item.kategori !== "CUTI" && (!item.keluar || item.keluar === ""));
 
-      if (userRecord) {
+      if (activeRecord) {
         if (!currentSess || currentSess.nama !== checkName) {
           localStorage.setItem('ehadir_session', JSON.stringify({
-            nama: userRecord.nama,
-            kategori: userRecord.kategori || "GURU", 
+            nama: activeRecord.nama,
+            kategori: activeRecord.kategori || "GURU", 
             date: new Date().toISOString().slice(0,10),
-            avatar: userRecord.avatar || localStorage.getItem('ehadir_user_avatar') || ""
+            avatar: activeRecord.avatar || localStorage.getItem('ehadir_user_avatar') || ""
           }));
-          location.reload(); 
+          checkSession(); // Update UI without full reload if possible
         }
       } else {
         let queue = JSON.parse(localStorage.getItem('ehadir_offline_queue') || "[]");
@@ -90,7 +91,8 @@
         
         if (currentSess && !isPending) {
           localStorage.removeItem('ehadir_session');
-          location.reload();
+          document.getElementById('dashboardPanel').style.display = 'none';
+          document.getElementById('defaultForm').style.display = 'block';
         }
       }
     }
@@ -108,7 +110,7 @@
         return;
       }
 
-      let isActive = currentList.some(i => i.nama === checkName && !i.isOffline && (!i.keluar || i.keluar === ""));
+      let isActive = currentList.some(i => i.nama === checkName && !i.isOffline && i.kategori !== "CUTI" && (!i.keluar || i.keluar === ""));
       let offlinePending = JSON.parse(localStorage.getItem('ehadir_offline_queue') || "[]").some(q => q.nama === checkName && q.action === "MASUK");
 
       if (isActive || offlinePending) {
@@ -136,7 +138,7 @@
         kat = document.getElementById('kategori').value;
       }
 
-      let isAlreadyActive = currentList.some(i => i.nama === nama && !i.isOffline && (!i.keluar || i.keluar === ""));
+      let isAlreadyActive = currentList.some(i => i.nama === nama && !i.isOffline && i.kategori !== "CUTI" && (!i.keluar || i.keluar === ""));
       if (isAlreadyActive) {
         if (!isAuto) showModernAlert("Sesi Aktif", "Anda belum daftar keluar untuk sesi sebelum ini. Sila klik DAFTAR KELUAR.", "error");
         return;
@@ -304,7 +306,7 @@
           let response = await fetch(API_URL, { method: "POST", body: JSON.stringify({action: "GET_LIST", passcode: PASSCODE}) });
           let json = await response.json();
           let list = json.data || json;
-          let record = list.find(item => item.nama === iName && item.jam && (!item.keluar || item.keluar === ""));
+          let record = list.find(item => item.nama === iName && item.kategori !== "CUTI" && item.jam && (!item.keluar || item.keluar === ""));
           
           if (record) {
              namaVal = record.nama;
@@ -331,12 +333,20 @@
       } else {
         let lName = localStorage.getItem('ehadir_locked_name');
         let lKat = localStorage.getItem('ehadir_locked_kat');
-        if (lName && lKat) { namaVal = lName; katVal = lKat; }
-        else {
+        if (lName && lKat) { 
+            namaVal = lName; 
+            katVal = lKat; 
+        } else {
           if(!isAuto) showModernAlert("Tiada Maklumat", "Sila isi Nama & Kategori atau KUNCI nama dahulu untuk daftar keluar.", "error");
           return;
         }
         uuidVal = "MANUAL_OUT_" + Date.now();
+      }
+      
+      // Keselamatan jika auto checkout, cuba pastikan uuid diambil dari list terkini
+      if (isAuto && currentList.length > 0) {
+         let activeRec = currentList.find(i => i.nama === namaVal && i.kategori !== "CUTI" && (!i.keluar || i.keluar === ""));
+         if (activeRec && activeRec.uuid) uuidVal = activeRec.uuid;
       }
       
       let alasanValue = isAuto ? "AUTO CHECKOUT (KELUAR KAWASAN)" : "PULANG (MANUAL)";
@@ -367,7 +377,7 @@
           }
           if(btn) btn.innerText = "SEDANG HANTAR...";
         } else {
-          locStatus = "LUAR"; // Auto checkout is triggered outside the zone.
+          locStatus = "LUAR";
         }
 
         try {
@@ -440,8 +450,8 @@
     function monitorAutoLogic() {
       if (isCutiModeActive) return;
 
-      let MS_IN_DELAY = (typeof MINIT_ANTI_SPAM_MASUK !== 'undefined' ? MINIT_ANTI_SPAM_MASUK : 5) * 60 * 1000;
-      let MS_OUT_DELAY = (typeof MINIT_DELAY_KELUAR !== 'undefined' ? MINIT_DELAY_KELUAR : 10) * 60 * 1000;
+      let MS_IN_DELAY = (typeof MINIT_ANTI_SPAM_MASUK !== 'undefined' ? MINIT_ANTI_SPAM_MASUK : 1) * 60 * 1000;
+      let MS_OUT_DELAY = (typeof MINIT_DELAY_KELUAR !== 'undefined' ? MINIT_DELAY_KELUAR : 1) * 60 * 1000;
 
       let session = JSON.parse(localStorage.getItem('ehadir_session'));
       let locked = localStorage.getItem('ehadir_locked_name');
@@ -452,9 +462,16 @@
       let isBlocked = localStorage.getItem('ehadir_auto_in_blocked'); 
 
       let checkName = locked || (session ? session.nama : null);
-      let isAlreadyActiveDB = false;
+      
+      // PENGUBAHSUAIAN PENTING USER: CHECK STATUS KEHADIRAN TERKINI (SEDANG HADIR SAHAJA)
+      let isSedangHadir = false;
+      let isSudahKeluar = false;
+      let isTidakHadir = false;
+      
       if (checkName) {
-        isAlreadyActiveDB = currentList.some(i => i.nama === checkName && !i.isOffline && (!i.keluar || i.keluar === ""));
+        isSedangHadir = currentList.some(i => i.nama === checkName && i.kategori !== "CUTI" && (!i.keluar || i.keluar === ""));
+        isSudahKeluar = currentList.some(i => i.nama === checkName && i.kategori !== "CUTI" && i.keluar && i.keluar !== "");
+        isTidakHadir = currentList.some(i => i.nama === checkName && i.kategori === "CUTI");
       }
 
       if (isInZone) {
@@ -465,10 +482,14 @@
            statusEl.style.background = "#e8f5e9";
          }
          
-         if (isBlocked || isAlreadyActiveDB) {
+         if (isBlocked || isSedangHadir || isSudahKeluar || isTidakHadir) {
            if (statusEl && !statusEl.innerHTML.includes('SEMAK & AKTIFKAN')) {
-             if (isAlreadyActiveDB) {
-               statusEl.innerHTML += `<br><span style="font-size:9px; color:#e67e22;">AUTO-IN DISABLE (ANDA BELUM DAFTAR KELUAR)</span>`;
+             if (isSedangHadir) {
+               statusEl.innerHTML += `<br><span style="font-size:9px; color:#e67e22;">AUTO-IN DISABLE (SEDANG HADIR)</span>`;
+             } else if (isSudahKeluar) {
+               statusEl.innerHTML += `<br><span style="font-size:9px; color:#e67e22;">AUTO-IN DISABLE (SUDAH KELUAR HARI INI)</span>`;
+             } else if (isTidakHadir) {
+               statusEl.innerHTML += `<br><span style="font-size:9px; color:#e67e22;">AUTO-IN DISABLE (TIDAK HADIR/CUTI)</span>`;
              } else {
                statusEl.innerHTML += `<br><span style="font-size:9px; color:#e67e22;">AUTO-IN DISABLE (KELUAR > ${RADIUS_RESET_AUTO_IN}M UNTUK RESET)</span>`;
              }
@@ -489,17 +510,17 @@
         if(wBox) wBox.style.display = "none";
         hasNotifiedExit = false; 
         
-        if (!session && locked && lockedKat && !hasNotifiedEntry) {
+        if (!session && locked && lockedKat && !hasNotifiedEntry && !isSedangHadir && !isSudahKeluar && !isTidakHadir) {
           hasNotifiedEntry = true;
           sendNotification("ANDA SUDAH SAMPAI!", "Sila klik di sini untuk buka aplikasi", "wake-up-entry");
         }
 
-        if (!session && locked && lockedKat && !isSubmitting && !isAlreadyActiveDB) {
+        if (!session && locked && lockedKat && !isSubmitting && !isSedangHadir && !isSudahKeluar && !isTidakHadir) {
           if (inZoneStart > 0) {
             let elapsed = now - inZoneStart;
             let remainingSec = Math.ceil((MS_IN_DELAY - elapsed) / 1000);
             
-            if(statusEl && !statusEl.innerHTML.includes('SEMAK & AKTIFKAN')) statusEl.innerHTML += ` <br>[AUTO-PUNCH: ${remainingSec}s]`;
+            if(statusEl && !statusEl.innerHTML.includes('SEMAK & AKTIFKAN')) statusEl.innerHTML += ` <br>[AUTO-PUNCH IN: ${remainingSec}s]`;
             
             if (remainingSec <= 0) {
               hantarMasuk(true);
@@ -511,30 +532,34 @@
       else {
         hasNotifiedEntry = false; 
 
-        if (session && !hasNotifiedExit) {
-          hasNotifiedExit = true;
-          sendNotification("ANDA TELAH KELUAR KAWASAN!", "Anda dikesan telah meninggalkan pejabat. Klik di sini untuk sahkan waktu balik (Punch Out).", "wake-up-exit");
-        }
+        // PENGUBAHSUAIAN KHAS: HANYA TRIGGER JIKA PEKERJA DI DALAM SENARAI "SEDANG HADIR" SAHAJA.
+        if (isSedangHadir) {
+          if (!hasNotifiedExit) {
+            hasNotifiedExit = true;
+            sendNotification("ANDA TELAH KELUAR KAWASAN!", "Anda dikesan telah meninggalkan pejabat. Auto Punch-Out akan bermula.", "wake-up-exit");
+          }
 
-        if (session && !isSubmitting) {
-           if (outZoneStart > 0) {
-             let elapsed = now - outZoneStart;
-             let remainingSec = Math.ceil((MS_OUT_DELAY - elapsed) / 1000);
-             
-             let warnBox = document.getElementById('warningBox');
-             if(warnBox) {
-               warnBox.style.display = "block";
-               warnBox.innerHTML = `AMARAN! KELUAR ZON.<br>AUTO PUNCH-OUT DALAM <span style="font-size:1.5em">${remainingSec}</span> S`;
-             }
+          if (!isSubmitting) {
+             if (outZoneStart > 0) {
+               let elapsed = now - outZoneStart;
+               let remainingSec = Math.ceil((MS_OUT_DELAY - elapsed) / 1000);
+               
+               let warnBox = document.getElementById('warningBox');
+               if(warnBox) {
+                 warnBox.style.display = "block";
+                 warnBox.innerHTML = `AMARAN! KELUAR ZON.<br>AUTO PUNCH-OUT DALAM <span style="font-size:1.5em">${remainingSec}</span> S`;
+               }
 
-             if (remainingSec <= 0) {
-               hantarKeluar(true);
-               outZoneStart = 0;
+               if (remainingSec <= 0) {
+                 hantarKeluar(true);
+                 outZoneStart = 0;
+               }
              }
-           }
+          }
         } else {
            let wBox = document.getElementById('warningBox');
            if(wBox) wBox.style.display = "none";
+           outZoneStart = 0; // Reset 
         }
       }
     }
@@ -1801,7 +1826,10 @@
       let savedAvatar = s.avatar || localStorage.getItem('ehadir_user_avatar');
       if(savedAvatar) document.getElementById('userAvatarDash').src = savedAvatar;
       updateDashboardInfo(); 
-    } 
+    } else {
+      document.getElementById('dashboardPanel').style.display = 'none'; 
+      document.getElementById('defaultForm').style.display = 'block'; 
+    }
   }
 
   function formatAppTime(val) {

@@ -6,7 +6,7 @@
   <title>Sistem Pelawat & Kehadiran v38.0 (Daftar Keluar Manual & GPS)</title>
   
   <script>
-    const API_URL = 'https://script.google.com/macros/s/AKfycbzXSzixK4jnD8XZ1Ci-gynWoyBW_bl0mVrqqILrk5s0vDtjK4PePkO81lFs243orx02/exec'; 
+    const API_URL = 'https://script.google.com/macros/s/AKfycbyVk8WYcz0zMcVlmH7ONRX0a29U0gyj66K6mSBKqKt81DMRUaf9Pje9TNpUILAHWIuz/exec'; 
     const PASSCODE = "101010";
     const SCHOOL_LAT = 5.250891554235944; 
     const SCHOOL_LNG = 100.75591785106874; 
@@ -344,13 +344,34 @@
 
       let proceed = async () => {
         isSubmitting = true; 
+        let locStatus = "TIADA";
+
         if(!isAuto) { 
           let btn = document.getElementById('btnKeluar') || document.getElementById('btnKeluarMain');
-          if(btn) { btn.disabled = true; btn.innerText = "SEDANG HANTAR..."; }
+          if(btn) { btn.disabled = true; btn.innerText = "MENCARI GPS (3s)..."; }
+          
+          try {
+            await new Promise((resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(pos => {
+                let d = calcDist(pos.coords.latitude, pos.coords.longitude, SCHOOL_LAT, SCHOOL_LNG);
+                locStatus = (d <= RADIUS_METER) ? "DALAM" : "LUAR";
+                lastLat = pos.coords.latitude;
+                lastLng = pos.coords.longitude;
+                resolve();
+              }, err => {
+                reject();
+              }, { enableHighAccuracy: true, timeout: 3000, maximumAge: 0 });
+            });
+          } catch(e) {
+            locStatus = "TIADA";
+          }
+          if(btn) btn.innerText = "SEDANG HANTAR...";
+        } else {
+          locStatus = "LUAR"; // Auto checkout is triggered outside the zone.
         }
 
         try {
-          const payload = { action: "KELUAR", passcode: PASSCODE, nama: namaVal.toUpperCase(), alasan: alasanValue, lat: lastLat, lng: lastLng, clientTime: new Date().toISOString(), uuid: sessionUUID };
+          const payload = { action: "KELUAR", passcode: PASSCODE, nama: namaVal.toUpperCase(), alasan: alasanValue, lat: lastLat, lng: lastLng, clientTime: new Date().toISOString(), uuid: sessionUUID, locStatus: locStatus };
           
           await sendData(payload);
           
@@ -383,7 +404,7 @@
       showModernAlert("Pengesahan Admin", "Passcode untuk keluarkan " + namaUser + ":", "prompt", function(pass) {
         if (pass !== PASSCODE) { showModernAlert("Gagal", "Passcode salah.", "error"); return; }
         
-        sendData({ action: "KELUAR", passcode: PASSCODE, nama: namaUser, alasan: "Manual Admin", lat: lastLat, lng: lastLng, clientTime: new Date().toISOString() })
+        sendData({ action: "KELUAR", passcode: PASSCODE, nama: namaUser, alasan: "Manual Admin", lat: lastLat, lng: lastLng, clientTime: new Date().toISOString(), locStatus: "TIADA" })
         .then(res => { 
           loadList(); 
         });
@@ -1895,15 +1916,19 @@
           let detailsHTML = "";
           if (i.kategori === "CUTI") {
               let isSah = i.statusSah === "DISAHKAN";
-              let iconSah = isSah ? "<span style='color:#27ae60;' title='Telah Disahkan'>✔️</span>" : "<span style='color:#e67e22;' title='Belum Disahkan'>⏳</span>";
-              let pengesahText = isSah ? `<div style="color:#27ae60; font-size:10px; font-weight:bold; margin-top:3px; background:#d4edda; display:inline-block; padding:2px 6px; border-radius:4px;">DISAHKAN: ${i.admin || "ADMIN"}</div>` : `<div style="color:#e67e22; font-size:10px; font-weight:bold; margin-top:3px; background:#fcf3cf; display:inline-block; padding:2px 6px; border-radius:4px;">BELUM DISAHKAN</div>`;
+              let pengesahText = isSah ? `<div style="color:#27ae60; font-size:10px; font-weight:bold; margin-top:3px; background:#d4edda; display:inline-block; padding:2px 6px; border-radius:4px;">DISAHKAN OLEH: ${i.admin || "ADMIN"}</div>` : `<div style="color:#e67e22; font-size:10px; font-weight:bold; margin-top:3px; background:#fcf3cf; display:inline-block; padding:2px 6px; border-radius:4px;">BELUM DISAHKAN</div>`;
 
-              detailsHTML = `<div style="display:flex; align-items:center; gap:5px;"><span style="font-weight:600; color:#e74c3c;">TIDAK HADIR / CUTI ${iconSah}</span></div>
-                   <div style="font-size:11px; color:#555; background:#fadbd8; padding:2px 6px; border-radius:4px; border:1px solid #e74c3c; margin-top:3px;">Sebab / Jenis: <b>${i.jam}</b></div>
-                   ${pengesahText}`;
+              detailsHTML = `<div style="display:flex; align-items:center; gap:5px;"><span style="font-weight:600; color:#e74c3c;">JENIS CUTI: ${i.jam}</span></div>${pengesahText}`;
           } else {
+              let locIndicator = "";
+              if (i.keluar && i.keluar !== "" && i.keluar !== "undefined") {
+                  if (i.locStatus === "DALAM") locIndicator = " <span title='Dalam Kawasan' style='font-size:12px;'>🔵</span>";
+                  else if (i.locStatus === "LUAR") locIndicator = " <span title='Luar Kawasan' style='font-size:12px;'>🔴</span>";
+                  else locIndicator = " <span title='GPS Tiada/Ralat' style='font-size:12px;'>🟡</span>";
+              }
+
               detailsHTML = `<div style="display:flex; align-items:center; gap:5px;"><span style="font-weight:600; color:#1e3c72;">${i.kategori}</span></div>
-                   <div style="font-size:11px; color:#555; background:#f8f9fa; padding:2px 6px; border-radius:4px; border:1px solid #eee;">Masuk: <b>${displayMasuk}</b> | Keluar: <b>${displayKeluar}</b></div>
+                   <div style="font-size:11px; color:#555; background:#f8f9fa; padding:2px 6px; border-radius:4px; border:1px solid #eee;">Masuk: <b>${displayMasuk}</b> | Keluar: <b>${displayKeluar}</b>${locIndicator}</div>
                    ${durationHTML}`;
           }
 

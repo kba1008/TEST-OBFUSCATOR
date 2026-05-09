@@ -105,7 +105,7 @@
           <p class="text-sm text-slate-500 mt-1">Dikuasakan oleh <strong>Enjin Analitik AI Berkuasa Tinggi</strong>. AI akan menapis dan menyusun data mengikut arahan. <em class="text-blue-600">Tugas AI HANYA menapis & menyusun, bukan mengubah pangkalan data asal.</em></p>
         </div>
         <div class="mt-4 md:mt-0 flex items-center space-x-2">
-          <button onclick="fetchData()" class="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors" title="Segar Semula Database">
+          <button onclick="fetchData(true)" class="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors" title="Segar Semula Database">
             <i data-lucide="refresh-cw" class="w-5 h-5"></i>
           </button>
           <button onclick="exportToExcel()" class="p-2 text-green-600 bg-green-50 hover:bg-green-100 rounded-lg transition-colors" title="Muat Turun Excel Output">
@@ -345,7 +345,7 @@
     lucide.createIcons();
 
     // PENTING: Sila pastikan anda set URL GAS yang terkini (Deploy As New Version)
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbz8V48QyfUsRlfEjFG4iQlr9afePeOf4Bun9FVJYvWQXlZtu8fx-TDvjDtLr8ZBCqlc/exec'; 
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwhTGMpU1xmjB1t4zTcO0OTNrCuCORsoHp-3YztaLaKNr03NK7-E7kGXxP-vNii_Z6q/exec'; 
     
     let rawData = [];
     let rawHeaders = [];
@@ -613,30 +613,55 @@
 
       toggleLoader(true, "Menyimpan Pangkalan Utama ke Database...");
       try {
-        await fetch(GAS_URL, { 
+        const response = await fetch(GAS_URL, { 
           method: 'POST', 
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: "save", headers: finalHeaders, rows: finalRows})
         });
+        if(!response.ok) throw new Error("Ralat Rangkaian");
+        
+        // Update cache selepas simpan berjaya
+        const savedData = { headers: finalHeaders, rows: finalRows };
+        localStorage.setItem('datapro_backup', JSON.stringify(savedData));
+        
         alert('Konfigurasi database awam berjaya disimpan!');
         updateDashboard(finalHeaders, finalRows);
         showView('dashboard');
       } catch (e) {
-        alert('Ralat menyimpan data.');
+        alert('Ralat menyimpan data. Sila semak sambungan rangkaian atau status GAS.');
       } finally {
         toggleLoader(false);
       }
     }
 
-    async function fetchData() {
+    // PENAMBAHBAIKAN KRITIKAL: Caching & Fallback
+    async function fetchData(forceRefresh = false) {
       toggleLoader(true, "Memuat turun database pangkalan awam...");
       try {
-        // Added cache-buster to ensure we get fresh data from GAS
+        // Tambah cache-buster untuk fetch baru, tetapi SW.js telah dibaiki 
+        // untuk mengabaikan parameter ini semasa memadankan cache.
         const response = await fetch(GAS_URL + "?t=" + new Date().getTime());
+        if(!response.ok) throw new Error("Ralat Status Pelayan");
+        
         const data = await response.json();
-        if(data && data.headers) updateDashboard(data.headers, data.rows || []);
-      } catch (error) {}
-      finally { toggleLoader(false); }
+        if(data && data.headers) {
+           // Simpan salinan pendua di LocalStorage jika berjaya
+           localStorage.setItem('datapro_backup', JSON.stringify(data));
+           updateDashboard(data.headers, data.rows || []);
+        }
+      } catch (error) {
+        console.warn("API gagal dihubungi. Mencuba untuk memuatkan data dari salinan tempatan (LocalStorage).", error);
+        const backup = localStorage.getItem('datapro_backup');
+        if (backup) {
+           const data = JSON.parse(backup);
+           updateDashboard(data.headers, data.rows || []);
+           if(forceRefresh) alert("Mod Luar Talian: Aplikasi memaparkan salinan data terakhir yang disimpan dalam peranti anda.");
+        } else {
+           if(forceRefresh) alert("Tiada data ditemui. Pastikan kod web app GAS adalah betul, di-deploy sebagai 'Anyone', dan peranti anda mempunyai capaian internet.");
+        }
+      } finally { 
+        toggleLoader(false); 
+      }
     }
 
     function updateDashboard(headers, rows) {
@@ -829,7 +854,7 @@
         return true;
       });
 
-      // Execute Sorting in Memory (Telah Diperkemas - Susunan Nombor Dipulihkan)
+      // Execute Sorting in Memory
       if (currentSortCol !== -1) {
         tempRows.sort((a, b) => {
           let valA = a[currentSortCol];
@@ -845,7 +870,6 @@
              return currentSortAsc ? dateA.getTime() - dateB.getTime() : dateB.getTime() - dateA.getTime();
           }
           
-          // Baiki susunan nombor yang mengandungi koma cth: "1,000.50"
           let cleanA = String(valA).replace(/,/g, '').trim();
           let cleanB = String(valB).replace(/,/g, '').trim();
           let numA = parseFloat(cleanA);
@@ -1088,8 +1112,6 @@
            currentSortCol = -1;
            currentSortAsc = true;
 
-           // PENAMBAHBAIKAN AI SORT: Gunakan sort AI sekali sahaja, kemudian buang dari rules
-           // Ini membenarkan pengguna buat susunan secara manual (klik header) selepas AI siap.
            let aiSortOrderStr = '';
            if (window.aiRules.sort) {
               let sortObj = Array.isArray(window.aiRules.sort) ? window.aiRules.sort[0] : window.aiRules.sort;
@@ -1102,7 +1124,6 @@
                       aiSortOrderStr = ` Data juga telah **disusun mengikut ${sortObj.header}** secara ${dirTxt}.`;
                   }
               }
-              // Padam sort rules AI supaya manual sort tak dikunci
               delete window.aiRules.sort;
            }
 

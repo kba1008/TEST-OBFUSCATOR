@@ -307,7 +307,94 @@
   <script>
     lucide.createIcons();
 
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwhTGMpU1xmjB1t4zTcO0OTNrCuCORsoHp-3YztaLaKNr03NK7-E7kGXxP-vNii_Z6q/exec'; 
+    const GAS_URL = '/**
+ * Google Apps Script untuk DataPro Backend
+ * Fungsi: Menerima data dari PWA dan menyimpan di Google Sheets, serta memberi respons GET.
+ */
+
+// Fungsi POST - Menyimpan data yang dihantar oleh Admin (Excel)
+function doPost(e) {
+  try {
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    
+    // Parse JSON data daripada payload
+    var postData = JSON.parse(e.postData.contents);
+    var headers = postData.headers;
+    var rows = postData.rows;
+    
+    // Kosongkan lembaran kerja (sheet) sedia ada
+    sheet.clear();
+    
+    // Tulis Header baru pada baris pertama jika array wujud dan tidak kosong
+    if (headers && headers.length > 0) {
+      sheet.appendRow(headers);
+      
+      // Format Header (Bold & Background)
+      var headerRange = sheet.getRange(1, 1, 1, headers.length);
+      headerRange.setFontWeight("bold");
+      headerRange.setBackground("#0f172a");
+      headerRange.setFontColor("#ffffff");
+    }
+    
+    // Tulis data baris (rows) secara pukal supaya pantas
+    if (rows && rows.length > 0) {
+      sheet.getRange(2, 1, rows.length, headers.length).setValues(rows);
+    }
+    
+    // Pulangkan respons kejayaan
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "success",
+      message: "Operasi berjaya diproses (Simpan / Padam Data)"
+    })).setMimeType(ContentService.MimeType.JSON);
+    
+  } catch (error) {
+    // Tangani ralat
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "error",
+      message: error.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// Fungsi GET - Menghantar data ke Papan Pemuka PWA (Dashboard Awam)
+function doGet(e) {
+  try {
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    var dataRange = sheet.getDataRange();
+    var allData = dataRange.getValues();
+    
+    if (allData.length === 0 || (allData.length === 1 && allData[0][0] === "")) {
+      return ContentService.createTextOutput(JSON.stringify({
+        headers: [],
+        rows: []
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    var headers = allData[0];
+    var rows = allData.slice(1);
+    
+    return ContentService.createTextOutput(JSON.stringify({
+      headers: headers,
+      rows: rows
+    })).setMimeType(ContentService.MimeType.JSON);
+    
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "error",
+      message: error.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// Fungsi ini membenarkan CORS pra-penerbangan (Preflight)
+function doOptions(e) {
+  var headers = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type"
+  };
+  return ContentService.createTextOutput("").setHeaders(headers);
+}'; 
     
     let rawData = [];
     let rawHeaders = [];

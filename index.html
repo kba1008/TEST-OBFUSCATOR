@@ -61,7 +61,7 @@
       <div class="flex justify-between items-center h-16">
         <div class="flex items-center space-x-3 cursor-pointer" onclick="showView('dashboard')">
           <i data-lucide="bar-chart-2" class="w-8 h-8 text-blue-400"></i>
-          <span class="font-bold text-xl tracking-wide">Data<span class="text-blue-400">Pro</span> <span class="text-xs bg-slate-800 px-2 py-1 rounded text-slate-300 ml-2">Groq Edition</span></span>
+          <span class="font-bold text-xl tracking-wide">Data<span class="text-blue-400">Pro</span> <span class="text-xs bg-slate-800 px-2 py-1 rounded text-slate-300 ml-2">Groq AI Filter</span></span>
         </div>
         <div>
           <button onclick="toggleAdminModal()" id="adminBtn" class="flex items-center space-x-2 bg-slate-800 hover:bg-slate-700 text-sm font-medium py-2 px-4 rounded-lg transition-all duration-300 border border-slate-700">
@@ -87,8 +87,8 @@
       <!-- Header Section -->
       <div class="flex flex-col md:flex-row md:items-center justify-between bg-white p-6 rounded-2xl glass-card">
         <div>
-          <h1 class="text-2xl font-bold text-slate-800">Papan Pemuka Pintar AI</h1>
-          <p class="text-sm text-slate-500 mt-1">Dikuasakan oleh <strong>Groq AI (Llama-3.1)</strong>. Berikan arahan santai seperti: <em class="text-blue-600">"Cari senarai guru di Malaysia yang lahir pada hari ini"</em>.</p>
+          <h1 class="text-2xl font-bold text-slate-800">Penapis AI Pintar Groq</h1>
+          <p class="text-sm text-slate-500 mt-1">Dikuasakan oleh <strong>Groq AI (Llama-3.1)</strong>. AI akan menapis (filter) dan menyusun data mengikut arahan. <em class="text-blue-600">Tugas AI HANYA menapis & menyusun, bukan mengubah pangkalan data asal.</em></p>
         </div>
         <div class="mt-4 md:mt-0 flex items-center space-x-2">
           <button onclick="fetchData()" class="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors" title="Segar Semula">
@@ -110,7 +110,7 @@
             <i data-lucide="database" class="w-6 h-6"></i>
           </div>
           <div>
-            <p class="text-sm text-slate-500 font-medium">Rekod Dipaparkan</p>
+            <p class="text-sm text-slate-500 font-medium">Rekod Dipaparkan (Telah Ditapis)</p>
             <h3 class="text-2xl font-bold text-slate-800" id="metricRows">0</h3>
           </div>
         </div>
@@ -128,8 +128,8 @@
             <i data-lucide="sparkles" class="w-6 h-6"></i>
           </div>
           <div>
-            <p class="text-sm text-slate-500 font-medium">Status Groq AI</p>
-            <h3 class="text-2xl font-bold text-slate-800">Aktif</h3>
+            <p class="text-sm text-slate-500 font-medium">Status Tapisan AI</p>
+            <h3 class="text-2xl font-bold text-slate-800" id="metricAiStatus">Sedia</h3>
           </div>
         </div>
       </div>
@@ -137,7 +137,7 @@
       <!-- AI Section -->
       <div class="glass-card p-6 rounded-2xl w-full flex flex-col h-[400px]">
         <h2 class="text-lg font-semibold mb-4 text-slate-800 flex items-center">
-          <i data-lucide="cpu" class="w-5 h-5 mr-2 text-purple-600"></i> Pembantu Analitik Groq AI
+          <i data-lucide="cpu" class="w-5 h-5 mr-2 text-purple-600"></i> Pembantu Analitik Data Groq AI
         </h2>
         <div id="aiChatBox" class="flex-grow overflow-y-auto bg-slate-50 p-4 rounded-xl border border-slate-200 mb-4 space-y-4 text-sm">
           <div class="flex items-start space-x-3">
@@ -145,7 +145,8 @@
               <i data-lucide="cpu" class="w-4 h-4"></i>
             </div>
             <div class="bg-white p-3 rounded-xl rounded-tl-none border border-slate-100 shadow-sm text-slate-700">
-              Hai! Saya dikuasakan oleh <strong>Groq AI (Llama-3.1)</strong>. Berikan arahan dalam bahasa biasa untuk mencari atau menyusun data. <br><br>Cth: <em>"Senaraikan guru di Malaysia, susun ikut tarikh lahir, cari yang lahir hari ini."</em><br><br>Tekan butang <strong>Reset</strong> untuk membatalkan arahan AI.
+              Hai! Saya AI bertugas untuk <strong>menapis (filter) dan menyusun (sort)</strong> lajur secara pintar.
+              <br><br>Sila beri arahan seperti: <em class="text-purple-600">"Cari di sekolah bernama SMK BALING berapa orang guru harijadinya pada bulan ini."</em><br><br>Saya akan mengolah jadual berpandukan pangkalan data anda tanpa memadam/menyimpan dokumen secara kekal. Tekan butang <strong>Set Semula</strong> untuk papar seluruh data.
             </div>
           </div>
         </div>
@@ -153,7 +154,7 @@
           <button onclick="resetData()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 p-3 rounded-xl transition-colors shadow-sm flex-shrink-0" title="Set Semula Semua Data">
             <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
           </button>
-          <input type="text" id="aiInput" placeholder="Cth: Cari guru yang lahir hari ini di Malaysia..." class="flex-grow px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-slate-50" onkeypress="if(event.key === 'Enter') processAIQuery()">
+          <input type="text" id="aiInput" placeholder="Cth: Cari guru di SMK BALING yang lahir bulan ini..." class="flex-grow px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-slate-50" onkeypress="if(event.key === 'Enter') processAIQuery()">
           <button onclick="processAIQuery()" class="bg-purple-600 hover:bg-purple-700 text-white p-3 rounded-xl transition-colors shadow-md flex-shrink-0">
             <i data-lucide="send" class="w-5 h-5"></i>
           </button>
@@ -192,8 +193,8 @@
     <div id="adminView" class="hidden space-y-6">
       <div class="flex items-center justify-between bg-white p-6 rounded-2xl glass-card border-l-4 border-l-purple-500">
         <div>
-          <h1 class="text-2xl font-bold text-slate-800">Panel Kawalan Admin</h1>
-          <p class="text-sm text-slate-500 mt-1">Muat naik fail dan biarkan <strong>AI memutuskan</strong> lajur yang sesuai mengikut keperluan anda.</p>
+          <h1 class="text-2xl font-bold text-slate-800">Panel Kawalan Admin (Tetapan Pangkalan Data)</h1>
+          <p class="text-sm text-slate-500 mt-1">Muat naik fail pangkalan data asal di sini untuk bacaan awam.</p>
         </div>
         <button onclick="logout()" class="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors" title="Tutup Panel">
           <i data-lucide="x" class="w-6 h-6"></i>
@@ -204,10 +205,10 @@
         <!-- Upload Section -->
         <div class="glass-card p-6 rounded-2xl lg:col-span-1">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-lg font-semibold text-slate-800">1. Muat Naik Excel</h2>
+            <h2 class="text-lg font-semibold text-slate-800">1. Muat Naik Excel Asal</h2>
             <button onclick="clearOldData()" class="flex items-center space-x-1 text-xs bg-red-100 hover:bg-red-200 text-red-600 py-1.5 px-3 rounded-lg font-medium transition-colors shadow-sm">
               <i data-lucide="trash-2" class="w-4 h-4"></i>
-              <span>Padam Data</span>
+              <span>Padam Pangkalan Data</span>
             </button>
           </div>
           <label class="flex flex-col items-center justify-center w-full h-40 border-2 border-slate-300 border-dashed rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors">
@@ -244,7 +245,7 @@
         <!-- Header Mapping Section -->
         <div class="glass-card p-6 rounded-2xl lg:col-span-2">
           <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
-            <h2 class="text-lg font-semibold text-slate-800">2. Konfigurasi Lajur (Header)</h2>
+            <h2 class="text-lg font-semibold text-slate-800">2. Konfigurasi Lajur Utama</h2>
             <div class="flex items-center space-x-2">
               <button onclick="toggleAllHeaders(true)" class="text-xs bg-emerald-100 hover:bg-emerald-200 text-emerald-700 py-1 px-3 rounded font-semibold transition-colors">Tanda Semua</button>
               <button onclick="toggleAllHeaders(false)" class="text-xs bg-red-100 hover:bg-red-200 text-red-700 py-1 px-3 rounded font-semibold transition-colors">NyahTanda Semua</button>
@@ -256,7 +257,7 @@
           <div class="mt-6 flex justify-end">
             <button onclick="saveConfiguration()" id="saveBtn" disabled class="opacity-50 cursor-not-allowed bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg shadow-md transition-all flex items-center space-x-2">
               <i data-lucide="save" class="w-4 h-4"></i>
-              <span>Simpan & Terbitkan</span>
+              <span>Simpan ke Database PWA</span>
             </button>
           </div>
         </div>
@@ -329,7 +330,7 @@
   <script>
     lucide.createIcons();
 
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwEcyO02tXa5OV45vClNZZbHh0kLWOiSpa_dA06sm4vloIINyeoE2J0wsOaIKA4Ccvq/exec'; // Ganti URL GAS anda
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwhTGMpU1xmjB1t4zTcO0OTNrCuCORsoHp-3YztaLaKNr03NK7-E7kGXxP-vNii_Z6q/exec'; // Ganti URL GAS anda
     
     let rawData = [];
     let rawHeaders = [];
@@ -343,7 +344,7 @@
     let activeFilters = {};
     let currentFilterCol = -1;
 
-    // Groq AI Global State
+    // Groq AI Global State (No direct saving to DB, just memory filtering)
     window.aiGroqRules = null;
 
     function showView(viewName) {
@@ -409,7 +410,7 @@
     }
 
     async function clearOldData() {
-      if(!confirm('Anda pasti mahu memadam semua data lama?')) return;
+      if(!confirm('Anda pasti mahu memadam semua data pangkalan awam? Ini memadam data asal.')) return;
       rawData = [];
       rawHeaders = [];
       window.uploadedWorkbook = null;
@@ -426,7 +427,7 @@
       toggleLoader(true);
       try {
         await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
-        alert('Data dipadam sepenuhnya.');
+        alert('Data pangkalan dipadam sepenuhnya.');
         updateDashboard([], []);
       } catch (error) {
         console.error(error);
@@ -438,7 +439,7 @@
     function handleFileUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
-      toggleLoader(true, "Membaca fail Excel...");
+      toggleLoader(true, "Membaca fail pangkalan Excel...");
       const reader = new FileReader();
       reader.onload = function(e) {
         try {
@@ -536,10 +537,10 @@
 
     async function askGroqHeaders() {
       const prompt = document.getElementById('adminAiPrompt').value.trim();
-      if(!prompt) return alert('Sila masukkan arahan untuk Groq AI.');
+      if(!prompt) return alert('Sila masukkan arahan untuk Groq AI memilih lajur utama.');
       if(rawHeaders.length === 0) return alert('Sila muat naik fail terlebih dahulu.');
 
-      toggleLoader(true, "Groq AI sedang memikirkan lajur terbaik...");
+      toggleLoader(true, "Groq AI sedang memilih lajur utama...");
       const payload = {
         action: "ask_groq_headers",
         prompt: prompt,
@@ -554,7 +555,7 @@
         const res = await response.json();
         if(res.status === 'success' && Array.isArray(res.data)) {
            const selectedByAI = res.data.map(h => h.toLowerCase());
-           toggleAllHeaders(false); // Uncheck all first
+           toggleAllHeaders(false); 
            let count = 0;
            document.querySelectorAll('.header-checkbox').forEach(cb => {
               if(selectedByAI.includes(cb.dataset.headerName.toLowerCase())) {
@@ -562,7 +563,7 @@
                  count++;
               }
            });
-           alert(`Groq berjaya memilih ${count} lajur untuk anda.`);
+           alert(`Groq berjaya memilih ${count} lajur pangkalan untuk anda.`);
         } else {
            alert('Ralat AI: ' + (res.message || 'Gagal memproses respons.'));
         }
@@ -589,10 +590,10 @@
       if(finalHeaders.length === 0) return alert('Pilih minimum satu lajur.');
       const finalRows = rawData.map(row => selectedOrig.map(i => row[i] !== undefined ? row[i] : ''));
 
-      toggleLoader(true, "Menyimpan ke Pangkalan Data...");
+      toggleLoader(true, "Menyimpan Pangkalan Utama ke Database...");
       try {
         await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: "save", headers: finalHeaders, rows: finalRows}) });
-        alert('Konfigurasi berjaya disimpan!');
+        alert('Konfigurasi database awam berjaya disimpan!');
         updateDashboard(finalHeaders, finalRows);
         showView('dashboard');
       } catch (e) {
@@ -603,7 +604,7 @@
     }
 
     async function fetchData() {
-      toggleLoader(true, "Memuat turun data awam...");
+      toggleLoader(true, "Memuat turun database pangkalan awam...");
       try {
         const response = await fetch(GAS_URL);
         const data = await response.json();
@@ -722,7 +723,7 @@
           if (!activeFilters[col].has(cellVal)) return false;
         }
 
-        // 2. Groq AI Filtering Rules
+        // 2. Groq AI Memory Filtering Rules (Memproses tapisan tanpa ubah DB)
         if (window.aiGroqRules) {
            // Global Search from AI
            if (window.aiGroqRules.globalSearch) {
@@ -753,7 +754,8 @@
                        if (!rowDate) return false;
                        let now = new Date();
                        if (f.operator === 'this_month') {
-                           if (rowDate.getMonth() !== now.getMonth() || rowDate.getFullYear() !== now.getFullYear()) return false;
+                           // Untuk carian harijadi/tarikh penting pada bulan ini (tanpa kisah tahun jika ia event tahunan seperti harijadi)
+                           if (rowDate.getMonth() !== now.getMonth()) return false;
                        } else {
                            if (rowDate.getMonth() !== now.getMonth()) return false;
                        }
@@ -778,7 +780,7 @@
           }
       }
 
-      // Execute Sorting
+      // Execute Sorting in Memory
       if (currentSortCol !== -1) {
         tempRows.sort((a, b) => {
           let valA = a[currentSortCol] ?? '';
@@ -800,6 +802,7 @@
       displayRows = tempRows;
       document.getElementById('metricRows').innerText = displayRows.length;
       document.getElementById('metricCols').innerText = window.appData.headers.length;
+      document.getElementById('metricAiStatus').innerText = window.aiGroqRules ? 'Aktif Menapis' : 'Sedia';
       renderTable(window.appData.headers, displayRows);
     }
 
@@ -873,7 +876,7 @@
         '</tr>';
       });
       
-      if(rowsToRender.length > 100) bodyHtml += `<tr><td colspan="${headers.length}" class="px-4 py-4 text-center bg-slate-100 text-slate-500 font-medium">Hanya memaparkan 100 rekod teratas.</td></tr>`;
+      if(rowsToRender.length > 100) bodyHtml += `<tr><td colspan="${headers.length}" class="px-4 py-4 text-center bg-slate-100 text-slate-500 font-medium">Hanya memaparkan 100 rekod teratas hasil tapisan.</td></tr>`;
       tBody.innerHTML = bodyHtml;
       lucide.createIcons();
     }
@@ -927,7 +930,7 @@
       const ws = XLSX.utils.aoa_to_sheet([window.appData.headers, ...displayRows]);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Data Output");
-      XLSX.writeFile(wb, "DataPro_Groq_Eksport.xlsx");
+      XLSX.writeFile(wb, "DataPro_Eksport_Tapisan_AI.xlsx");
     }
 
     function shareData() {
@@ -986,10 +989,10 @@
       input.value = '';
 
       if(!window.appData || window.appData.headers.length === 0) {
-         return appendChatMessage('ai', 'Maaf, sistem tiada data buat masa ini.');
+         return appendChatMessage('ai', 'Maaf, sistem pangkalan data kosong buat masa ini.');
       }
 
-      appendChatMessage('ai', '<span class="animate-pulse font-semibold text-purple-600">Groq AI sedang menganalisa data...</span>', 'groq-loading');
+      appendChatMessage('ai', '<span class="animate-pulse font-semibold text-purple-600">Sedang membaca berjuta kemungkinan untuk menapis (filter) jadual...</span>', 'groq-loading');
 
       const payload = {
         action: "ask_groq_data",
@@ -1008,15 +1011,15 @@
         if (res.status === 'success' && res.data) {
            window.aiGroqRules = res.data;
            applyFiltersAndSort();
-           let aiResponse = "Saya telah memproses jadual berdasarkan arahan Pintar Groq. ";
+           let aiResponse = "Selesai. AI telah menetapkan arahan **menapis dan menyusun** data untuk anda secara sementara (tanpa simpan ke DB). ";
            if(displayRows.length > 0) {
-             aiResponse += `Sebanyak **${displayRows.length} rekod** ditemui padan dengan kriteria anda.`;
+             aiResponse += `Sebanyak **${displayRows.length} rekod** ditemui padan dengan arahan tersebut.`;
            } else {
-             aiResponse += `Namun, tiada rekod yang sepadan dijumpai.`;
+             aiResponse += `Namun, tiada rekod yang sepadan dijumpai dalam pangkalan data.`;
            }
            appendChatMessage('ai', aiResponse);
         } else {
-           appendChatMessage('ai', `Ralat: ${res.message || 'Gagal menterjemah arahan melalui Groq.'}`);
+           appendChatMessage('ai', `Ralat: ${res.message || 'Gagal menterjemah arahan tapisan melalui Groq.'}`);
         }
       } catch (e) {
         removeChatMessage('groq-loading');

@@ -1,61 +1,4 @@
 <!DOCTYPE html>
-<!--
-====================================================================
-NAMA APLIKASI: DataPro AI Dashboard
-====================================================================
-
-KOD GOOGLE APPS SCRIPT (Code.gs) UNTUK RUJUKAN PENYELESAIAN:
-(Sila salin kod di bawah dan letakkan dalam Google Apps Script anda)
-
-var SPREADSHEET_ID = "1embpf5CJplt3rsitmf7oti6BEvZuobYCA2HGoEwo_uc";
-var FOLDER_ID = "1xXDf5kRT5fib9sTFSRJlfJSkQ7mgSTgu";
-
-function getMainSheet() {
-  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  var sheet = ss.getSheetByName("Data_Pangkalan");
-  if (!sheet) {
-    sheet = ss.insertSheet("Data_Pangkalan", 0);
-  }
-  return sheet;
-}
-
-function doPost(e) {
-  try {
-    if (!e || !e.postData || !e.postData.contents) {
-      throw new Error("Tiada payload JSON dihantar.");
-    }
-    var postData = JSON.parse(e.postData.contents);
-    var action = postData.action;
-    if (action === "save") {
-      var sheet = getMainSheet();
-      sheet.clear();
-      if (postData.headers && postData.headers.length > 0) {
-        sheet.appendRow(postData.headers);
-      }
-      if (postData.rows && postData.rows.length > 0) {
-        sheet.getRange(2, 1, postData.rows.length, postData.headers.length).setValues(postData.rows);
-      }
-      return ContentService.createTextOutput(JSON.stringify({status: "success"})).setMimeType(ContentService.MimeType.JSON);
-    }
-  } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({status: "error", message: err.toString()})).setMimeType(ContentService.MimeType.JSON);
-  }
-}
-
-function doGet(e) {
-  try {
-    var sheet = getMainSheet();
-    var allData = sheet.getDataRange().getDisplayValues();
-    if (allData.length === 0 || (allData.length === 1 && allData[0][0] === "")) {
-      return ContentService.createTextOutput(JSON.stringify({headers: [], rows: []})).setMimeType(ContentService.MimeType.JSON);
-    }
-    return ContentService.createTextOutput(JSON.stringify({headers: allData[0], rows: allData.slice(1)})).setMimeType(ContentService.MimeType.JSON);
-  } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({status: "error", message: err.toString()})).setMimeType(ContentService.MimeType.JSON);
-  }
-}
-====================================================================
--->
 <html lang="ms">
 <head>
   <meta charset="UTF-8">
@@ -402,7 +345,7 @@ function doGet(e) {
     lucide.createIcons();
 
     // PENTING: Sila pastikan anda set URL GAS yang terkini (Deploy As New Version -> Anyone)
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxVPcHQ2JTIaU1M6rFTUpNAKFUoUXgUOfqlMF0OiI9Bqv6KK0glWO0VcyWRV__jdXDh/exec'; 
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwhTGMpU1xmjB1t4zTcO0OTNrCuCORsoHp-3YztaLaKNr03NK7-E7kGXxP-vNii_Z6q/exec'; 
     
     let rawData = [];
     let rawHeaders = [];
@@ -667,23 +610,36 @@ function doGet(e) {
       if(finalHeaders.length === 0) return alert('Pilih minimum satu lajur.');
       const finalRows = rawData.map(row => selectedOrig.map(i => row[i] !== undefined ? row[i] : ''));
 
-      toggleLoader(true, "Menyimpan Pangkalan Utama ke Database...");
+      toggleLoader(true, "Menyimpan konfigurasi (Memproses Inisialisasi)...");
       try {
-        const response = await fetch(GAS_URL, { 
+        let initRes = await fetch(GAS_URL, { 
           method: 'POST', 
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: "save", headers: finalHeaders, rows: finalRows})
+          body: JSON.stringify({ action: "save_init", headers: finalHeaders })
         });
-        if(!response.ok) throw new Error("Ralat Rangkaian");
+        if(!initRes.ok) throw new Error("Ralat Rangkaian (Init)");
+
+        const CHUNK_SIZE = 500;
+        const totalChunks = Math.ceil(finalRows.length / CHUNK_SIZE);
+        for(let i=0; i < totalChunks; i++) {
+            toggleLoader(true, `Menyimpan rekod (Bahagian ${i+1} daripada ${totalChunks})...`);
+            let chunk = finalRows.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+            let chunkRes = await fetch(GAS_URL, { 
+              method: 'POST', 
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify({ action: "save_chunk", rows: chunk, headersLength: finalHeaders.length })
+            });
+            if(!chunkRes.ok) throw new Error("Ralat Rangkaian (Chunk " + (i+1) + ")");
+        }
         
         const savedData = { headers: finalHeaders, rows: finalRows };
         localStorage.setItem('datapro_backup', JSON.stringify(savedData));
         
-        alert('Konfigurasi database awam berjaya disimpan!');
+        alert('Konfigurasi database awam berjaya disimpan secara berperingkat!');
         updateDashboard(finalHeaders, finalRows);
         showView('dashboard');
       } catch (e) {
-        alert('Ralat menyimpan data. Sila semak sambungan rangkaian atau status GAS.');
+        alert('Ralat menyimpan data. Sila semak sambungan rangkaian: ' + e.message);
       } finally {
         toggleLoader(false);
       }
@@ -1165,18 +1121,18 @@ function doGet(e) {
            currentSortAsc = true;
 
            let aiSortOrderStr = '';
-           if (window.aiRules.sort) {
+           if (window.aiRules.sort && typeof window.aiRules.sort === 'object') {
               let sortObj = Array.isArray(window.aiRules.sort) ? window.aiRules.sort[0] : window.aiRules.sort;
               if (sortObj && sortObj.header) {
                   let aiSortCol = findHeaderIndex(sortObj.header);
                   if (aiSortCol !== -1) {
                       currentSortCol = aiSortCol;
-                      currentSortAsc = sortObj.order ? sortObj.order.toLowerCase().startsWith('asc') : true;
+                      currentSortAsc = sortObj.order ? sortObj.order.toLowerCase().includes('asc') : true;
                       let dirTxt = currentSortAsc ? 'Menaik (A-Z / Lama ke Baru)' : 'Menurun (Z-A / Baru ke Lama)';
                       aiSortOrderStr = ` Data juga telah **disusun mengikut ${sortObj.header}** secara ${dirTxt}.`;
                   }
               }
-              delete window.aiRules.sort;
+              // TIDAK LAGI DIBUANG (delete window.aiRules.sort) supaya status kekal wujud jika filter diaplikasikan semula
            }
 
            applyFiltersAndSort(); 

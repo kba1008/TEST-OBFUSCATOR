@@ -92,7 +92,7 @@
       <div class="flex flex-col md:flex-row md:items-center justify-between bg-white p-6 rounded-2xl glass-card">
         <div>
           <h1 class="text-2xl font-bold text-slate-800">Papan Pemuka Analitik</h1>
-          <p class="text-sm text-slate-500 mt-1">Paparan data masa nyata yang telah disahkan oleh pentadbir. Klik pada tajuk jadual untuk menyusun data.</p>
+          <p class="text-sm text-slate-500 mt-1">Paparan data masa nyata. Anda boleh <strong class="text-blue-600">menyusun (sort)</strong> dan <strong class="text-blue-600">menapis (filter)</strong> data seperti di dalam Excel.</p>
         </div>
         <div class="mt-4 md:mt-0">
           <button onclick="fetchData()" class="flex items-center space-x-2 text-blue-600 bg-blue-50 hover:bg-blue-100 py-2 px-4 rounded-lg transition-colors">
@@ -109,7 +109,7 @@
             <i data-lucide="database" class="w-6 h-6"></i>
           </div>
           <div>
-            <p class="text-sm text-slate-500 font-medium">Jumlah Rekod</p>
+            <p class="text-sm text-slate-500 font-medium">Rekod Ditapis</p>
             <h3 class="text-2xl font-bold text-slate-800" id="metricRows">0</h3>
           </div>
         </div>
@@ -185,7 +185,7 @@
           </table>
         </div>
         <div class="p-4 text-center text-sm text-slate-500 bg-slate-50 border-t border-slate-100">
-          Data dijana secara automatik daripada fail sumber
+          Data dijana secara automatik. Klik ikon TAPIS pada lajur untuk menyaring data.
         </div>
       </div>
     </div>
@@ -205,7 +205,14 @@
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Upload Section -->
         <div class="glass-card p-6 rounded-2xl lg:col-span-1">
-          <h2 class="text-lg font-semibold mb-4 text-slate-800">1. Muat Naik Sumber</h2>
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-semibold text-slate-800">1. Muat Naik Sumber</h2>
+            <!-- BUTANG PADAM DATA LAMA -->
+            <button onclick="clearOldData()" class="flex items-center space-x-1 text-xs bg-red-100 hover:bg-red-200 text-red-600 py-1.5 px-3 rounded-lg font-medium transition-colors shadow-sm">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+              <span>Padam Data Lama</span>
+            </button>
+          </div>
           <label class="flex flex-col items-center justify-center w-full h-40 border-2 border-slate-300 border-dashed rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors">
             <div class="flex flex-col items-center justify-center pt-5 pb-6">
               <i data-lucide="upload-cloud" class="w-10 h-10 text-slate-400 mb-3"></i>
@@ -270,6 +277,30 @@
     </div>
   </div>
 
+  <!-- Data Filter Modal (Excel-like) -->
+  <div id="filterModal" class="hidden fixed inset-0 bg-slate-900 bg-opacity-60 backdrop-blur-sm z-50 flex justify-center items-center">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4 transform transition-all">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-slate-800" id="filterModalTitle">Tapis Lajur</h3>
+        <button onclick="closeFilterModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="flex justify-between items-center mb-3">
+        <input type="text" id="filterSearch" placeholder="Cari dalam senarai..." class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500" onkeyup="searchFilterList()">
+      </div>
+      <div class="max-h-60 overflow-y-auto mb-4 border border-slate-200 rounded-lg p-2 text-sm bg-slate-50" id="filterCheckboxes">
+        <!-- Dynamic checkboxes injected here -->
+      </div>
+      <div class="flex space-x-4 mb-6">
+        <button onclick="selectAllFilters(true)" class="text-xs font-semibold text-blue-600 hover:text-blue-800">☑ Pilih Semua</button>
+        <button onclick="selectAllFilters(false)" class="text-xs font-semibold text-red-600 hover:text-red-800">☐ Nyahpilih</button>
+      </div>
+      <div class="flex space-x-3">
+        <button onclick="closeFilterModal()" class="w-1/2 py-2 px-4 bg-slate-100 text-slate-600 rounded-lg font-medium hover:bg-slate-200 transition-colors">Batal</button>
+        <button onclick="applyCurrentFilter()" class="w-1/2 py-2 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">Gunakan Tapis</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // Initialize Lucide Icons
     lucide.createIcons();
@@ -286,10 +317,12 @@
     window.appData = { headers: [], rows: [] }; 
     window.uploadedWorkbook = null;
 
-    // Sorting States
+    // Sorting & Filtering States
     let currentSortCol = -1;
     let currentSortAsc = true;
     let displayRows = [];
+    let activeFilters = {}; // Format: { colIndex: Set(values) }
+    let currentFilterCol = -1;
 
     // --- UI NAVIGATION ---
     function showView(viewName) {
@@ -343,6 +376,51 @@
       const loader = document.getElementById('globalLoader');
       if(show) loader.classList.remove('hidden');
       else loader.classList.add('hidden');
+    }
+
+    // --- ADMIN LOGIC (CLEAR DATA) ---
+    async function clearOldData() {
+      if(!confirm('Anda pasti mahu memadam semua data lama? Tindakan ini akan mengosongkan papan pemuka awam serta pangkalan data.')) return;
+      
+      // Padam data lokal
+      rawData = [];
+      rawHeaders = [];
+      window.uploadedWorkbook = null;
+      localStorage.removeItem('adminRawHeaders');
+      localStorage.removeItem('adminRawData');
+      
+      // Kosongkan UI admin
+      document.getElementById('headerSelection').innerHTML = '<p class="col-span-full text-slate-400 italic">Data telah dipadam. Sila muat naik fail baharu.</p>';
+      document.getElementById('sheetSelectionContainer').classList.add('hidden');
+      document.getElementById('excelUpload').value = '';
+      
+      const btn = document.getElementById('saveBtn');
+      btn.disabled = true;
+      btn.classList.add('opacity-50', 'cursor-not-allowed');
+
+      // Kemaskini backend Google Sheets (Kosongkan jadual dengan hantar array kosong)
+      const payload = {
+        headers: [],
+        rows: []
+      };
+      
+      toggleLoader(true);
+      try {
+        await fetch(GAS_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8'
+          },
+          body: JSON.stringify(payload)
+        });
+        alert('Data lama berjaya dipadam sepenuhnya. Sila muat naik Excel baharu.');
+        updateDashboard([], []);
+      } catch (error) {
+        console.error('Error clearing data:', error);
+        alert('Data lokal dipadam, tetapi terdapat ralat memadam data dari pangkalan server (GAS).');
+      } finally {
+        toggleLoader(false);
+      }
     }
 
     // --- ADMIN LOGIC (EXCEL HANDLING MULTI-SHEET) ---
@@ -466,7 +544,6 @@
       btn.classList.remove('opacity-50', 'cursor-not-allowed');
     }
 
-    // Fungsi baharu untuk Tick All / Untick All
     function toggleAllHeaders(isChecked) {
       const checkboxes = document.querySelectorAll('#headerSelection input[type="checkbox"]');
       checkboxes.forEach(cb => cb.checked = isChecked);
@@ -521,7 +598,7 @@
       }
     }
 
-    // --- DASHBOARD LOGIC (FETCH, RENDER, SORT) ---
+    // --- DASHBOARD LOGIC (FETCH, RENDER, SORT, FILTER) ---
     async function fetchData() {
       toggleLoader(true);
       try {
@@ -540,61 +617,132 @@
 
     function updateDashboard(headers, rows) {
       window.appData = { headers, rows };
-      displayRows = [...rows];
+      activeFilters = {};
       currentSortCol = -1;
       currentSortAsc = true;
-
-      document.getElementById('metricRows').innerText = rows.length;
+      
       document.getElementById('metricCols').innerText = headers.length;
-
-      renderTable(headers, displayRows);
-      renderChart(headers, displayRows);
+      applyFiltersAndSort();
     }
 
-    function renderTable(headers, rowsToRender) {
-      const tHead = document.getElementById('tableHead');
-      const tBody = document.getElementById('tableBody');
+    // --- FILTER & SORT EXCEL-LIKE LOGIC ---
+    function openFilterModal(colIndex) {
+      currentFilterCol = colIndex;
+      const title = document.getElementById('filterModalTitle');
+      title.innerText = `Tapis: ${window.appData.headers[colIndex]}`;
       
-      if(headers.length === 0) {
-        tHead.innerHTML = '';
-        tBody.innerHTML = '<tr><td class="px-6 py-4 text-center text-slate-500">Tiada data tersedia. Admin perlu muat naik data.</td></tr>';
-        if(chartInstance) chartInstance.destroy();
-        return;
-      }
-
-      // Render Headers with Sort Indicators
-      tHead.innerHTML = '<tr>' + headers.map((h, index) => {
-        let sortIcon = '';
-        if (currentSortCol === index) {
-          sortIcon = currentSortAsc ? '<i data-lucide="chevron-up" class="inline w-4 h-4 ml-1 text-blue-500"></i>' : '<i data-lucide="chevron-down" class="inline w-4 h-4 ml-1 text-blue-500"></i>';
-        } else {
-          sortIcon = '<i data-lucide="chevrons-up-down" class="inline w-4 h-4 ml-1 opacity-40"></i>';
-        }
-        return `
-          <th onclick="sortTable(${index})" class="cursor-pointer hover:bg-slate-200 px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider whitespace-nowrap transition-colors select-none group">
-            <div class="flex items-center">${h} <span class="text-slate-400 group-hover:text-blue-500 transition-colors">${sortIcon}</span></div>
-          </th>`;
-      }).join('') + '</tr>';
+      // Dapatkan nilai unik daripada SELURUH data
+      const uniqueValues = [...new Set(window.appData.rows.map(r => r[colIndex] !== undefined && r[colIndex] !== null ? String(r[colIndex]).trim() : ''))].sort();
       
-      // Render Body
-      let bodyHtml = '';
-      const maxDisplay = 50;
-      const subsetRows = rowsToRender.slice(0, maxDisplay);
+      const container = document.getElementById('filterCheckboxes');
+      container.innerHTML = '';
+      document.getElementById('filterSearch').value = '';
       
-      subsetRows.forEach(row => {
-        bodyHtml += '<tr class="hover:bg-slate-50 transition-colors">' + 
-          row.map(cell => `<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700">${cell !== null && cell !== undefined && cell !== '' ? cell : '-'}</td>`).join('') + 
-        '</tr>';
+      const currentFilterSet = activeFilters[colIndex];
+      
+      uniqueValues.forEach(val => {
+        const isChecked = !currentFilterSet || currentFilterSet.has(val) ? 'checked' : '';
+        const labelStr = val === '' ? '(Kosong)' : val;
+        container.innerHTML += `
+          <label class="flex items-center space-x-3 p-2 hover:bg-slate-100 cursor-pointer rounded filter-item">
+            <input type="checkbox" value="${val.replace(/"/g, '&quot;')}" ${isChecked} class="filter-cb w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500">
+            <span class="truncate filter-text" title="${labelStr.replace(/"/g, '&quot;')}">${labelStr}</span>
+          </label>
+        `;
       });
       
-      if(rowsToRender.length > maxDisplay) {
-        bodyHtml += `<tr><td colspan="${headers.length}" class="px-6 py-4 text-center text-sm text-slate-500 font-medium bg-slate-50">Memaparkan ${maxDisplay} rekod pertama sahaja daripada ${rowsToRender.length} rekod.</td></tr>`;
-      }
-      tBody.innerHTML = bodyHtml;
-      lucide.createIcons();
+      document.getElementById('filterModal').classList.remove('hidden');
     }
 
-    // Fungsi baharu untuk sorting
+    function searchFilterList() {
+      const query = document.getElementById('filterSearch').value.toLowerCase();
+      const items = document.querySelectorAll('.filter-item');
+      items.forEach(item => {
+        const text = item.querySelector('.filter-text').innerText.toLowerCase();
+        item.style.display = text.includes(query) ? 'flex' : 'none';
+      });
+    }
+
+    function selectAllFilters(check) {
+      const cbs = document.querySelectorAll('.filter-cb');
+      // Hanya toggle checkbox yang dipaparkan (tidak disembunyikan oleh search)
+      cbs.forEach(cb => {
+        if(cb.parentElement.style.display !== 'none') {
+          cb.checked = check;
+        }
+      });
+    }
+
+    function closeFilterModal() {
+      document.getElementById('filterModal').classList.add('hidden');
+    }
+
+    function applyCurrentFilter() {
+      const cbs = document.querySelectorAll('.filter-cb');
+      const selectedVals = new Set();
+      let allChecked = true;
+      
+      cbs.forEach(cb => {
+        if(cb.checked) selectedVals.add(cb.value);
+        else allChecked = false;
+      });
+      
+      if (allChecked) {
+        delete activeFilters[currentFilterCol]; // Jika semua ditandakan, buang tapisan
+      } else {
+        activeFilters[currentFilterCol] = selectedVals;
+      }
+      
+      closeFilterModal();
+      applyFiltersAndSort();
+    }
+
+    function applyFiltersAndSort() {
+      // 1. Tapis Data Dahulu
+      let tempRows = window.appData.rows.filter(row => {
+        for (const colStr in activeFilters) {
+          const col = parseInt(colStr);
+          let cellVal = row[col] !== undefined && row[col] !== null ? String(row[col]).trim() : '';
+          if (!activeFilters[col].has(cellVal)) {
+            return false;
+          }
+        }
+        return true;
+      });
+
+      // 2. Susun Data (Sort) yang telah ditapis
+      if (currentSortCol !== -1) {
+        tempRows.sort((a, b) => {
+          let valA = a[currentSortCol];
+          let valB = b[currentSortCol];
+          
+          valA = valA !== null && valA !== undefined ? valA : '';
+          valB = valB !== null && valB !== undefined ? valB : '';
+
+          let numA = parseFloat(valA);
+          let numB = parseFloat(valB);
+          
+          if (!isNaN(numA) && !isNaN(numB) && String(valA).trim() !== '' && String(valB).trim() !== '') {
+             return currentSortAsc ? numA - numB : numB - numA;
+          }
+
+          let strA = String(valA).toLowerCase();
+          let strB = String(valB).toLowerCase();
+          
+          if (strA < strB) return currentSortAsc ? -1 : 1;
+          if (strA > strB) return currentSortAsc ? 1 : -1;
+          return 0;
+        });
+      }
+
+      displayRows = tempRows;
+      
+      // 3. Papar Data Baharu
+      document.getElementById('metricRows').innerText = displayRows.length;
+      renderTable(window.appData.headers, displayRows);
+      renderChart(window.appData.headers, displayRows);
+    }
+
     function sortTable(colIndex) {
       if (!window.appData || window.appData.rows.length === 0) return;
 
@@ -604,34 +752,61 @@
         currentSortCol = colIndex;
         currentSortAsc = true;
       }
+      applyFiltersAndSort();
+    }
 
-      displayRows.sort((a, b) => {
-        let valA = a[colIndex];
-        let valB = b[colIndex];
-        
-        valA = valA !== null && valA !== undefined ? valA : '';
-        valB = valB !== null && valB !== undefined ? valB : '';
+    function renderTable(headers, rowsToRender) {
+      const tHead = document.getElementById('tableHead');
+      const tBody = document.getElementById('tableBody');
+      
+      if(headers.length === 0) {
+        tHead.innerHTML = '';
+        tBody.innerHTML = '<tr><td class="px-6 py-4 text-center text-slate-500">Tiada data tersedia. Admin perlu muat naik fail baharu.</td></tr>';
+        if(chartInstance) chartInstance.destroy();
+        return;
+      }
 
-        let numA = parseFloat(valA);
-        let numB = parseFloat(valB);
-        
-        // Jika kedua-duanya nombor sah (bukan string kosong)
-        if (!isNaN(numA) && !isNaN(numB) && String(valA).trim() !== '' && String(valB).trim() !== '') {
-           return currentSortAsc ? numA - numB : numB - numA;
+      // Render Headers with Sort & Filter Indicators
+      tHead.innerHTML = '<tr>' + headers.map((h, index) => {
+        let sortIcon = '';
+        if (currentSortCol === index) {
+          sortIcon = currentSortAsc ? '<i data-lucide="chevron-up" class="inline w-4 h-4 ml-1 text-blue-600"></i>' : '<i data-lucide="chevron-down" class="inline w-4 h-4 ml-1 text-blue-600"></i>';
+        } else {
+          sortIcon = '<i data-lucide="chevrons-up-down" class="inline w-4 h-4 ml-1 opacity-30 group-hover:opacity-100"></i>';
         }
 
-        // Fallback kepada susunan teks
-        let strA = String(valA).toLowerCase();
-        let strB = String(valB).toLowerCase();
-        
-        if (strA < strB) return currentSortAsc ? -1 : 1;
-        if (strA > strB) return currentSortAsc ? 1 : -1;
-        return 0;
-      });
+        let filterHasActive = activeFilters[index] !== undefined;
+        let filterIconClass = filterHasActive ? 'text-blue-600 fill-blue-100' : 'text-slate-400 group-hover:text-blue-500';
 
-      // Kemaskini paparan Jadual dan Carta berdasarkan susunan baharu
-      renderTable(window.appData.headers, displayRows);
-      renderChart(window.appData.headers, displayRows);
+        return `
+          <th class="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider whitespace-nowrap transition-colors select-none group bg-slate-50 border-b border-slate-200">
+            <div class="flex items-center justify-between space-x-2">
+              <div class="cursor-pointer flex items-center flex-grow" onclick="sortTable(${index})">
+                ${h} <span class="text-slate-400 transition-colors">${sortIcon}</span>
+              </div>
+              <button onclick="event.stopPropagation(); openFilterModal(${index})" class="p-1 hover:bg-slate-200 rounded transition-colors" title="Tapis Lajur">
+                <i data-lucide="filter" class="w-4 h-4 ${filterIconClass}"></i>
+              </button>
+            </div>
+          </th>`;
+      }).join('') + '</tr>';
+      
+      // Render Body
+      let bodyHtml = '';
+      const maxDisplay = 100;
+      const subsetRows = rowsToRender.slice(0, maxDisplay);
+      
+      subsetRows.forEach(row => {
+        bodyHtml += '<tr class="hover:bg-blue-50 transition-colors">' + 
+          row.map(cell => `<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700">${cell !== null && cell !== undefined && cell !== '' ? cell : '-'}</td>`).join('') + 
+        '</tr>';
+      });
+      
+      if(rowsToRender.length > maxDisplay) {
+        bodyHtml += `<tr><td colspan="${headers.length}" class="px-6 py-4 text-center text-sm text-slate-500 font-medium bg-slate-50">Memaparkan ${maxDisplay} rekod pertama sahaja daripada ${rowsToRender.length} rekod.</td></tr>`;
+      }
+      tBody.innerHTML = bodyHtml;
+      lucide.createIcons();
     }
 
     function renderChart(headers, rowsToRender) {
@@ -714,12 +889,14 @@
       input.value = '';
 
       setTimeout(() => {
-        if(!window.appData || window.appData.rows.length === 0) {
-          appendChatMessage('ai', 'Maaf, sistem tiada data buat masa ini. Sila hubungi admin untuk muat naik data.');
+        // AI Hanya Semak Data Yang Sedang Dipaparkan (Filtered Data)
+        if(!displayRows || displayRows.length === 0) {
+          appendChatMessage('ai', 'Maaf, sistem tiada data buat masa ini atau semua data telah ditapis.');
           return;
         }
 
-        const { headers, rows } = window.appData;
+        const headers = window.appData.headers;
+        const rows = displayRows; 
         const keywords = query.toLowerCase().split(' ').filter(k => k.length > 1);
         
         let results = [];
@@ -737,7 +914,7 @@
         results.sort((a, b) => b.matchCount - a.matchCount);
 
         if(results.length > 0) {
-          let response = `Saya telah menganalisis jadual ini dan menjumpai **${results.length} rekod** yang berkaitan:\n\n`;
+          let response = `Berdasarkan data yang dipaparkan, saya menjumpai **${results.length} rekod** yang berkaitan:\n\n`;
           const limit = Math.min(results.length, 3);
           
           for(let i=0; i<limit; i++) {
@@ -754,7 +931,7 @@
           }
           appendChatMessage('ai', response);
         } else {
-          appendChatMessage('ai', 'Maaf, saya telah membaca seluruh baris dan lajur dalam jadual ini, namun **tiada padanan** dijumpai untuk pertanyaan anda.');
+          appendChatMessage('ai', 'Maaf, tiada padanan dijumpai untuk pertanyaan anda dalam rekod yang dipaparkan.');
         }
       }, 600);
     }

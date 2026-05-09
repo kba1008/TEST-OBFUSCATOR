@@ -344,10 +344,20 @@
   </div>
 
   <script>
+    // --- PRO ERROR DETECTOR INJECTION ---
+    window.addEventListener('error', function(event) {
+      console.error('%c[DataPro Frontend Error]', 'color: white; background: red; font-weight: bold; padding: 2px 4px;', event.message, '\nFile:', event.filename, '\nLine:', event.lineno);
+      // Log to backend if needed in future
+    });
+    window.addEventListener('unhandledrejection', function(event) {
+      console.error('%c[DataPro Promise Rejection]', 'color: white; background: darkorange; font-weight: bold; padding: 2px 4px;', event.reason);
+    });
+    // ------------------------------------
+
     lucide.createIcons();
 
     // PENTING: Sila pastikan anda set URL GAS yang terkini (Deploy As New Version -> Anyone)
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbzw_Avg0JqwS7xRn_Eut9vxXtCDhlAlH2u_qT-L6ZsZUxK32t4wW772rXDUBaCJydgr/exec'; 
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwhTGMpU1xmjB1t4zTcO0OTNrCuCORsoHp-3YztaLaKNr03NK7-E7kGXxP-vNii_Z6q/exec'; 
     
     let rawData = [];
     let rawHeaders = [];
@@ -365,10 +375,14 @@
     window.aiRules = null;
 
     function showView(viewName) {
-      document.getElementById('dashboardView').classList.add('hidden');
-      document.getElementById('adminView').classList.add('hidden');
-      document.getElementById(viewName + 'View').classList.remove('hidden');
-      if(viewName === 'dashboard') fetchData();
+      try {
+        document.getElementById('dashboardView').classList.add('hidden');
+        document.getElementById('adminView').classList.add('hidden');
+        document.getElementById(viewName + 'View').classList.remove('hidden');
+        if(viewName === 'dashboard') fetchData();
+      } catch(e) {
+        console.error('Error in showView:', e);
+      }
     }
 
     function toggleAdminModal() {
@@ -426,16 +440,19 @@
       }
     }
 
-    // PEMBAIKAN: Fungsi clearOldData memanggil API dengan pengecaman selamat (Token Admin)
     async function clearOldData() {
       if(!confirm('Anda pasti mahu memadam semua data pangkalan awam? Ini memadam data asal.')) return;
       rawData = [];
       rawHeaders = [];
       window.uploadedWorkbook = null;
       
-      await localforage.removeItem('adminRawHeaders');
-      await localforage.removeItem('adminRawData');
-      await localforage.removeItem('datapro_backup');
+      try {
+        await localforage.removeItem('adminRawHeaders');
+        await localforage.removeItem('adminRawData');
+        await localforage.removeItem('datapro_backup');
+      } catch(e) {
+        console.error('Failed clearing localforage', e);
+      }
       
       document.getElementById('headerSelection').innerHTML = '<p class="col-span-full text-slate-400 italic">Data telah dipadam.</p>';
       document.getElementById('sheetSelectionContainer').classList.add('hidden');
@@ -488,7 +505,8 @@
           document.getElementById('aiHeaderHelper').classList.remove('hidden');
           processSelectedSheet();
         } catch(err) {
-          alert("Ralat memproses fail.");
+          alert("Ralat memproses fail: " + err.message);
+          console.error("FileUpload Error:", err);
         } finally {
           toggleLoader(false);
         }
@@ -597,13 +615,14 @@
            alert('Ralat AI: ' + (res.message || 'Gagal memproses respons.'));
         }
       } catch(e) {
+        console.error('askAiHeaders Error', e);
         alert('Gagal menghubungi pelayan (GAS). Pastikan URL GAS tepat dan skrip berfungsi.');
       } finally {
         toggleLoader(false);
       }
     }
 
-    // PEMBAIKAN KRITIKAL: Menambah semakan status JSON dan Token Admin untuk elak ralat simpan data.
+    // PEMBAIKAN KRITIKAL (Menyelesaikan isu TypeError undefined dalam 2D array di Google Apps Script)
     async function saveConfiguration() {
       const itemDivs = document.querySelectorAll('#headerSelection > div');
       const finalHeaders = [];
@@ -618,7 +637,14 @@
       });
 
       if(finalHeaders.length === 0) return alert('Pilih minimum satu lajur.');
-      const finalRows = rawData.map(row => selectedOrig.map(i => row[i] !== undefined ? row[i] : ''));
+      
+      // Pastikan semua row diolah rapi agar tiada elemen 'undefined' untuk mengelak ralat array GAS
+      const finalRows = [];
+      rawData.forEach(row => {
+         if(!row) return;
+         let newRow = selectedOrig.map(i => (row[i] !== undefined && row[i] !== null) ? String(row[i]) : '');
+         finalRows.push(newRow);
+      });
 
       toggleLoader(true, "Menyimpan konfigurasi (Memproses Inisialisasi)...");
       try {
@@ -632,7 +658,7 @@
         let initData = await initRes.json();
         if(initData.status !== 'success') throw new Error("Ralat Skrip: " + initData.message);
 
-        const CHUNK_SIZE = 250; // Dikecilkan untuk kestabilan saiz payload Google Apps Script
+        const CHUNK_SIZE = 100; // Dikurangkan untuk mengelak JSON payload dari terpotong
         const totalChunks = Math.ceil(finalRows.length / CHUNK_SIZE);
         
         for(let i=0; i < totalChunks; i++) {
@@ -656,13 +682,13 @@
         updateDashboard(finalHeaders, finalRows);
         showView('dashboard');
       } catch (e) {
+        console.error('saveConfiguration Critical Error', e);
         alert('RALAT KRITIKAL: Gagal menyimpan data sepenuhnya. Sila cuba lagi.\n\nMaklumat: ' + e.message);
       } finally {
         toggleLoader(false);
       }
     }
 
-    // PEMBAIKAN PWA: Hanya menggunakan GET, maka tiada isu terpadam data semasa PWA refresh.
     async function fetchData(forceRefresh = false) {
       toggleLoader(true, "Memuat turun database pangkalan awam...");
       try {
@@ -672,7 +698,7 @@
            cache: 'no-store' 
         });
         
-        if(!response.ok) throw new Error("Ralat Status Pelayan API");
+        if(!response.ok) throw new Error("Ralat Status Pelayan API: " + response.statusText);
         
         const data = await response.json();
         if(data && data.headers) {
@@ -692,6 +718,7 @@
               if(forceRefresh) alert("Tiada data ditemui di pangkalan dan tiada backup tempatan.");
            }
         } catch (e) {
+           console.error('Backup Error', e);
            if(forceRefresh) alert("Ralat memproses data backup tempatan.");
         }
       } finally {
@@ -1169,6 +1196,7 @@
            appendChatMessage('ai', `Ralat API/Backend: ${res.message || 'Sila semak konsol backend atau muat naik skrip baharu.'}`);
         }
       } catch (e) {
+        console.error('AI Query Error', e);
         removeChatMessage('ai-loading');
         appendChatMessage('ai', 'Maaf, gagal berhubung dengan pelayan pusat AI (Ralat Rangkaian). Pastikan URL GAS sah dan menerima text/plain.');
       }
@@ -1206,7 +1234,9 @@
     });
 
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch((err) => {
+        console.error('Service Worker registration failed:', err);
+      }));
     }
     
     fetchData();

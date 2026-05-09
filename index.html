@@ -342,7 +342,7 @@
             <select id="inactiveColSelect" class="flex-grow bg-white border border-purple-200 text-slate-800 text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block p-2.5">
               <!-- Populated dynamically -->
             </select>
-            <button onclick="addColManagerItem()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm">
+            <button onclick="addColManagerItem()" id="addColBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm">
               Tambah
             </button>
           </div>
@@ -374,7 +374,7 @@
         <button onclick="closeFilterModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       <div class="flex justify-between items-center mb-3">
-        <input type="text" id="filterSearch" placeholder="Cari dalam senarai..." class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500" onkeyup="searchFilterList()">
+        <input type="text" id="filterSearch" placeholder="Cari dalam senarai..." class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500" onkeyup="searchFilterList()">
       </div>
       <div class="max-h-60 overflow-y-auto mb-4 border border-slate-200 rounded-lg p-2 text-sm bg-slate-50" id="filterCheckboxes"></div>
       <div class="flex space-x-4 mb-6">
@@ -434,7 +434,7 @@
     lucide.createIcons();
 
     // PENTING: Sila pastikan anda set URL GAS yang terkini (Deploy As New Version -> Anyone)
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbzqO27L8MMHIX2h1bzDEz9Z9AUl6Y6X8vCE8GWVOgglUhtXv5IULtjNbDvEz-NNM9pK/exec'; 
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwhTGMpU1xmjB1t4zTcO0OTNrCuCORsoHp-3YztaLaKNr03NK7-E7kGXxP-vNii_Z6q/exec'; 
     
     let rawData = [];
     let rawHeaders = [];
@@ -707,8 +707,8 @@
         htmlContent += `
           <div class="flex items-center space-x-2 bg-slate-50 p-3 rounded-lg border border-slate-200 cursor-move" data-original-index="${index}">
             <i data-lucide="grip-vertical" class="w-5 h-5 text-slate-400"></i>
-            <input type="checkbox" id="header_${index}" checked class="w-4 h-4 text-blue-600 header-checkbox" data-header-name="${escapeHtml(header)}">
-            <label for="header_${index}" class="font-medium truncate">${header}</label>
+            <input type="checkbox" id="header_${index}" checked class="w-4 h-4 text-blue-600 header-checkbox" data-idx="${index}">
+            <label for="header_${index}" class="font-medium truncate">${escapeHtml(header)}</label>
           </div>`;
       });
       
@@ -748,8 +748,10 @@
            const selectedByAI = res.data.map(h => h.toLowerCase());
            toggleAllHeaders(false); 
            let count = 0;
-           document.querySelectorAll('.header-checkbox').forEach(cb => {
-              if(selectedByAI.includes(cb.dataset.headerName.toLowerCase())) {
+           document.querySelectorAll('.header-checkbox').forEach((cb) => {
+              const headerIdx = parseInt(cb.dataset.idx);
+              const headerName = rawHeaders[headerIdx];
+              if(headerName && selectedByAI.includes(headerName.toLowerCase())) {
                  cb.checked = true;
                  count++;
               }
@@ -927,24 +929,40 @@
     function renderColManagerUI() {
       const inactiveSelect = document.getElementById('inactiveColSelect');
       const activeList = document.getElementById('activeColList');
+      const addColBtn = document.getElementById('addColBtn');
 
-      let inactiveHtml = '<option value="">-- Pilih Lajur --</option>';
-      globalAllHeaders.forEach(h => {
+      let inactiveHtml = '';
+      let inactiveCount = 0;
+      
+      globalAllHeaders.forEach((h, idx) => {
          if (!tempActiveHeaders.includes(h)) {
-            inactiveHtml += `<option value="${escapeHtml(h)}">${escapeHtml(h)}</option>`;
+            inactiveHtml += `<option value="${idx}">${escapeHtml(h)}</option>`;
+            inactiveCount++;
          }
       });
-      inactiveSelect.innerHTML = inactiveHtml;
+
+      if (inactiveCount === 0) {
+         inactiveSelect.innerHTML = '<option value="">-- Semua Lajur Telah Dipaparkan --</option>';
+         inactiveSelect.disabled = true;
+         addColBtn.disabled = true;
+         addColBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      } else {
+         inactiveSelect.innerHTML = '<option value="">-- Pilih Lajur Tambahan --</option>' + inactiveHtml;
+         inactiveSelect.disabled = false;
+         addColBtn.disabled = false;
+         addColBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
 
       let activeHtml = '';
-      tempActiveHeaders.forEach(h => {
+      tempActiveHeaders.forEach((h, index) => {
+         let origIdx = globalAllHeaders.indexOf(h);
          activeHtml += `
-            <li class="flex justify-between items-center bg-white p-3 mb-2 border border-slate-200 rounded-xl cursor-move shadow-sm" data-id="${escapeHtml(h)}">
+            <li class="flex justify-between items-center bg-white p-3 mb-2 border border-slate-200 rounded-xl cursor-move shadow-sm" data-orig-idx="${origIdx}">
                <span class="font-medium text-sm text-slate-700 flex items-center">
                   <i data-lucide="grip-vertical" class="w-4 h-4 mr-2 text-slate-400"></i>${escapeHtml(h)}
                </span>
-               <button onclick="removeColManagerItem('${escapeHtml(h)}')" class="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-lg transition-colors">
-                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+               <button onclick="removeColManagerItem(${index})" class="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-lg transition-colors" title="Sembunyikan Lajur">
+                  <i data-lucide="eye-off" class="w-4 h-4"></i>
                </button>
             </li>`;
       });
@@ -957,22 +975,32 @@
          handle: '.cursor-move',
          onEnd: function () {
             const newHeaders = [];
-            activeList.querySelectorAll('li').forEach(li => newHeaders.push(li.dataset.id));
+            activeList.querySelectorAll('li').forEach(li => {
+                let origIdx = parseInt(li.dataset.origIdx);
+                if (!isNaN(origIdx)) {
+                   newHeaders.push(globalAllHeaders[origIdx]);
+                }
+            });
             tempActiveHeaders = newHeaders;
          }
       });
     }
 
     function addColManagerItem() {
-      const val = document.getElementById('inactiveColSelect').value;
-      if (val) {
-         tempActiveHeaders.push(val);
-         renderColManagerUI();
+      const select = document.getElementById('inactiveColSelect');
+      if (select.disabled) return;
+      const idx = select.value;
+      if (idx !== "") {
+         const originalH = globalAllHeaders[parseInt(idx)];
+         if (originalH && !tempActiveHeaders.includes(originalH)) {
+            tempActiveHeaders.push(originalH);
+            renderColManagerUI();
+         }
       }
     }
 
-    function removeColManagerItem(header) {
-      tempActiveHeaders = tempActiveHeaders.filter(h => h !== header);
+    function removeColManagerItem(index) {
+      tempActiveHeaders.splice(index, 1);
       renderColManagerUI();
     }
 

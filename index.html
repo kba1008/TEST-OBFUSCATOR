@@ -316,7 +316,7 @@
   <script>
     lucide.createIcons();
 
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycby7-D6BxSk9_uO-vNbSq5vgGf2fUnOKYQfcCA0tdX13qbRKmpJtu5kqBWHkrJZTpJDu/exec'; 
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwhTGMpU1xmjB1t4zTcO0OTNrCuCORsoHp-3YztaLaKNr03NK7-E7kGXxP-vNii_Z6q/exec'; 
     
     let rawData = [];
     let rawHeaders = [];
@@ -427,13 +427,16 @@
           const data = new Uint8Array(e.target.result);
           window.uploadedWorkbook = XLSX.read(data, {type: 'array'});
           const selector = document.getElementById('sheetSelector');
-          selector.innerHTML = '';
+          
+          let optionsHtml = '';
           if (window.uploadedWorkbook.SheetNames.length > 1) {
-            selector.innerHTML += '<option value="MERGE_ALL">📥 Gabungkan Semua (Merge All)</option>';
+            optionsHtml += '<option value="MERGE_ALL">📥 Gabungkan Semua (Merge All)</option>';
           }
           window.uploadedWorkbook.SheetNames.forEach(name => {
-            selector.innerHTML += `<option value="${name}">${name}</option>`;
+            optionsHtml += `<option value="${name}">${name}</option>`;
           });
+          selector.innerHTML = optionsHtml;
+
           document.getElementById('sheetSelectionContainer').classList.remove('hidden');
           processSelectedSheet();
         } catch(err) {
@@ -483,18 +486,23 @@
 
     function renderHeaderCheckboxes() {
       const container = document.getElementById('headerSelection');
-      container.innerHTML = '';
-      if (rawHeaders.length === 0) return;
+      if (rawHeaders.length === 0) {
+        container.innerHTML = '<p class="col-span-full text-slate-400 italic">Tiada data lajur dijumpai.</p>';
+        return;
+      }
 
+      let htmlContent = '';
       rawHeaders.forEach((header, index) => {
         if(!header) return;
-        container.innerHTML += `
+        htmlContent += `
           <div class="flex items-center space-x-2 bg-slate-50 p-3 rounded-lg border border-slate-200 cursor-move" data-original-index="${index}">
             <i data-lucide="grip-vertical" class="w-5 h-5 text-slate-400"></i>
             <input type="checkbox" id="header_${index}" checked class="w-4 h-4 text-blue-600">
             <label for="header_${index}" class="font-medium truncate">${header}</label>
           </div>`;
       });
+      
+      container.innerHTML = htmlContent;
       lucide.createIcons();
 
       if(sortableInstance) sortableInstance.destroy();
@@ -554,21 +562,25 @@
     function openFilterModal(colIndex) {
       currentFilterCol = colIndex;
       document.getElementById('filterModalTitle').innerText = `Tapis: ${window.appData.headers[colIndex]}`;
+      
       const uniqueValues = [...new Set(window.appData.rows.map(r => r[colIndex] !== undefined && r[colIndex] !== null ? String(r[colIndex]).trim() : ''))].sort();
       const container = document.getElementById('filterCheckboxes');
-      container.innerHTML = '';
       document.getElementById('filterSearch').value = '';
       
       const currentFilterSet = activeFilters[colIndex];
+      let htmlContent = '';
+      
       uniqueValues.forEach(val => {
         const isChecked = !currentFilterSet || currentFilterSet.has(val) ? 'checked' : '';
         const labelStr = val === '' ? '(Kosong)' : val;
-        container.innerHTML += `
+        htmlContent += `
           <label class="flex items-center space-x-3 p-2 hover:bg-slate-100 cursor-pointer filter-item">
             <input type="checkbox" value="${val.replace(/"/g, '&quot;')}" ${isChecked} class="filter-cb w-4 h-4 text-blue-600">
             <span class="filter-text">${labelStr}</span>
           </label>`;
       });
+      
+      container.innerHTML = htmlContent;
       document.getElementById('filterModal').classList.remove('hidden');
     }
 

@@ -191,7 +191,6 @@
             </button>
           </div>
         </div>
-        <!-- Removed scroll-smooth to prevent dragging lag -->
         <div class="overflow-x-auto table-container">
           <table class="min-w-full divide-y divide-slate-200">
             <thead class="bg-slate-50" id="tableHead"></thead>
@@ -345,7 +344,8 @@
   <script>
     lucide.createIcons();
 
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxQ9JwVfHhHpkGHdxl4rD8sN6Go5I0UeSnYqePi5VYMYcfJig9aPamzI3EhQtz4vOSW/exec'; 
+    // PENTING: Sila pastikan anda set URL GAS yang terkini (Deploy As New Version)
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwhTGMpU1xmjB1t4zTcO0OTNrCuCORsoHp-3YztaLaKNr03NK7-E7kGXxP-vNii_Z6q/exec'; 
     
     let rawData = [];
     let rawHeaders = [];
@@ -615,7 +615,7 @@
         await fetch(GAS_URL, { 
           method: 'POST', 
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: "save", headers: finalHeaders, rows: finalRows}) 
+          body: JSON.stringify({ action: "save", headers: finalHeaders, rows: finalRows})
         });
         alert('Konfigurasi database awam berjaya disimpan!');
         updateDashboard(finalHeaders, finalRows);
@@ -702,12 +702,17 @@
     }
     // -------------------------------------
 
+    // Penambahbaikan: Parsing Tarikh Lebih Kukuh
     function parseDate(cellVal) {
       if (!cellVal) return null;
       if (typeof cellVal === 'number') {
-         const utcDays = cellVal - 25569;
-         const utcValue = utcDays * 86400;
-         return new Date((utcValue * 1000) + (new Date().getTimezoneOffset() * 60000));
+         // Halang nombor biasa diproses sebagai tarikh. Excel dates biasanya > 20000 (Tahun > 1954)
+         if (cellVal > 20000 && cellVal < 60000) {
+             const utcDays = cellVal - 25569;
+             const utcValue = utcDays * 86400;
+             return new Date((utcValue * 1000) + (new Date().getTimezoneOffset() * 60000));
+         }
+         return null;
       }
       
       let ds = String(cellVal).trim();
@@ -716,15 +721,30 @@
          let d = parseInt(parts[0], 10);
          let m = parseInt(parts[1], 10) - 1;
          let y = parseInt(parts[2], 10);
-         if (d > 31) {
-             return new Date(d, m, y);
-         } else if (y < 100) {
-             y += 2000;
+         if (!isNaN(d) && !isNaN(m) && !isNaN(y)) {
+             if (d > 31) {
+                 return new Date(d, m, y);
+             } else if (y < 100) {
+                 y += 2000;
+             }
+             return new Date(y, m, d);
          }
-         return new Date(y, m, d);
       }
+      // Jangan fallback ke date jika input hanya nombor bulat
+      if (/^\d+$/.test(ds)) return null;
+      
       let fallback = new Date(ds);
       return isNaN(fallback.getTime()) ? null : fallback;
+    }
+
+    // Fungsi Fuzzy Match untuk halang sistem kaku jika AI buat kesilapan ejaan lajur
+    function findHeaderIndex(targetHeader) {
+        if (!targetHeader) return -1;
+        let t = targetHeader.trim().toLowerCase();
+        let exact = window.appData.headers.findIndex(h => h.trim().toLowerCase() === t);
+        if (exact !== -1) return exact;
+        // Fuzzy match: Jika AI pulangkan 'Nama' tapi lajur adalah 'Nama Guru'
+        return window.appData.headers.findIndex(h => h.trim().toLowerCase().includes(t) || t.includes(h.trim().toLowerCase()));
     }
 
     function sortTable(colIndex) {
@@ -746,7 +766,7 @@
           if (!activeFilters[col].has(cellVal)) return false;
         }
 
-        // 2. AI Memory Filtering Rules (Memproses tapisan array carian bebas)
+        // 2. AI Memory Filtering Rules
         if (window.aiRules) {
            if (window.aiRules.globalSearch) {
               let searchTerms = Array.isArray(window.aiRules.globalSearch) ? window.aiRules.globalSearch : [window.aiRules.globalSearch];
@@ -760,7 +780,7 @@
            if (window.aiRules.filters && Array.isArray(window.aiRules.filters)) {
                for (let f of window.aiRules.filters) {
                    if (!f.header) continue;
-                   let colIndex = window.appData.headers.findIndex(h => h.trim().toLowerCase() === f.header.trim().toLowerCase());
+                   let colIndex = findHeaderIndex(f.header);
                    if (colIndex === -1) continue;
                    
                    let cellVal = row[colIndex];
@@ -808,11 +828,11 @@
         return true;
       });
 
-      // AI Sort Override (Menangkap Arahan Susunan Llama)
+      // AI Sort Override (Guna Fuzzy Match untuk elak freeze)
       if (window.aiRules && window.aiRules.sort) {
           let sortObj = Array.isArray(window.aiRules.sort) ? window.aiRules.sort[0] : window.aiRules.sort;
           if (sortObj && sortObj.header) {
-              let aiSortCol = window.appData.headers.findIndex(h => h.trim().toLowerCase() === sortObj.header.trim().toLowerCase());
+              let aiSortCol = findHeaderIndex(sortObj.header);
               if (aiSortCol !== -1) {
                   currentSortCol = aiSortCol;
                   currentSortAsc = sortObj.order ? sortObj.order.toLowerCase().startsWith('asc') : true;
@@ -820,15 +840,15 @@
           }
       }
 
-      // Execute Sorting in Memory 
+      // Execute Sorting in Memory (Telah Diperkemas)
       if (currentSortCol !== -1) {
         tempRows.sort((a, b) => {
-          let valA = a[currentSortCol] ?? '';
-          let valB = b[currentSortCol] ?? '';
+          let valA = a[currentSortCol];
+          let valB = b[currentSortCol];
           
-          let numA = parseFloat(valA);
-          let numB = parseFloat(valB);
-          
+          if(valA === null || valA === undefined) valA = '';
+          if(valB === null || valB === undefined) valB = '';
+
           let dateA = parseDate(valA);
           let dateB = parseDate(valB);
 
@@ -836,7 +856,12 @@
              return currentSortAsc ? dateA.getTime() - dateB.getTime() : dateB.getTime() - dateA.getTime();
           }
           
-          if (!isNaN(numA) && !isNaN(numB) && String(valA).trim() !== '' && String(valB).trim() !== '') {
+          let numA = parseFloat(valA);
+          let numB = parseFloat(valB);
+          let isNumA = !isNaN(numA) && String(valA).trim() !== '';
+          let isNumB = !isNaN(numB) && String(valB).trim() !== '';
+
+          if (isNumA && isNumB) {
              return currentSortAsc ? numA - numB : numB - numA;
           }
           
@@ -879,7 +904,7 @@
              });
          }
          if (window.aiRules.filters && Array.isArray(window.aiRules.filters)) {
-             let filter = window.aiRules.filters.find(f => window.appData.headers.findIndex(h => h.trim().toLowerCase() === f.header?.trim().toLowerCase()) === colIndex);
+             let filter = window.aiRules.filters.find(f => findHeaderIndex(f.header) === colIndex);
              if (filter && (filter.operator === 'equals' || filter.operator === 'contains')) {
                  const term = escapeHtml(filter.value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                  if (term) {
@@ -1061,16 +1086,16 @@
           },
           body: JSON.stringify(payload)
         });
+        
         const res = await response.json();
         removeChatMessage('ai-loading');
         
         if (res.status === 'success' && res.data) {
-           // HANYA reset aturan lama SELEPAS data AI baru berjaya dimuat turun.
            window.aiRules = res.data;
            activeFilters = {};
            currentSortCol = -1;
            currentSortAsc = true;
-           applyFiltersAndSort(); // Terapkan aturan susun atur dan tapisan baru
+           applyFiltersAndSort(); 
            
            let aiResponse = "Selesai. AI telah menetapkan arahan **menapis dan menyusun** data baharu secara automatik. ";
            if(displayRows.length > 0) {
@@ -1088,6 +1113,9 @@
            }
 
            appendChatMessage('ai', aiResponse);
+        } else if (res.status === 'success' && !res.data) {
+           // Failsafe jika payload lari ke block `save` lama di GAS
+           appendChatMessage('ai', `Ralat Logik: Backend membalas status berjaya tetapi tanpa data AI. Mesej: "${res.message || 'Tiada mesej'}". Sila Hard Refresh (Clear Cache) pelayar anda atau pastikan skrip GAS telah di-Deploy As New Version.`);
         } else {
            appendChatMessage('ai', `Ralat API/Backend: ${res.message || 'Sila semak konsol backend atau muat naik skrip baharu.'}`);
         }
@@ -1097,7 +1125,6 @@
       }
     }
 
-    // Fungsi untuk menarik jadual (drag-to-scroll) dengan pantas
     function initDragToScroll() {
       const slider = document.querySelector('.table-container');
       if(!slider) return;
@@ -1120,7 +1147,6 @@
         if (!isDown) return;
         e.preventDefault();
         const x = e.pageX - slider.offsetLeft;
-        // Kelajuan drag ditambah 2.5 kali ganda untuk pergerakan sangat pantas
         const walk = (x - startX) * 2.5; 
         slider.scrollLeft = scrollLeft - walk;
       });

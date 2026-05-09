@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <!-- PWA Standalone Meta Tags to Hide Browser/Server URL -->
+  <!-- PWA Standalone Meta Tags -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DataPro">
@@ -160,7 +160,7 @@
             </div>
             <div class="bg-white p-3 rounded-xl rounded-tl-none border border-slate-100 shadow-sm text-slate-700">
               Hai! Saya AI bertugas untuk <strong>menapis (filter) dan menyusun (sort)</strong> lajur secara pintar.
-              <br><br>Sila beri arahan (walaupun dalam bahasa pasar) seperti: <em class="text-purple-600">"Cuba listkan guru dari SMK opsyen sains sahaja"</em>
+              <br><br>Sila beri arahan (walaupun dalam bahasa pasar) seperti: <em class="text-purple-600">"Cuba listkan guru dari SMK opsyen sains sahaja, susun ikut nama menaik"</em>
             </div>
           </div>
         </div>
@@ -345,7 +345,7 @@
     lucide.createIcons();
 
     // PENTING: Sila pastikan anda set URL GAS yang terkini (Deploy As New Version)
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbz9MqgDz_-F-EMnbmtQH7Bl1ZAxB0xNTaDBzS91XjANozXyoJgMH62i4BvMh5bJliwB/exec'; 
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwhTGMpU1xmjB1t4zTcO0OTNrCuCORsoHp-3YztaLaKNr03NK7-E7kGXxP-vNii_Z6q/exec'; 
     
     let rawData = [];
     let rawHeaders = [];
@@ -424,7 +424,7 @@
       }
     }
 
-    // ADMIN FUNCTION: Butang delete ini sememangnya diminta ada oleh pengguna untuk memadam data asal jika perlu.
+    // ADMIN FUNCTION: Memadam data dari Pangkalan Utama
     async function clearOldData() {
       if(!confirm('Anda pasti mahu memadam semua data pangkalan awam? Ini memadam data asal.')) return;
       rawData = [];
@@ -631,7 +631,8 @@
     async function fetchData() {
       toggleLoader(true, "Memuat turun database pangkalan awam...");
       try {
-        const response = await fetch(GAS_URL);
+        // Added cache-buster to ensure we get fresh data from GAS
+        const response = await fetch(GAS_URL + "?t=" + new Date().getTime());
         const data = await response.json();
         if(data && data.headers) updateDashboard(data.headers, data.rows || []);
       } catch (error) {}
@@ -744,7 +745,6 @@
         let t = targetHeader.trim().toLowerCase();
         let exact = window.appData.headers.findIndex(h => h.trim().toLowerCase() === t);
         if (exact !== -1) return exact;
-        // Fuzzy match: Jika AI pulangkan 'Nama' tapi lajur adalah 'Nama Guru'
         return window.appData.headers.findIndex(h => h.trim().toLowerCase().includes(t) || t.includes(h.trim().toLowerCase()));
     }
 
@@ -829,19 +829,7 @@
         return true;
       });
 
-      // AI Sort Override (Guna Fuzzy Match untuk elak freeze)
-      if (window.aiRules && window.aiRules.sort) {
-          let sortObj = Array.isArray(window.aiRules.sort) ? window.aiRules.sort[0] : window.aiRules.sort;
-          if (sortObj && sortObj.header) {
-              let aiSortCol = findHeaderIndex(sortObj.header);
-              if (aiSortCol !== -1) {
-                  currentSortCol = aiSortCol;
-                  currentSortAsc = sortObj.order ? sortObj.order.toLowerCase().startsWith('asc') : true;
-              }
-          }
-      }
-
-      // Execute Sorting in Memory (Telah Diperkemas)
+      // Execute Sorting in Memory (Telah Diperkemas - Susunan Nombor Dipulihkan)
       if (currentSortCol !== -1) {
         tempRows.sort((a, b) => {
           let valA = a[currentSortCol];
@@ -857,10 +845,13 @@
              return currentSortAsc ? dateA.getTime() - dateB.getTime() : dateB.getTime() - dateA.getTime();
           }
           
-          let numA = parseFloat(valA);
-          let numB = parseFloat(valB);
-          let isNumA = !isNaN(numA) && String(valA).trim() !== '';
-          let isNumB = !isNaN(numB) && String(valB).trim() !== '';
+          // Baiki susunan nombor yang mengandungi koma cth: "1,000.50"
+          let cleanA = String(valA).replace(/,/g, '').trim();
+          let cleanB = String(valB).replace(/,/g, '').trim();
+          let numA = parseFloat(cleanA);
+          let numB = parseFloat(cleanB);
+          let isNumA = !isNaN(numA) && cleanA !== '';
+          let isNumB = !isNaN(numB) && cleanB !== '';
 
           if (isNumA && isNumB) {
              return currentSortAsc ? numA - numB : numB - numA;
@@ -1024,14 +1015,12 @@
       }
     }
 
-    // PENGUBAHSUAIAN PENTING: Fungsi ini hanya menormalkan (reset) paparan dan membuang tapisan AI/Manual dari memori penyemak imbas.
-    // Ia TIDAK AKAN memadamkan data dalam pangkalan data asal mahupun Google Sheet.
     function resetData() {
       window.aiRules = null;
       activeFilters = {};
       currentSortCol = -1;
       currentSortAsc = true;
-      applyFiltersAndSort(); // Akan proses semula jadual dengan syarat kosong (paparan semua data asal)
+      applyFiltersAndSort(); 
       const input = document.getElementById('aiInput');
       if(input) input.value = '';
     }
@@ -1098,6 +1087,25 @@
            activeFilters = {};
            currentSortCol = -1;
            currentSortAsc = true;
+
+           // PENAMBAHBAIKAN AI SORT: Gunakan sort AI sekali sahaja, kemudian buang dari rules
+           // Ini membenarkan pengguna buat susunan secara manual (klik header) selepas AI siap.
+           let aiSortOrderStr = '';
+           if (window.aiRules.sort) {
+              let sortObj = Array.isArray(window.aiRules.sort) ? window.aiRules.sort[0] : window.aiRules.sort;
+              if (sortObj && sortObj.header) {
+                  let aiSortCol = findHeaderIndex(sortObj.header);
+                  if (aiSortCol !== -1) {
+                      currentSortCol = aiSortCol;
+                      currentSortAsc = sortObj.order ? sortObj.order.toLowerCase().startsWith('asc') : true;
+                      let dirTxt = currentSortAsc ? 'Menaik (A-Z / Lama ke Baru)' : 'Menurun (Z-A / Baru ke Lama)';
+                      aiSortOrderStr = ` Data juga telah **disusun mengikut ${sortObj.header}** secara ${dirTxt}.`;
+                  }
+              }
+              // Padam sort rules AI supaya manual sort tak dikunci
+              delete window.aiRules.sort;
+           }
+
            applyFiltersAndSort(); 
            
            let aiResponse = "Selesai. AI telah menetapkan arahan **menapis dan menyusun** data baharu secara automatik. ";
@@ -1107,17 +1115,9 @@
              aiResponse += `Namun, tiada rekod yang sepadan dijumpai dalam pangkalan data.`;
            }
 
-           if (window.aiRules.sort) {
-              let sortObj = Array.isArray(window.aiRules.sort) ? window.aiRules.sort[0] : window.aiRules.sort;
-              if (sortObj && sortObj.header) {
-                  let orderStr = (sortObj.order && sortObj.order.toLowerCase().startsWith('asc')) ? 'Menaik (A-Z / Lama ke Baru)' : 'Menurun (Z-A / Baru ke Lama)';
-                  aiResponse += ` Data juga telah **disusun mengikut ${sortObj.header}** secara ${orderStr}.`;
-              }
-           }
-
+           aiResponse += aiSortOrderStr;
            appendChatMessage('ai', aiResponse);
         } else if (res.status === 'success' && !res.data) {
-           // Failsafe jika payload lari ke block `save` lama di GAS
            appendChatMessage('ai', `Ralat Logik: Backend membalas status berjaya tetapi tanpa data AI. Mesej: "${res.message || 'Tiada mesej'}". Sila Hard Refresh (Clear Cache) pelayar anda atau pastikan skrip GAS telah di-Deploy As New Version.`);
         } else {
            appendChatMessage('ai', `Ralat API/Backend: ${res.message || 'Sila semak konsol backend atau muat naik skrip baharu.'}`);

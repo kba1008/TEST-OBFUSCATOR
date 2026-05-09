@@ -18,7 +18,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- localForage for IndexedDB Storage (Fix Quota Exceeded) -->
+  <!-- localForage for IndexedDB Storage -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
   <!-- SheetJS for Excel parsing -->
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
@@ -347,7 +347,7 @@
     lucide.createIcons();
 
     // PENTING: Sila pastikan anda set URL GAS yang terkini (Deploy As New Version -> Anyone)
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbyg_izQVz5crht9eV0Ke0-8VN1aCibOlnMIo5cP8I-BujJIgnItEwJIhA7JO6o1AfBT/exec'; 
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwhTGMpU1xmjB1t4zTcO0OTNrCuCORsoHp-3YztaLaKNr03NK7-E7kGXxP-vNii_Z6q/exec'; 
     
     let rawData = [];
     let rawHeaders = [];
@@ -377,7 +377,6 @@
       document.getElementById('adminPassword').value = '';
     }
 
-    // REPAIRED: Using localForage instead of localStorage to fix QuotaExceededError
     async function verifyPassword() {
       const pwd = document.getElementById('adminPassword').value;
       if(pwd === '101010') {
@@ -427,6 +426,7 @@
       }
     }
 
+    // PEMBAIKAN: Fungsi clearOldData memanggil API dengan pengecaman selamat (Token Admin)
     async function clearOldData() {
       if(!confirm('Anda pasti mahu memadam semua data pangkalan awam? Ini memadam data asal.')) return;
       rawData = [];
@@ -443,17 +443,21 @@
       document.getElementById('excelUpload').value = '';
       document.getElementById('saveBtn').disabled = true;
 
-      const payload = { action: "save", headers: [], rows: [] };
-      toggleLoader(true);
+      const payload = { action: "save", headers: [], rows: [], adminToken: "101010" };
+      toggleLoader(true, "Memadam data pangkalan awam...");
       try {
-        await fetch(GAS_URL, { 
+        let res = await fetch(GAS_URL, { 
           method: 'POST', 
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify(payload) 
         });
+        let data = await res.json();
+        if (data.status !== 'success') throw new Error(data.message || "Gagal memadam");
+        
         alert('Data pangkalan dipadam sepenuhnya.');
         updateDashboard([], []);
       } catch (error) {
+        alert('Ralat semasa memadam data: ' + error.message);
         console.error(error);
       } finally {
         toggleLoader(false);
@@ -521,7 +525,6 @@
         }
       }
 
-      // REPAIRED: Using localForage instead of localStorage
       try {
         localforage.setItem('adminRawHeaders', rawHeaders);
         localforage.setItem('adminRawData', rawData);
@@ -600,6 +603,7 @@
       }
     }
 
+    // PEMBAIKAN KRITIKAL: Menambah semakan status JSON dan Token Admin untuk elak ralat simpan data.
     async function saveConfiguration() {
       const itemDivs = document.querySelectorAll('#headerSelection > div');
       const finalHeaders = [];
@@ -621,40 +625,48 @@
         let initRes = await fetch(GAS_URL, { 
           method: 'POST', 
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: "save_init", headers: finalHeaders })
+          body: JSON.stringify({ action: "save_init", headers: finalHeaders, adminToken: "101010" })
         });
-        if(!initRes.ok) throw new Error("Ralat Rangkaian (Init)");
+        if(!initRes.ok) throw new Error("Ralat Rangkaian semasa Initialize");
+        
+        let initData = await initRes.json();
+        if(initData.status !== 'success') throw new Error("Ralat Skrip: " + initData.message);
 
-        const CHUNK_SIZE = 500;
+        const CHUNK_SIZE = 250; // Dikecilkan untuk kestabilan saiz payload Google Apps Script
         const totalChunks = Math.ceil(finalRows.length / CHUNK_SIZE);
+        
         for(let i=0; i < totalChunks; i++) {
             toggleLoader(true, `Menyimpan rekod (Bahagian ${i+1} daripada ${totalChunks})...`);
             let chunk = finalRows.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
             let chunkRes = await fetch(GAS_URL, { 
               method: 'POST', 
               headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-              body: JSON.stringify({ action: "save_chunk", rows: chunk, headersLength: finalHeaders.length })
+              body: JSON.stringify({ action: "save_chunk", rows: chunk, headersLength: finalHeaders.length, adminToken: "101010" })
             });
-            if(!chunkRes.ok) throw new Error("Ralat Rangkaian (Chunk " + (i+1) + ")");
+            if(!chunkRes.ok) throw new Error(`Ralat Rangkaian (Chunk ${i+1})`);
+            
+            let chunkData = await chunkRes.json();
+            if(chunkData.status !== 'success') throw new Error(`Ralat Menyimpan (Chunk ${i+1}): ` + chunkData.message);
         }
         
         const savedData = { headers: finalHeaders, rows: finalRows };
-        // REPAIRED: Store using localForage avoiding quota restrictions
         await localforage.setItem('datapro_backup', savedData);
         
-        alert('Konfigurasi database awam berjaya disimpan secara berperingkat!');
+        alert('Konfigurasi database awam berjaya disimpan sepenuhnya!');
         updateDashboard(finalHeaders, finalRows);
         showView('dashboard');
       } catch (e) {
-        alert('Ralat menyimpan data. Sila semak sambungan rangkaian: ' + e.message);
+        alert('RALAT KRITIKAL: Gagal menyimpan data sepenuhnya. Sila cuba lagi.\n\nMaklumat: ' + e.message);
       } finally {
         toggleLoader(false);
       }
     }
 
+    // PEMBAIKAN PWA: Hanya menggunakan GET, maka tiada isu terpadam data semasa PWA refresh.
     async function fetchData(forceRefresh = false) {
       toggleLoader(true, "Memuat turun database pangkalan awam...");
       try {
+        console.log("Mengambil data dari GAS via GET method...");
         const response = await fetch(GAS_URL, { 
            method: 'GET',
            cache: 'no-store' 
@@ -664,26 +676,25 @@
         
         const data = await response.json();
         if(data && data.headers) {
-           // REPAIRED: Store using localForage to support extremely large JSON arrays
            await localforage.setItem('datapro_backup', data);
            updateDashboard(data.headers, data.rows || []);
         } else {
            throw new Error("Format data JSON yang diterima rosak atau kosong.");
         }
       } catch (error) {
-        console.warn("API gagal dihubungi. Mencuba memuatkan data dari salinan tempatan (IndexedDB/localForage).", error);
+        console.warn("API gagal dihubungi. Mencuba memuatkan data dari salinan tempatan.", error);
         try {
            const backup = await localforage.getItem('datapro_backup');
            if (backup && backup.headers) {
               updateDashboard(backup.headers, backup.rows || []);
               if(forceRefresh) alert("Mod Luar Talian: Aplikasi memaparkan salinan data terakhir yang disimpan dalam peranti anda kerana capaian ke pelayan gagal.");
            } else {
-              if(forceRefresh) alert("Tiada data ditemui di pangkalan dan tiada backup tempatan. Pastikan kod web app GAS adalah betul, di-deploy sebagai 'Anyone', dan peranti mempunyai capaian internet.");
+              if(forceRefresh) alert("Tiada data ditemui di pangkalan dan tiada backup tempatan.");
            }
         } catch (e) {
            if(forceRefresh) alert("Ralat memproses data backup tempatan.");
         }
-      } finally { 
+      } finally {
         toggleLoader(false); 
       }
     }

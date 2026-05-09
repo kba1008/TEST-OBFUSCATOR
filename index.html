@@ -338,12 +338,14 @@
         <!-- Add Column Section -->
         <div class="bg-purple-50 p-4 rounded-xl border border-purple-100">
           <label class="block text-sm font-semibold text-purple-800 mb-2">Tambah Lajur Dari Database</label>
-          <div class="flex space-x-2">
-            <select id="inactiveColSelect" class="flex-grow bg-white border border-purple-200 text-slate-800 text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block p-2.5">
-              <!-- Populated dynamically -->
-            </select>
-            <button onclick="addColManagerItem()" id="addColBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm">
-              Tambah
+          <div class="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+            <div class="flex-grow min-w-0">
+              <select id="inactiveColSelect" class="w-full bg-white border border-purple-200 text-slate-800 text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block p-2.5 truncate">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+            <button onclick="addColManagerItem()" id="addColBtn" class="flex-shrink-0 w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center justify-center whitespace-nowrap">
+              <i data-lucide="plus" class="w-4 h-4 mr-1"></i> Tambah
             </button>
           </div>
         </div>
@@ -434,7 +436,7 @@
     lucide.createIcons();
 
     // PENTING: Sila pastikan anda set URL GAS yang terkini (Deploy As New Version -> Anyone)
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbynkpp7EiKwWjL53dbfzY7qMXVcWMRJvt-NA7TXctsymER5xIq6I9RQTFnaNTAix78/exec'; 
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwhTGMpU1xmjB1t4zTcO0OTNrCuCORsoHp-3YztaLaKNr03NK7-E7kGXxP-vNii_Z6q/exec'; 
     
     let rawData = [];
     let rawHeaders = [];
@@ -843,9 +845,15 @@
     async function fetchData(forceRefresh = false) {
       toggleLoader(true, "Memuat turun database pangkalan awam...");
       try {
-        const response = await fetch(GAS_URL, { 
+        // PEMBAIKAN: Suntikan Cache Busting Parameter untuk memintas cache pelayar dan Service Worker pada panggilan GET
+        const fetchUrl = GAS_URL + (GAS_URL.includes('?') ? '&' : '?') + "t=" + new Date().getTime();
+        const response = await fetch(fetchUrl, { 
            method: 'GET',
-           cache: 'no-store' 
+           cache: 'no-store',
+           headers: {
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache'
+           }
         });
         
         if(!response.ok) throw new Error("Ralat Status Pelayan API: " + response.statusText);
@@ -883,7 +891,20 @@
        globalAllRows = data.allRows || data.rows || [];
        globalActiveHeaders = data.activeHeaders || data.allHeaders || data.headers || [];
 
-       const activeIndices = globalActiveHeaders.map(h => globalAllHeaders.indexOf(h)).filter(i => i !== -1);
+       // PEMBAIKAN: Pad baris (rows) untuk mengelakkan ralat data hilang jika lajur tersembunyi tiba-tiba diaktifkan
+       globalAllRows = globalAllRows.map(row => {
+           let paddedRow = [];
+           for(let i = 0; i < globalAllHeaders.length; i++) {
+               paddedRow.push(row[i] !== undefined && row[i] !== null ? row[i] : "");
+           }
+           return paddedRow;
+       });
+
+       const activeIndices = globalActiveHeaders.map(h => {
+           let cleanH = String(h).trim();
+           return globalAllHeaders.findIndex(ah => String(ah).trim() === cleanH);
+       }).filter(i => i !== -1);
+       
        const actualHeaders = activeIndices.map(i => globalAllHeaders[i]);
        const actualRows = globalAllRows.map(row => activeIndices.map(i => row[i]));
 

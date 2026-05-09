@@ -367,7 +367,7 @@
     lucide.createIcons();
 
     // PENTING: Sila pastikan anda set URL GAS yang terkini (Deploy As New Version -> Anyone)
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbw1fA2ONn5tksopS7ouv3vyjloiqZ468YQ2kKqvGuYA_vLqSaKtZY66VG--mh6AKnk/exec'; 
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwhTGMpU1xmjB1t4zTcO0OTNrCuCORsoHp-3YztaLaKNr03NK7-E7kGXxP-vNii_Z6q/exec'; 
     
     let rawData = [];
     let rawHeaders = [];
@@ -591,8 +591,8 @@
           const ws = window.uploadedWorkbook.Sheets[name];
           const jsonData = XLSX.utils.sheet_to_json(ws, {header: 1});
           if (jsonData.length > 0) {
-            if (idx === 0) headers = jsonData[0];
-            allRows = allRows.concat(jsonData.slice(1).filter(r => r.length > 0));
+            if (idx === 0) headers = Array.isArray(jsonData[0]) ? jsonData[0] : [];
+            allRows = allRows.concat(jsonData.slice(1).filter(r => Array.isArray(r) && r.length > 0));
           }
         });
         rawHeaders = headers;
@@ -601,8 +601,8 @@
         const ws = window.uploadedWorkbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(ws, {header: 1});
         if (jsonData.length > 0) {
-          rawHeaders = jsonData[0];
-          rawData = jsonData.slice(1).filter(r => r.length > 0);
+          rawHeaders = Array.isArray(jsonData[0]) ? jsonData[0] : [];
+          rawData = jsonData.slice(1).filter(r => Array.isArray(r) && r.length > 0);
         } else {
           rawHeaders = [];
           rawData = [];
@@ -706,11 +706,16 @@
       
       // Pastikan semua row diolah rapi agar tiada elemen 'undefined' untuk mengelak ralat array GAS
       const finalRows = [];
-      rawData.forEach(row => {
-         if(!row) return;
-         let newRow = selectedOrig.map(i => (row[i] !== undefined && row[i] !== null) ? String(row[i]) : '');
-         finalRows.push(newRow);
-      });
+      if (Array.isArray(rawData)) {
+          rawData.forEach(row => {
+             if(!row || !Array.isArray(row)) return;
+             let newRow = selectedOrig.map(i => {
+                 let cellData = row[i];
+                 return (cellData !== undefined && cellData !== null) ? String(cellData) : '';
+             });
+             finalRows.push(newRow);
+          });
+      }
 
       toggleLoader(true, "Menyimpan konfigurasi (Memproses Inisialisasi)...");
       try {

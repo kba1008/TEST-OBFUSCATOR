@@ -105,10 +105,10 @@
           <p class="text-sm text-slate-500 mt-1">Dikuasakan oleh <strong>Enjin Analitik AI Berkuasa Tinggi</strong>. AI akan menapis dan menyusun data mengikut arahan. <em class="text-blue-600">Tugas AI HANYA menapis & menyusun, bukan mengubah pangkalan data asal.</em></p>
         </div>
         <div class="mt-4 md:mt-0 flex items-center space-x-2">
-          <button onclick="fetchData()" class="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors" title="Segar Semula">
+          <button onclick="fetchData()" class="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors" title="Segar Semula Database">
             <i data-lucide="refresh-cw" class="w-5 h-5"></i>
           </button>
-          <button onclick="exportToExcel()" class="p-2 text-green-600 bg-green-50 hover:bg-green-100 rounded-lg transition-colors" title="Muat Turun Excel">
+          <button onclick="exportToExcel()" class="p-2 text-green-600 bg-green-50 hover:bg-green-100 rounded-lg transition-colors" title="Muat Turun Excel Output">
             <i data-lucide="file-spreadsheet" class="w-5 h-5"></i>
           </button>
           <button onclick="shareData()" class="p-2 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors" title="Kongsi ke Media Sosial">
@@ -165,7 +165,7 @@
           </div>
         </div>
         <div class="flex items-center space-x-2 mt-auto">
-          <button onclick="resetData()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 p-3 rounded-xl transition-colors shadow-sm flex-shrink-0" title="Set Semula Semua Data">
+          <button onclick="resetData()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 p-3 rounded-xl transition-colors shadow-sm flex-shrink-0" title="Reset Tapisan & Susunan (Kembali ke Data Asli)">
             <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
           </button>
           <input type="text" id="aiInput" placeholder="Cth: Cari guru di SMK BALING dan susun mengikut nama dari A-Z..." class="flex-grow px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-slate-50" onkeypress="if(event.key === 'Enter') processAIQuery()">
@@ -424,6 +424,7 @@
       }
     }
 
+    // ADMIN FUNCTION: Butang delete ini sememangnya diminta ada oleh pengguna untuk memadam data asal jika perlu.
     async function clearOldData() {
       if(!confirm('Anda pasti mahu memadam semua data pangkalan awam? Ini memadam data asal.')) return;
       rawData = [];
@@ -1023,12 +1024,14 @@
       }
     }
 
+    // PENGUBAHSUAIAN PENTING: Fungsi ini hanya menormalkan (reset) paparan dan membuang tapisan AI/Manual dari memori penyemak imbas.
+    // Ia TIDAK AKAN memadamkan data dalam pangkalan data asal mahupun Google Sheet.
     function resetData() {
       window.aiRules = null;
       activeFilters = {};
       currentSortCol = -1;
       currentSortAsc = true;
-      applyFiltersAndSort();
+      applyFiltersAndSort(); // Akan proses semula jadual dengan syarat kosong (paparan semua data asal)
       const input = document.getElementById('aiInput');
       if(input) input.value = '';
     }

@@ -146,7 +146,7 @@
             </div>
             <div class="bg-white p-3 rounded-xl rounded-tl-none border border-slate-100 shadow-sm text-slate-700">
               Hai! Saya AI bertugas untuk <strong>menapis (filter) dan menyusun (sort)</strong> lajur secara pintar.
-              <br><br>Sila beri arahan seperti: <em class="text-purple-600">"Cari di sekolah bernama SMK BALING berapa orang guru harijadinya pada bulan ini."</em><br><br>Saya akan mengolah jadual berpandukan pangkalan data anda tanpa memadam/menyimpan dokumen secara kekal. Tekan butang <strong>Set Semula</strong> untuk papar seluruh data.
+              <br><br>Sila beri arahan seperti: <em class="text-purple-600">"Cari di sekolah bernama SMK BALING dan susun ikut umur dari paling tua."</em><br><br>Saya akan mengolah jadual berpandukan pangkalan data anda tanpa memadam/menyimpan dokumen secara kekal. Tekan butang <strong>Set Semula</strong> untuk papar seluruh data.
             </div>
           </div>
         </div>
@@ -154,7 +154,7 @@
           <button onclick="resetData()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 p-3 rounded-xl transition-colors shadow-sm flex-shrink-0" title="Set Semula Semua Data">
             <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
           </button>
-          <input type="text" id="aiInput" placeholder="Cth: Cari guru di SMK BALING yang lahir bulan ini..." class="flex-grow px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-slate-50" onkeypress="if(event.key === 'Enter') processAIQuery()">
+          <input type="text" id="aiInput" placeholder="Cth: Cari guru di SMK BALING dan susun mengikut nama abjad..." class="flex-grow px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-slate-50" onkeypress="if(event.key === 'Enter') processAIQuery()">
           <button onclick="processAIQuery()" class="bg-purple-600 hover:bg-purple-700 text-white p-3 rounded-xl transition-colors shadow-md flex-shrink-0">
             <i data-lucide="send" class="w-5 h-5"></i>
           </button>
@@ -330,7 +330,7 @@
   <script>
     lucide.createIcons();
 
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxiwJOz__BmZdu8l-QZjpeIdq4TOU2d3fpASfkOBY8aqFRXOFGsswzS-cJCWLlqyAdW/exec'; // Ganti URL GAS anda
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwhTGMpU1xmjB1t4zTcO0OTNrCuCORsoHp-3YztaLaKNr03NK7-E7kGXxP-vNii_Z6q/exec'; // Ganti URL GAS anda
     
     let rawData = [];
     let rawHeaders = [];
@@ -734,7 +734,8 @@
            // Specific AI Column Filters
            if (window.aiGroqRules.filters && Array.isArray(window.aiGroqRules.filters)) {
                for (let f of window.aiGroqRules.filters) {
-                   let colIndex = window.appData.headers.findIndex(h => h.toLowerCase() === f.header.toLowerCase());
+                   if (!f.header) continue;
+                   let colIndex = window.appData.headers.findIndex(h => h.trim().toLowerCase() === f.header.trim().toLowerCase());
                    if (colIndex === -1) continue;
                    
                    let cellVal = row[colIndex];
@@ -754,7 +755,6 @@
                        if (!rowDate) return false;
                        let now = new Date();
                        if (f.operator === 'this_month') {
-                           // Untuk carian harijadi/tarikh penting pada bulan ini (tanpa kisah tahun jika ia event tahunan seperti harijadi)
                            if (rowDate.getMonth() !== now.getMonth()) return false;
                        } else {
                            if (rowDate.getMonth() !== now.getMonth()) return false;
@@ -772,11 +772,14 @@
       });
 
       // AI Sort Override
-      if (window.aiGroqRules && window.aiGroqRules.sort && window.aiGroqRules.sort.header) {
-          let aiSortCol = window.appData.headers.findIndex(h => h.toLowerCase() === window.aiGroqRules.sort.header.toLowerCase());
-          if (aiSortCol !== -1) {
-              currentSortCol = aiSortCol;
-              currentSortAsc = window.aiGroqRules.sort.order === 'asc';
+      if (window.aiGroqRules && window.aiGroqRules.sort) {
+          let sortObj = Array.isArray(window.aiGroqRules.sort) ? window.aiGroqRules.sort[0] : window.aiGroqRules.sort;
+          if (sortObj && sortObj.header) {
+              let aiSortCol = window.appData.headers.findIndex(h => h.trim().toLowerCase() === sortObj.header.trim().toLowerCase());
+              if (aiSortCol !== -1) {
+                  currentSortCol = aiSortCol;
+                  currentSortAsc = sortObj.order ? sortObj.order.toLowerCase().startsWith('asc') : true;
+              }
           }
       }
 
@@ -787,6 +790,13 @@
           let valB = b[currentSortCol] ?? '';
           let numA = parseFloat(valA);
           let numB = parseFloat(valB);
+          
+          let dateA = parseDate(valA);
+          let dateB = parseDate(valB);
+
+          if (dateA && dateB) {
+             return currentSortAsc ? dateA.getTime() - dateB.getTime() : dateB.getTime() - dateA.getTime();
+          }
           
           if (!isNaN(numA) && !isNaN(numB) && String(valA).trim() !== '' && String(valB).trim() !== '') {
              return currentSortAsc ? numA - numB : numB - numA;
@@ -802,7 +812,7 @@
       displayRows = tempRows;
       document.getElementById('metricRows').innerText = displayRows.length;
       document.getElementById('metricCols').innerText = window.appData.headers.length;
-      document.getElementById('metricAiStatus').innerText = window.aiGroqRules ? 'Aktif Menapis' : 'Sedia';
+      document.getElementById('metricAiStatus').innerText = window.aiGroqRules ? 'Aktif Menapis & Menyusun' : 'Sedia';
       renderTable(window.appData.headers, displayRows);
     }
 
@@ -825,8 +835,8 @@
              const regex = new RegExp(`(${term})`, 'gi');
              str = str.replace(regex, '<mark class="bg-purple-300 text-slate-900 rounded px-1 font-semibold">$1</mark>');
          }
-         if (window.aiGroqRules.filters) {
-             let filter = window.aiGroqRules.filters.find(f => window.appData.headers.findIndex(h => h.toLowerCase() === f.header.toLowerCase()) === colIndex);
+         if (window.aiGroqRules.filters && Array.isArray(window.aiGroqRules.filters)) {
+             let filter = window.aiGroqRules.filters.find(f => window.appData.headers.findIndex(h => h.trim().toLowerCase() === f.header?.trim().toLowerCase()) === colIndex);
              if (filter && (filter.operator === 'equals' || filter.operator === 'contains')) {
                  const term = escapeHtml(filter.value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                  if (term) {
@@ -992,7 +1002,7 @@
          return appendChatMessage('ai', 'Maaf, sistem pangkalan data kosong buat masa ini.');
       }
 
-      appendChatMessage('ai', '<span class="animate-pulse font-semibold text-purple-600">Sedang membaca berjuta kemungkinan untuk menapis (filter) jadual...</span>', 'groq-loading');
+      appendChatMessage('ai', '<span class="animate-pulse font-semibold text-purple-600">Sedang memproses algoritma menapis dan menyusun jadual...</span>', 'groq-loading');
 
       const payload = {
         action: "ask_groq_data",
@@ -1011,12 +1021,21 @@
         if (res.status === 'success' && res.data) {
            window.aiGroqRules = res.data;
            applyFiltersAndSort();
-           let aiResponse = "Selesai. AI telah menetapkan arahan **menapis dan menyusun** data untuk anda secara sementara (tanpa simpan ke DB). ";
+           let aiResponse = "Selesai. AI telah menetapkan arahan **menapis dan menyusun** data untuk anda secara sementara. ";
            if(displayRows.length > 0) {
-             aiResponse += `Sebanyak **${displayRows.length} rekod** ditemui padan dengan arahan tersebut.`;
+             aiResponse += `Sebanyak **${displayRows.length} rekod** ditemui padan.`;
            } else {
              aiResponse += `Namun, tiada rekod yang sepadan dijumpai dalam pangkalan data.`;
            }
+
+           if (window.aiGroqRules.sort) {
+              let sortObj = Array.isArray(window.aiGroqRules.sort) ? window.aiGroqRules.sort[0] : window.aiGroqRules.sort;
+              if (sortObj && sortObj.header) {
+                  let orderStr = (sortObj.order && sortObj.order.toLowerCase().startsWith('asc')) ? 'Menaik' : 'Menurun';
+                  aiResponse += ` Data juga telah **disusun mengikut ${sortObj.header}** secara ${orderStr}.`;
+              }
+           }
+
            appendChatMessage('ai', aiResponse);
         } else {
            appendChatMessage('ai', `Ralat: ${res.message || 'Gagal menterjemah arahan tapisan melalui Groq.'}`);

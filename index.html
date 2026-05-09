@@ -146,7 +146,7 @@
             </div>
             <div class="bg-white p-3 rounded-xl rounded-tl-none border border-slate-100 shadow-sm text-slate-700">
               Hai! Saya AI bertugas untuk <strong>menapis (filter) dan menyusun (sort)</strong> lajur secara pintar.
-              <br><br>Sila beri arahan (walaupun dalam bahasa pasar/singkatan) seperti: <em class="text-purple-600">"Cari di sekolah bernama SMK BALING dan susun ikut umur drpd yg paling tua."</em><br><br>Saya akan mengolah jadual berpandukan pangkalan data anda. Setiap carian baru akan <strong>set semula (reset)</strong> tapisan lama secara automatik.
+              <br><br>Sila beri arahan (walaupun dalam bahasa pasar/singkatan) seperti: <em class="text-purple-600">"Cuba listkan guru dari SMK opsyen sains sahaja"</em><br><br>Setiap carian baru akan <strong>set semula (reset)</strong> tapisan lama secara automatik.
             </div>
           </div>
         </div>
@@ -330,7 +330,7 @@
   <script>
     lucide.createIcons();
 
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwJnsuh5U-S3DT1ziCqdXtnUNCIBGY-8YHPdEkd4HaxmsjgCCoA-XimufQ1UygKeQyO/exec'; 
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwhTGMpU1xmjB1t4zTcO0OTNrCuCORsoHp-3YztaLaKNr03NK7-E7kGXxP-vNii_Z6q/exec'; 
     
     let rawData = [];
     let rawHeaders = [];
@@ -683,7 +683,6 @@
       if (typeof cellVal === 'number') {
          const utcDays = cellVal - 25569;
          const utcValue = utcDays * 86400;
-         // Offset fix for accurate local date interpretation
          return new Date((utcValue * 1000) + (new Date().getTimezoneOffset() * 60000));
       }
       
@@ -723,15 +722,17 @@
           if (!activeFilters[col].has(cellVal)) return false;
         }
 
-        // 2. AI Memory Filtering Rules (Memproses tapisan tanpa ubah DB)
+        // 2. AI Memory Filtering Rules (Memproses tapisan array carian bebas)
         if (window.aiRules) {
-           // Global Search from AI
            if (window.aiRules.globalSearch) {
-              const matches = row.some(cell => String(cell).toLowerCase().includes(window.aiRules.globalSearch.toLowerCase()));
-              if (!matches) return false;
+              let searchTerms = Array.isArray(window.aiRules.globalSearch) ? window.aiRules.globalSearch : [window.aiRules.globalSearch];
+              for (let term of searchTerms) {
+                  if (!term) continue;
+                  const matches = row.some(cell => String(cell).toLowerCase().includes(String(term).toLowerCase()));
+                  if (!matches) return false; // WAJIB ada semua kata kunci untuk dianggap padan
+              }
            }
            
-           // Specific AI Column Filters
            if (window.aiRules.filters && Array.isArray(window.aiRules.filters)) {
                for (let f of window.aiRules.filters) {
                    if (!f.header) continue;
@@ -795,7 +796,7 @@
           }
       }
 
-      // Execute Sorting in Memory (Sangat Cekap)
+      // Execute Sorting in Memory
       if (currentSortCol !== -1) {
         tempRows.sort((a, b) => {
           let valA = a[currentSortCol] ?? '';
@@ -845,9 +846,13 @@
 
       if (window.aiRules) {
          if (window.aiRules.globalSearch) {
-             const term = escapeHtml(window.aiRules.globalSearch).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-             const regex = new RegExp(`(${term})`, 'gi');
-             str = str.replace(regex, '<mark class="bg-purple-300 text-slate-900 rounded px-1 font-semibold">$1</mark>');
+             let searchTerms = Array.isArray(window.aiRules.globalSearch) ? window.aiRules.globalSearch : [window.aiRules.globalSearch];
+             searchTerms.forEach(t => {
+                 if(!t) return;
+                 const term = escapeHtml(t).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                 const regex = new RegExp(`(${term})`, 'gi');
+                 str = str.replace(regex, '<mark class="bg-purple-300 text-slate-900 rounded px-1 font-semibold">$1</mark>');
+             });
          }
          if (window.aiRules.filters && Array.isArray(window.aiRules.filters)) {
              let filter = window.aiRules.filters.find(f => window.appData.headers.findIndex(h => h.trim().toLowerCase() === f.header?.trim().toLowerCase()) === colIndex);
@@ -1012,7 +1017,6 @@
       appendChatMessage('user', query);
       input.value = '';
       
-      // SET SEMULA (RESET) DATA TERLEBIH DAHULU SEPERTI DIMINTA PENGGUNA
       window.aiRules = null;
       activeFilters = {};
       currentSortCol = -1;

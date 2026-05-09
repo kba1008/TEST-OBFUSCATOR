@@ -436,7 +436,7 @@
     lucide.createIcons();
 
     // PENTING: Sila pastikan anda set URL GAS yang terkini (Deploy As New Version -> Anyone)
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxy8XbdaqkS37nOvCTX6m4jfasVw6Ry6xlbLX384RYe6KN0qxLnMClbar84RciB9qER/exec'; 
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwhTGMpU1xmjB1t4zTcO0OTNrCuCORsoHp-3YztaLaKNr03NK7-E7kGXxP-vNii_Z6q/exec'; 
     
     let rawData = [];
     let rawHeaders = [];
@@ -847,13 +847,11 @@
       try {
         // PEMBAIKAN: Suntikan Cache Busting Parameter untuk memintas cache pelayar dan Service Worker pada panggilan GET
         const fetchUrl = GAS_URL + (GAS_URL.includes('?') ? '&' : '?') + "t=" + new Date().getTime();
+        
+        // PEMBAIKAN KEPADA RALAT 'MOD LUAR TALIAN':
+        // Menghapuskan custom headers (Cache-Control, Pragma) yang memicu preflight CORS di Google Apps Script dan menyebabkan GET request ditolak.
         const response = await fetch(fetchUrl, { 
-           method: 'GET',
-           cache: 'no-store',
-           headers: {
-              'Cache-Control': 'no-cache',
-              'Pragma': 'no-cache'
-           }
+           method: 'GET'
         });
         
         if(!response.ok) throw new Error("Ralat Status Pelayan API: " + response.statusText);

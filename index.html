@@ -3,6 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- PWA Standalone Meta Tags to Hide Browser/Server URL -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="DataPro">
+  <meta name="mobile-web-app-capable" content="yes">
+
   <title>DataPro - Papan Pemuka Profesional AI</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
@@ -29,6 +36,13 @@
       backdrop-filter: blur(10px);
       border: 1px solid rgba(226, 232, 240, 0.8);
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+    .table-container {
+      cursor: grab;
+      overscroll-behavior-x: contain;
+    }
+    .table-container:active {
+      cursor: grabbing;
     }
     .table-container::-webkit-scrollbar {
       height: 8px;
@@ -88,7 +102,7 @@
       <div class="flex flex-col md:flex-row md:items-center justify-between bg-white p-6 rounded-2xl glass-card">
         <div>
           <h1 class="text-2xl font-bold text-slate-800">Penapis Data AI Cerdas</h1>
-          <p class="text-sm text-slate-500 mt-1">Dikuasakan oleh <strong>Enjin Analitik AI Berkuasa Tinggi</strong>. AI akan menapis (filter) dan menyusun data mengikut arahan. <em class="text-blue-600">Tugas AI HANYA menapis & menyusun, bukan mengubah pangkalan data asal.</em></p>
+          <p class="text-sm text-slate-500 mt-1">Dikuasakan oleh <strong>Enjin Analitik AI Berkuasa Tinggi</strong>. AI akan menapis dan menyusun data mengikut arahan. <em class="text-blue-600">Tugas AI HANYA menapis & menyusun, bukan mengubah pangkalan data asal.</em></p>
         </div>
         <div class="mt-4 md:mt-0 flex items-center space-x-2">
           <button onclick="fetchData()" class="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors" title="Segar Semula">
@@ -110,7 +124,7 @@
             <i data-lucide="database" class="w-6 h-6"></i>
           </div>
           <div>
-            <p class="text-sm text-slate-500 font-medium">Rekod Dipaparkan (Telah Ditapis)</p>
+            <p class="text-sm text-slate-500 font-medium">Rekod Dipaparkan</p>
             <h3 class="text-2xl font-bold text-slate-800" id="metricRows">0</h3>
           </div>
         </div>
@@ -146,7 +160,7 @@
             </div>
             <div class="bg-white p-3 rounded-xl rounded-tl-none border border-slate-100 shadow-sm text-slate-700">
               Hai! Saya AI bertugas untuk <strong>menapis (filter) dan menyusun (sort)</strong> lajur secara pintar.
-              <br><br>Sila beri arahan (walaupun dalam bahasa pasar/singkatan) seperti: <em class="text-purple-600">"Cuba listkan guru dari SMK opsyen sains sahaja"</em><br><br>Setiap carian baru akan <strong>set semula (reset)</strong> tapisan lama secara automatik.
+              <br><br>Sila beri arahan (walaupun dalam bahasa pasar) seperti: <em class="text-purple-600">"Cuba listkan guru dari SMK opsyen sains sahaja"</em>
             </div>
           </div>
         </div>
@@ -168,7 +182,7 @@
             <i data-lucide="table" class="w-5 h-5 mr-2 text-slate-500"></i> Jadual Data Analitik
           </h2>
           <div class="flex items-center space-x-2 bg-slate-50 p-1.5 rounded-lg border border-slate-200">
-            <span class="text-xs text-slate-500 font-medium px-2 hidden sm:inline-block">Tatal lajur:</span>
+            <span class="text-xs text-slate-500 font-medium px-2 hidden sm:inline-block">Tatal Pantas: Boleh ditarik/drag</span>
             <button onclick="scrollTable('left')" class="p-1.5 bg-white border border-slate-300 rounded hover:bg-slate-100 text-slate-700 shadow-sm transition-colors" title="Tatal Kiri">
               <i data-lucide="chevron-left" class="w-4 h-4"></i>
             </button>
@@ -177,14 +191,15 @@
             </button>
           </div>
         </div>
-        <div class="overflow-x-auto table-container scroll-smooth">
+        <!-- Removed scroll-smooth to prevent dragging lag -->
+        <div class="overflow-x-auto table-container">
           <table class="min-w-full divide-y divide-slate-200">
             <thead class="bg-slate-50" id="tableHead"></thead>
             <tbody class="bg-white" id="tableBody"></tbody>
           </table>
         </div>
         <div class="p-4 text-center text-sm text-slate-500 bg-slate-50 border-t border-slate-100">
-          Klik pada mana-mana baris jadual untuk paparan butiran terperinci.
+          Klik pada mana-mana baris jadual untuk paparan butiran terperinci. (Boleh tarik jadual ke kiri/kanan untuk tatal pantas)
         </div>
       </div>
     </div>
@@ -330,7 +345,7 @@
   <script>
     lucide.createIcons();
 
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwLOqxxun-KPkeWzXEr1gbML6C2M0g1Q7QysKRs9FSgS1LA_lioRghEqNvnW0EE83sC/exec'; 
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwhTGMpU1xmjB1t4zTcO0OTNrCuCORsoHp-3YztaLaKNr03NK7-E7kGXxP-vNii_Z6q/exec'; 
     
     let rawData = [];
     let rawHeaders = [];
@@ -738,7 +753,7 @@
               for (let term of searchTerms) {
                   if (!term) continue;
                   const matches = row.some(cell => String(cell).toLowerCase().includes(String(term).toLowerCase()));
-                  if (!matches) return false; // WAJIB ada semua kata kunci untuk dianggap padan
+                  if (!matches) return false; 
               }
            }
            
@@ -805,7 +820,7 @@
           }
       }
 
-      // Execute Sorting in Memory (Mesti berjalan jika currentSortCol bukan -1)
+      // Execute Sorting in Memory 
       if (currentSortCol !== -1) {
         tempRows.sort((a, b) => {
           let valA = a[currentSortCol] ?? '';
@@ -1025,12 +1040,6 @@
 
       appendChatMessage('user', query);
       input.value = '';
-      
-      window.aiRules = null;
-      activeFilters = {};
-      currentSortCol = -1;
-      currentSortAsc = true;
-      applyFiltersAndSort();
 
       if(!window.appData || window.appData.headers.length === 0) {
          return appendChatMessage('ai', 'Maaf, sistem pangkalan data kosong buat masa ini.');
@@ -1056,8 +1065,12 @@
         removeChatMessage('ai-loading');
         
         if (res.status === 'success' && res.data) {
+           // HANYA reset aturan lama SELEPAS data AI baru berjaya dimuat turun.
            window.aiRules = res.data;
-           applyFiltersAndSort(); // Akan memanggil logik menyusun yang telah dikemas kini
+           activeFilters = {};
+           currentSortCol = -1;
+           currentSortAsc = true;
+           applyFiltersAndSort(); // Terapkan aturan susun atur dan tapisan baru
            
            let aiResponse = "Selesai. AI telah menetapkan arahan **menapis dan menyusun** data baharu secara automatik. ";
            if(displayRows.length > 0) {
@@ -1084,9 +1097,43 @@
       }
     }
 
+    // Fungsi untuk menarik jadual (drag-to-scroll) dengan pantas
+    function initDragToScroll() {
+      const slider = document.querySelector('.table-container');
+      if(!slider) return;
+      let isDown = false;
+      let startX;
+      let scrollLeft;
+
+      slider.addEventListener('mousedown', (e) => {
+        isDown = true;
+        startX = e.pageX - slider.offsetLeft;
+        scrollLeft = slider.scrollLeft;
+      });
+      slider.addEventListener('mouseleave', () => {
+        isDown = false;
+      });
+      slider.addEventListener('mouseup', () => {
+        isDown = false;
+      });
+      slider.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - slider.offsetLeft;
+        // Kelajuan drag ditambah 2.5 kali ganda untuk pergerakan sangat pantas
+        const walk = (x - startX) * 2.5; 
+        slider.scrollLeft = scrollLeft - walk;
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initDragToScroll();
+    });
+
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
     }
+    
     fetchData();
   </script>
 </body>

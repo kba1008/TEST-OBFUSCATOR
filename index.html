@@ -1,4 +1,61 @@
 <!DOCTYPE html>
+<!--
+====================================================================
+NAMA APLIKASI: DataPro AI Dashboard
+====================================================================
+
+KOD GOOGLE APPS SCRIPT (Code.gs) UNTUK RUJUKAN PENYELESAIAN:
+(Sila salin kod di bawah dan letakkan dalam Google Apps Script anda)
+
+var SPREADSHEET_ID = "1embpf5CJplt3rsitmf7oti6BEvZuobYCA2HGoEwo_uc";
+var FOLDER_ID = "1xXDf5kRT5fib9sTFSRJlfJSkQ7mgSTgu";
+
+function getMainSheet() {
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheet = ss.getSheetByName("Data_Pangkalan");
+  if (!sheet) {
+    sheet = ss.insertSheet("Data_Pangkalan", 0);
+  }
+  return sheet;
+}
+
+function doPost(e) {
+  try {
+    if (!e || !e.postData || !e.postData.contents) {
+      throw new Error("Tiada payload JSON dihantar.");
+    }
+    var postData = JSON.parse(e.postData.contents);
+    var action = postData.action;
+    if (action === "save") {
+      var sheet = getMainSheet();
+      sheet.clear();
+      if (postData.headers && postData.headers.length > 0) {
+        sheet.appendRow(postData.headers);
+      }
+      if (postData.rows && postData.rows.length > 0) {
+        sheet.getRange(2, 1, postData.rows.length, postData.headers.length).setValues(postData.rows);
+      }
+      return ContentService.createTextOutput(JSON.stringify({status: "success"})).setMimeType(ContentService.MimeType.JSON);
+    }
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({status: "error", message: err.toString()})).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doGet(e) {
+  try {
+    var sheet = getMainSheet();
+    var allData = sheet.getDataRange().getDisplayValues();
+    if (allData.length === 0 || (allData.length === 1 && allData[0][0] === "")) {
+      return ContentService.createTextOutput(JSON.stringify({headers: [], rows: []})).setMimeType(ContentService.MimeType.JSON);
+    }
+    return ContentService.createTextOutput(JSON.stringify({headers: allData[0], rows: allData.slice(1)})).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({status: "error", message: err.toString()})).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+====================================================================
+-->
 <html lang="ms">
 <head>
   <meta charset="UTF-8">
@@ -345,7 +402,7 @@
     lucide.createIcons();
 
     // PENTING: Sila pastikan anda set URL GAS yang terkini (Deploy As New Version -> Anyone)
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxLRcqpOWBa8p1g9fK9clXrZEmrTaMOIJVcXvaE3GCrot2HHkZ-VfEbWWblEPPWM-Ag/exec'; 
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwhTGMpU1xmjB1t4zTcO0OTNrCuCORsoHp-3YztaLaKNr03NK7-E7kGXxP-vNii_Z6q/exec'; 
     
     let rawData = [];
     let rawHeaders = [];
@@ -632,9 +689,6 @@
       }
     }
 
-    // PENAMBAHBAIKAN KRITIKAL 1: Caching Bypassing untuk API
-    // Membuang `?t=timestamp` kerana boleh mengganggu '302 Redirect' pelayan Google.
-    // Penggunaan { cache: 'no-store' } lebih efisien dan stabil.
     async function fetchData(forceRefresh = false) {
       toggleLoader(true, "Memuat turun database pangkalan awam...");
       try {

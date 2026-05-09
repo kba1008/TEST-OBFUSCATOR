@@ -57,7 +57,7 @@
 
   <!-- Navigation Bar -->
   <nav class="bg-slate-900 text-white sticky top-0 z-50 shadow-lg">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16">
         <div class="flex items-center space-x-3 cursor-pointer" onclick="showView('dashboard')">
           <i data-lucide="bar-chart-2" class="w-8 h-8 text-blue-400"></i>
@@ -74,7 +74,7 @@
   </nav>
 
   <!-- Main Content -->
-  <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+  <main class="flex-grow max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
     
     <!-- Loader -->
     <div id="globalLoader" class="hidden fixed inset-0 bg-white bg-opacity-80 z-40 flex flex-col justify-center items-center">
@@ -161,16 +161,25 @@
       </div>
 
       <!-- Table Section -->
-      <div class="glass-card rounded-2xl overflow-hidden">
-        <div class="p-6 border-b border-slate-100">
-          <h2 class="text-lg font-semibold text-slate-800 flex items-center">
+      <div class="glass-card rounded-2xl overflow-hidden mt-6">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-6 border-b border-slate-100 bg-white">
+          <h2 class="text-lg font-semibold text-slate-800 flex items-center mb-4 sm:mb-0">
             <i data-lucide="table" class="w-5 h-5 mr-2 text-slate-500"></i> Jadual Data Terperinci
           </h2>
+          <div class="flex items-center space-x-2 bg-slate-50 p-1.5 rounded-lg border border-slate-200">
+            <span class="text-xs text-slate-500 font-medium px-2 hidden sm:inline-block">Tatal lajur:</span>
+            <button onclick="scrollTable('left')" class="p-1.5 bg-white border border-slate-300 rounded hover:bg-slate-100 text-slate-700 shadow-sm transition-colors" title="Tatal Kiri">
+              <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </button>
+            <button onclick="scrollTable('right')" class="p-1.5 bg-white border border-slate-300 rounded hover:bg-slate-100 text-slate-700 shadow-sm transition-colors" title="Tatal Kanan">
+              <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </button>
+          </div>
         </div>
-        <div class="overflow-x-auto table-container">
+        <div class="overflow-x-auto table-container scroll-smooth">
           <table class="min-w-full divide-y divide-slate-200">
             <thead class="bg-slate-50" id="tableHead"></thead>
-            <tbody class="bg-white divide-y divide-slate-100" id="tableBody"></tbody>
+            <tbody class="bg-white" id="tableBody"></tbody>
           </table>
         </div>
         <div class="p-4 text-center text-sm text-slate-500 bg-slate-50 border-t border-slate-100">
@@ -307,94 +316,7 @@
   <script>
     lucide.createIcons();
 
-    const GAS_URL = '/**
- * Google Apps Script untuk DataPro Backend
- * Fungsi: Menerima data dari PWA dan menyimpan di Google Sheets, serta memberi respons GET.
- */
-
-// Fungsi POST - Menyimpan data yang dihantar oleh Admin (Excel)
-function doPost(e) {
-  try {
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-    
-    // Parse JSON data daripada payload
-    var postData = JSON.parse(e.postData.contents);
-    var headers = postData.headers;
-    var rows = postData.rows;
-    
-    // Kosongkan lembaran kerja (sheet) sedia ada
-    sheet.clear();
-    
-    // Tulis Header baru pada baris pertama jika array wujud dan tidak kosong
-    if (headers && headers.length > 0) {
-      sheet.appendRow(headers);
-      
-      // Format Header (Bold & Background)
-      var headerRange = sheet.getRange(1, 1, 1, headers.length);
-      headerRange.setFontWeight("bold");
-      headerRange.setBackground("#0f172a");
-      headerRange.setFontColor("#ffffff");
-    }
-    
-    // Tulis data baris (rows) secara pukal supaya pantas
-    if (rows && rows.length > 0) {
-      sheet.getRange(2, 1, rows.length, headers.length).setValues(rows);
-    }
-    
-    // Pulangkan respons kejayaan
-    return ContentService.createTextOutput(JSON.stringify({
-      status: "success",
-      message: "Operasi berjaya diproses (Simpan / Padam Data)"
-    })).setMimeType(ContentService.MimeType.JSON);
-    
-  } catch (error) {
-    // Tangani ralat
-    return ContentService.createTextOutput(JSON.stringify({
-      status: "error",
-      message: error.toString()
-    })).setMimeType(ContentService.MimeType.JSON);
-  }
-}
-
-// Fungsi GET - Menghantar data ke Papan Pemuka PWA (Dashboard Awam)
-function doGet(e) {
-  try {
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-    var dataRange = sheet.getDataRange();
-    var allData = dataRange.getValues();
-    
-    if (allData.length === 0 || (allData.length === 1 && allData[0][0] === "")) {
-      return ContentService.createTextOutput(JSON.stringify({
-        headers: [],
-        rows: []
-      })).setMimeType(ContentService.MimeType.JSON);
-    }
-    
-    var headers = allData[0];
-    var rows = allData.slice(1);
-    
-    return ContentService.createTextOutput(JSON.stringify({
-      headers: headers,
-      rows: rows
-    })).setMimeType(ContentService.MimeType.JSON);
-    
-  } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({
-      status: "error",
-      message: error.toString()
-    })).setMimeType(ContentService.MimeType.JSON);
-  }
-}
-
-// Fungsi ini membenarkan CORS pra-penerbangan (Preflight)
-function doOptions(e) {
-  var headers = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type"
-  };
-  return ContentService.createTextOutput("").setHeaders(headers);
-}'; 
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwhTGMpU1xmjB1t4zTcO0OTNrCuCORsoHp-3YztaLaKNr03NK7-E7kGXxP-vNii_Z6q/exec'; 
     
     let rawData = [];
     let rawHeaders = [];
@@ -455,6 +377,18 @@ function doOptions(e) {
       const loader = document.getElementById('globalLoader');
       if(show) loader.classList.remove('hidden');
       else loader.classList.add('hidden');
+    }
+
+    function scrollTable(direction) {
+      const container = document.querySelector('.table-container');
+      if(container) {
+        const scrollAmount = 300;
+        if(direction === 'left') {
+          container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+        } else {
+          container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        }
+      }
     }
 
     async function clearOldData() {
@@ -656,11 +590,9 @@ function doOptions(e) {
       document.getElementById('filterModal').classList.add('hidden');
     }
 
-    // Pembantu fungsi pengekstrakan tarikh untuk AI yang lebih mantap
     function parseDate(cellVal) {
       if (!cellVal) return null;
       if (typeof cellVal === 'number') {
-         // Excel serial date ke JS Date, membetulkan bug leap year 1900 Excel dan memastikan penggunaan UTC
          const utcDays = cellVal - 25569;
          const utcValue = utcDays * 86400;
          const dateInfo = new Date(utcValue * 1000);
@@ -671,14 +603,11 @@ function doOptions(e) {
       let rowDate = new Date(ds);
       
       if (isNaN(rowDate.getTime())) {
-          // Kesan format string dengan pemisah / atau -
           let p = ds.split(/[\/\-]/);
           if(p.length === 3) {
-             // Jika format adalah DD/MM/YYYY
              if(p[0].length <= 2 && p[2].length === 4) {
                 rowDate = new Date(p[2], parseInt(p[1])-1, p[0]);
              }
-             // Jika format adalah YYYY/MM/DD
              else if(p[0].length === 4) {
                 rowDate = new Date(p[0], parseInt(p[1])-1, p[2]);
              }
@@ -813,7 +742,7 @@ function doOptions(e) {
       
       if(headers.length === 0) {
         tHead.innerHTML = '';
-        tBody.innerHTML = '<tr><td class="px-6 py-4 text-center">Tiada data tersedia.</td></tr>';
+        tBody.innerHTML = '<tr><td class="px-4 py-4 text-center">Tiada data tersedia.</td></tr>';
         return;
       }
 
@@ -824,26 +753,27 @@ function doOptions(e) {
         let filterIconClass = activeFilters[index] ? 'text-blue-600' : 'text-slate-400';
 
         return `
-          <th class="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider whitespace-nowrap bg-slate-50 border-b border-slate-200">
-            <div class="flex items-center justify-between space-x-2">
-              <div class="cursor-pointer flex items-center flex-grow" onclick="sortTable(${index})">
+          <th class="px-4 py-4 text-center text-xs font-bold text-slate-600 uppercase tracking-wider whitespace-nowrap bg-slate-100 border-b border-slate-200 relative">
+            <div class="flex items-center justify-center space-x-2">
+              <div class="cursor-pointer flex items-center" onclick="sortTable(${index})">
                 ${h} <span class="text-slate-400">${sortIcon}</span>
               </div>
-              <button onclick="event.stopPropagation(); openFilterModal(${index})" class="p-1 hover:bg-slate-200 rounded">
-                <i data-lucide="filter" class="w-4 h-4 ${filterIconClass}"></i>
-              </button>
             </div>
+            <button onclick="event.stopPropagation(); openFilterModal(${index})" class="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 hover:bg-slate-200 rounded" title="Tapis Lajur">
+              <i data-lucide="filter" class="w-4 h-4 ${filterIconClass}"></i>
+            </button>
           </th>`;
       }).join('') + '</tr>';
       
       let bodyHtml = '';
       rowsToRender.slice(0, 100).forEach((row, rowIndex) => {
-        bodyHtml += `<tr class="hover:bg-blue-50 cursor-pointer transition-colors" onclick="showRowDetails(${rowIndex})">` + 
-          row.map((cell, colIndex) => `<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700">${highlightText(cell, colIndex)}</td>`).join('') + 
+        const bgClass = rowIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50';
+        bodyHtml += `<tr class="${bgClass} hover:bg-blue-100 cursor-pointer transition-colors" onclick="showRowDetails(${rowIndex})">` + 
+          row.map((cell, colIndex) => `<td class="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center border-b border-slate-100">${highlightText(cell, colIndex)}</td>`).join('') + 
         '</tr>';
       });
       
-      if(rowsToRender.length > 100) bodyHtml += `<tr><td colspan="${headers.length}" class="px-6 py-4 text-center bg-slate-50">Hanya memaparkan 100 rekod teratas.</td></tr>`;
+      if(rowsToRender.length > 100) bodyHtml += `<tr><td colspan="${headers.length}" class="px-4 py-4 text-center bg-slate-100 text-slate-500 font-medium">Hanya memaparkan 100 rekod teratas.</td></tr>`;
       tBody.innerHTML = bodyHtml;
       lucide.createIcons();
     }
@@ -863,7 +793,7 @@ function doOptions(e) {
       headers.forEach((header, i) => {
         let val = row[i] !== null && row[i] !== undefined && row[i] !== '' ? highlightText(row[i], i) : '<span class="text-slate-400 italic">Tiada Data</span>';
         html += `
-          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
             <p class="text-xs text-blue-600 font-bold uppercase tracking-wider mb-1">${header}</p>
             <p class="text-slate-800 font-medium break-words text-base">${val}</p>
           </div>
@@ -963,11 +893,8 @@ function doOptions(e) {
         const isBersara = queryLower.includes('bersara') || queryLower.includes('pencen');
         const isLahir = queryLower.includes('lahir') || queryLower.includes('hari jadi') || queryLower.includes('birthday');
 
-        // Logik Khusus Carian Pekerja Lahir Bulan Ini
         if (isLahir && isBulanIni) {
            let dateColIndex = -1;
-           
-           // 1. Keutamaan tinggi kepada lajur 'TARIKH LAHIR' secara spesifik bagi mengelak silap faham
            for(let i=0; i<window.appData.headers.length; i++) {
              let h = window.appData.headers[i].toLowerCase().trim();
              if(h === 'tarikh lahir' || h === 'dob' || h === 'date of birth') {
@@ -975,7 +902,6 @@ function doOptions(e) {
              }
            }
 
-           // 2. Jika tiada, baru fallback menggunakan .includes() sebagai sandaran
            if (dateColIndex === -1) {
              for(let i=0; i<window.appData.headers.length; i++) {
                let h = window.appData.headers[i].toLowerCase().trim();
@@ -1001,12 +927,9 @@ function doOptions(e) {
              actionTaken = true;
            }
         }
-        
-        // Logik Khusus Carian Pekerja Bersara Bulan Ini
         else if (isBersara && isBulanIni) {
            let dateColIndex = -1;
 
-           // Keutamaan tinggi carian spesifik
            for(let i=0; i<window.appData.headers.length; i++) {
              let h = window.appData.headers[i].toLowerCase().trim();
              if(h === 'tarikh bersara' || h === 'opsyen bersara' || h === 'tarikh masuk pencen') {
@@ -1014,7 +937,6 @@ function doOptions(e) {
              }
            }
 
-           // Sandaran kepada perkataan berkaitan pencen/bersara
            if(dateColIndex === -1) {
              for(let i=0; i<window.appData.headers.length; i++) {
                let h = window.appData.headers[i].toLowerCase().trim();

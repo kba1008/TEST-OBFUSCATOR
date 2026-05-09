@@ -157,7 +157,7 @@
                 <i data-lucide="bot" class="w-4 h-4"></i>
               </div>
               <div class="bg-white p-3 rounded-xl rounded-tl-none border border-slate-100 shadow-sm text-slate-700">
-                Hai! Saya Pembantu AI anda. Beritahu saya untuk <strong class="text-blue-600">menapis</strong> atau <strong class="text-blue-600">menyusun</strong> jadual. <br><br>Contohnya: <br><em>"Berikan list gaji bawah 1000"</em> <br><em>"Susun jualan paling tinggi"</em><br><br>Anda boleh membatalkan arahan saya dengan menekan butang <strong>Reset</strong>.
+                Hai! Saya Pembantu AI anda. Beritahu saya untuk <strong class="text-blue-600">mencari</strong>, <strong class="text-blue-600">menapis</strong> atau <strong class="text-blue-600">menyusun</strong> jadual. <br><br>Contohnya: <br><em>"Cari nama Naim"</em> <br><em>"Berikan list gaji bawah 1000"</em> <br><em>"Susun jualan paling tinggi"</em><br><br>Anda boleh membatalkan arahan saya dengan menekan butang <strong>Reset</strong>.
               </div>
             </div>
           </div>
@@ -165,7 +165,7 @@
             <button onclick="resetData()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 p-3 rounded-xl transition-colors shadow-sm flex-shrink-0" title="Set Semula Semua Data">
               <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
             </button>
-            <input type="text" id="aiInput" placeholder="Arahkan AI (cth: gaji bawah 1000)..." class="flex-grow px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50" onkeypress="if(event.key === 'Enter') processAIQuery()">
+            <input type="text" id="aiInput" placeholder="Cth: Cari nama Naim..." class="flex-grow px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50" onkeypress="if(event.key === 'Enter') processAIQuery()">
             <button onclick="processAIQuery()" class="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-xl transition-colors shadow-md flex-shrink-0">
               <i data-lucide="send" class="w-5 h-5"></i>
             </button>
@@ -188,7 +188,7 @@
           </table>
         </div>
         <div class="p-4 text-center text-sm text-slate-500 bg-slate-50 border-t border-slate-100">
-          Data dijana secara automatik. Anda boleh gunakan Pembantu AI di atas untuk mengubah susunan jadual tanpa perlu tekan manual.
+          Data dijana secara automatik. <strong class="text-blue-600">Klik pada mana-mana baris jadual untuk paparan butiran yang cantik dan terperinci.</strong>
         </div>
       </div>
     </div>
@@ -302,10 +302,27 @@
     </div>
   </div>
 
+  <!-- Row Detail Modal (Visual Display) -->
+  <div id="rowDetailModal" class="hidden fixed inset-0 bg-slate-900 bg-opacity-60 backdrop-blur-sm z-50 flex justify-center items-center">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-2xl w-full mx-4 transform transition-all max-h-[90vh] flex flex-col">
+      <div class="flex justify-between items-center mb-4 border-b pb-4">
+        <h3 class="text-xl font-bold text-slate-800 flex items-center">
+          <i data-lucide="file-text" class="w-6 h-6 mr-2 text-blue-600"></i> Butiran Rekod
+        </h3>
+        <button onclick="closeRowDetailModal()" class="text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 p-2 rounded-full transition-colors">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="overflow-y-auto flex-grow p-2" id="rowDetailContent">
+        <!-- Content dynamically populated -->
+      </div>
+    </div>
+  </div>
+
   <script>
     lucide.createIcons();
 
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbz0lqlROq96jHXy1_PeULnd2v12Z4eSfgxWrIh1ttrASKhZCN8PCh7cjzqkZVn4I3yR/exec'; 
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwhTGMpU1xmjB1t4zTcO0OTNrCuCORsoHp-3YztaLaKNr03NK7-E7kGXxP-vNii_Z6q/exec'; 
     
     let rawData = [];
     let rawHeaders = [];
@@ -528,7 +545,7 @@
 
     function updateDashboard(headers, rows) {
       window.appData = { headers, rows };
-      resetData(); // Reset everything automatically uses applyFiltersAndSort
+      resetData(); 
     }
 
     // --- EXCEL-LIKE FILTERS ---
@@ -658,7 +675,35 @@
       renderChart(window.appData.headers, displayRows);
     }
 
-    // --- UI RENDERING ---
+    // --- FORENSIC REPAIR: HELPER UNTUK HIGHLIGHT SEARCH KEYWORD ---
+    function escapeHtml(unsafe) {
+      return String(unsafe)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function highlightText(text, colIndex) {
+      if (text === null || text === undefined || text === '') return '-';
+      let str = escapeHtml(String(text));
+
+      if (window.aiGlobalSearch) {
+         const term = escapeHtml(window.aiGlobalSearch).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+         const regex = new RegExp(`(${term})`, 'gi');
+         str = str.replace(regex, '<mark class="bg-yellow-300 text-slate-900 rounded px-1 font-semibold">$1</mark>');
+      } else if (window.aiCustomFilter && window.aiCustomFilter.col === colIndex) {
+         if (window.aiCustomFilter.type === 'includes' || (window.aiCustomFilter.type === 'equal' && isNaN(parseFloat(window.aiCustomFilter.val)))) {
+             const term = escapeHtml(window.aiCustomFilter.val).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+             const regex = new RegExp(`(${term})`, 'gi');
+             str = str.replace(regex, '<mark class="bg-yellow-300 text-slate-900 rounded px-1 font-semibold">$1</mark>');
+         }
+      }
+      return str;
+    }
+
+    // --- UI RENDERING & VISUAL ROW DISPLAY ---
     function renderTable(headers, rowsToRender) {
       const tHead = document.getElementById('tableHead');
       const tBody = document.getElementById('tableBody');
@@ -690,15 +735,43 @@
       }).join('') + '</tr>';
       
       let bodyHtml = '';
-      rowsToRender.slice(0, 100).forEach(row => {
-        bodyHtml += '<tr class="hover:bg-blue-50">' + 
-          row.map(cell => `<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700">${cell !== null && cell !== undefined && cell !== '' ? cell : '-'}</td>`).join('') + 
+      rowsToRender.slice(0, 100).forEach((row, rowIndex) => {
+        // User Modification: Applied highlightText helper function to cell contents
+        bodyHtml += `<tr class="hover:bg-blue-50 cursor-pointer transition-colors" onclick="showRowDetails(${rowIndex})">` + 
+          row.map((cell, colIndex) => `<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700">${highlightText(cell, colIndex)}</td>`).join('') + 
         '</tr>';
       });
       
       if(rowsToRender.length > 100) bodyHtml += `<tr><td colspan="${headers.length}" class="px-6 py-4 text-center bg-slate-50">Hanya memaparkan 100 rekod teratas.</td></tr>`;
       tBody.innerHTML = bodyHtml;
       lucide.createIcons();
+    }
+
+    function showRowDetails(rowIndex) {
+      const row = displayRows[rowIndex];
+      const headers = window.appData.headers;
+      const contentDiv = document.getElementById('rowDetailContent');
+      
+      let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
+      headers.forEach((header, i) => {
+        // User Modification: Applied highlightText to detail view as well for consistency
+        let val = row[i] !== null && row[i] !== undefined && row[i] !== '' ? highlightText(row[i], i) : '<span class="text-slate-400 italic">Tiada Data</span>';
+        html += `
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 hover:shadow-md transition-shadow">
+            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">${header}</p>
+            <p class="text-slate-800 font-medium break-words">${val}</p>
+          </div>
+        `;
+      });
+      html += '</div>';
+      
+      contentDiv.innerHTML = html;
+      document.getElementById('rowDetailModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeRowDetailModal() {
+      document.getElementById('rowDetailModal').classList.add('hidden');
     }
 
     function renderChart(headers, rowsToRender) {
@@ -766,74 +839,79 @@
         }
 
         const queryLower = query.toLowerCase();
-        let responseMsg = "Maaf, saya kurang jelas. Cuba nyatakan **nama lajur** dan operasi seperti **'bawah 1000'**, **'lebih 50'**, atau **'susun tertinggi'**.";
+        let responseMsg = "Maaf, saya kurang jelas. Cuba nyatakan **nama lajur** dan operasi (cth: 'gaji bawah 1000') atau gunakan perkataan **cari** (cth: 'cari nama Naim').";
         let actionTaken = false;
 
-        // 1. Find target column matching query
-        let targetColIndex = -1;
-        let targetHeader = "";
-        for (let i = 0; i < window.appData.headers.length; i++) {
-           const headerWords = window.appData.headers[i].toLowerCase().split(/[\s_]+/);
-           for (const hw of headerWords) {
-              if (hw.length > 2 && queryLower.includes(hw)) {
-                 targetColIndex = i;
-                 targetHeader = window.appData.headers[i];
-                 break;
-              }
+        // 1. FORENSIC REPAIR: Global Search First priority if "cari" is heavily implied
+        if (queryLower.startsWith('cari') || queryLower.includes('cari ')) {
+           let keywordMatch = query.match(/cari\s+(?:nama\s+)?(.*)/i);
+           let fullKeyword = keywordMatch && keywordMatch[1] ? keywordMatch[1].trim() : query.replace(/cari/i, '').trim();
+           
+           if (fullKeyword) {
+              window.aiGlobalSearch = fullKeyword.toLowerCase();
+              window.aiCustomFilter = null; // override specific column limit
+              actionTaken = true;
+              responseMsg = `Saya telah mencari kata kunci **${fullKeyword}** di seluruh ruang jadual. Klik pada mana-mana baris di bawah untuk melihat butiran visual penuh.`;
            }
-           if(targetColIndex !== -1) break;
         }
 
-        if (targetColIndex !== -1) {
-           const numbers = query.match(/\d+/g);
-           const targetNum = numbers ? parseFloat(numbers[0]) : null;
+        // 2. Original Specific Column Matching (if not performing a global explicit search)
+        if (!actionTaken) {
+          let targetColIndex = -1;
+          let targetHeader = "";
+          for (let i = 0; i < window.appData.headers.length; i++) {
+             const headerWords = window.appData.headers[i].toLowerCase().split(/[\s_]+/);
+             for (const hw of headerWords) {
+                if (hw.length > 2 && queryLower.includes(hw)) {
+                   targetColIndex = i;
+                   targetHeader = window.appData.headers[i];
+                   break;
+                }
+             }
+             if(targetColIndex !== -1) break;
+          }
 
-           // Keywords Detection
-           const isSort = queryLower.includes('susun') || queryLower.includes('sort') || queryLower.includes('senarai');
-           const isDesc = queryLower.includes('tinggi') || queryLower.includes('tertinggi') || queryLower.includes('turun') || queryLower.includes('banyak');
-           const isAsc = queryLower.includes('rendah') || queryLower.includes('terendah') || queryLower.includes('naik') || queryLower.includes('sikit');
-           
-           const isBawah = queryLower.includes('bawah') || queryLower.includes('kurang') || queryLower.includes('<');
-           const isAtas = queryLower.includes('atas') || queryLower.includes('lebih') || queryLower.includes('>');
+          if (targetColIndex !== -1) {
+             const numbers = query.match(/\d+/g);
+             const targetNum = numbers ? parseFloat(numbers[0]) : null;
 
-           if (isSort && (isDesc || isAsc)) {
-              currentSortCol = targetColIndex;
-              currentSortAsc = isAsc ? true : false; 
-              actionTaken = true;
-              responseMsg = `Baik, saya telah menyusun jadual mengikut lajur **${targetHeader}** secara **${currentSortAsc ? 'Menaik (Terendah ke Tertinggi)' : 'Menurun (Tertinggi ke Terendah)'}**.\n\nTekan butang Reset untuk membatalkan susunan.`;
-           } else if (targetNum !== null && (isBawah || isAtas)) {
-              window.aiCustomFilter = {
-                col: targetColIndex,
-                type: isBawah ? 'less' : 'greater',
-                val: targetNum
-              };
-              actionTaken = true;
-              responseMsg = `Berjaya! Saya telah menapis data supaya memaparkan **${targetHeader}** yang **${isBawah ? 'kurang dari' : 'lebih dari'} ${targetNum}** sahaja.\n\nTekan butang Reset untuk lihat semula data penuh.`;
-           } else if (targetNum !== null) {
-              window.aiCustomFilter = {
-                col: targetColIndex,
-                type: 'equal',
-                val: targetNum
-              };
-              actionTaken = true;
-              responseMsg = `Saya menapis jadual bagi nilai **${targetHeader}** yang sama dengan **${targetNum}**.`;
-           } else {
-              // Try word matching if no number
-              const words = queryLower.split(' ').filter(w => !['cari','senarai','tunjuk','berikan','list','yang','ada','dan','atau'].includes(w) && !targetHeader.toLowerCase().includes(w));
-              if(words.length > 0) {
-                 window.aiCustomFilter = { col: targetColIndex, type: 'includes', val: words[0] };
-                 actionTaken = true;
-                 responseMsg = `Saya telah mencari kata kunci **${words[0]}** di dalam lajur **${targetHeader}**.`;
-              }
-           }
-        } else {
-           // Global fallback
-           const words = queryLower.split(' ').filter(w => !['cari','senarai','tunjuk','berikan','list','susun'].includes(w));
-           if (words.length > 0 && !queryLower.includes('susun')) {
-              window.aiGlobalSearch = words[0];
-              actionTaken = true;
-              responseMsg = `Lajur spesifik tidak ditemui, jadi saya mencari perkataan **${words[0]}** di seluruh jadual.\n\nJika anda mahu menyusun/menapis nilai nombor, sebutkan nama lajur secara tepat (cth: "Gaji bawah 1000").`;
-           }
+             const isSort = queryLower.includes('susun') || queryLower.includes('sort') || queryLower.includes('senarai');
+             const isDesc = queryLower.includes('tinggi') || queryLower.includes('tertinggi') || queryLower.includes('turun') || queryLower.includes('banyak');
+             const isAsc = queryLower.includes('rendah') || queryLower.includes('terendah') || queryLower.includes('naik') || queryLower.includes('sikit');
+             
+             const isBawah = queryLower.includes('bawah') || queryLower.includes('kurang') || queryLower.includes('<');
+             const isAtas = queryLower.includes('atas') || queryLower.includes('lebih') || queryLower.includes('>');
+
+             if (isSort && (isDesc || isAsc)) {
+                currentSortCol = targetColIndex;
+                currentSortAsc = isAsc ? true : false; 
+                actionTaken = true;
+                responseMsg = `Baik, saya telah menyusun jadual mengikut lajur **${targetHeader}** secara **${currentSortAsc ? 'Menaik' : 'Menurun'}**.\n\nTekan butang Reset untuk membatalkan susunan.`;
+             } else if (targetNum !== null && (isBawah || isAtas)) {
+                window.aiCustomFilter = { col: targetColIndex, type: isBawah ? 'less' : 'greater', val: targetNum };
+                actionTaken = true;
+                responseMsg = `Berjaya! Saya telah menapis data memaparkan **${targetHeader}** yang **${isBawah ? 'kurang dari' : 'lebih dari'} ${targetNum}** sahaja.`;
+             } else if (targetNum !== null) {
+                window.aiCustomFilter = { col: targetColIndex, type: 'equal', val: targetNum };
+                actionTaken = true;
+                responseMsg = `Saya menapis jadual bagi nilai **${targetHeader}** yang sama dengan **${targetNum}**.`;
+             } else {
+                const words = queryLower.split(' ').filter(w => !['cari','senarai','tunjuk','berikan','list','yang','ada','dan','atau'].includes(w) && !targetHeader.toLowerCase().includes(w));
+                if(words.length > 0) {
+                   window.aiCustomFilter = { col: targetColIndex, type: 'includes', val: words[0] };
+                   actionTaken = true;
+                   responseMsg = `Saya telah mencari kata kunci **${words[0]}** di dalam lajur **${targetHeader}**.`;
+                }
+             }
+          } else {
+             // Fallback if user just type random word without "cari"
+             const words = queryLower.split(' ').filter(w => !['cari','senarai','tunjuk','berikan','list','susun'].includes(w));
+             if (words.length > 0 && !queryLower.includes('susun')) {
+                window.aiGlobalSearch = words[0];
+                actionTaken = true;
+                responseMsg = `Saya mencari perkataan **${words[0]}** di seluruh jadual.\n\nJika anda mahu menapis nilai nombor yang tepat, sebutkan nama lajur (cth: "Gaji bawah 1000").`;
+             }
+          }
         }
 
         if (actionTaken) applyFiltersAndSort();

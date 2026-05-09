@@ -102,7 +102,7 @@
       <div class="flex flex-col md:flex-row md:items-center justify-between bg-white p-6 rounded-2xl glass-card">
         <div>
           <h1 class="text-2xl font-bold text-slate-800">Penapis Data AI Cerdas</h1>
-          <p class="text-sm text-slate-500 mt-1">Dikuasakan oleh <strong>Enjin Analitik AI Berkuasa Tinggi</strong>. AI akan menapis dan menyusun data mengikut arahan. <em class="text-blue-600">Tugas AI HANYA menapis & menyusun, bukan mengubah pangkalan data asal.</em></p>
+          <p class="text-sm text-slate-500 mt-1">Dikuasakan oleh <strong>Enjin Analitik AI Berkuasa Tinggi</strong>. AI akan menapis dan menyusun data mengikut arahan. <em class="text-blue-600">Tugas AI HANYA menapis & susun, bukan mengubah database asal.</em></p>
         </div>
         <div class="mt-4 md:mt-0 flex items-center space-x-2">
           <button onclick="fetchData(true)" class="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors" title="Segar Semula Database">
@@ -222,7 +222,7 @@
             <h2 class="text-lg font-semibold text-slate-800">1. Muat Naik Excel Asal</h2>
             <button onclick="clearOldData()" class="flex items-center space-x-1 text-xs bg-red-100 hover:bg-red-200 text-red-600 py-1.5 px-3 rounded-lg font-medium transition-colors shadow-sm">
               <i data-lucide="trash-2" class="w-4 h-4"></i>
-              <span>Padam Pangkalan Data</span>
+              <span>Padam Data</span>
             </button>
           </div>
           <label class="flex flex-col items-center justify-center w-full h-40 border-2 border-slate-300 border-dashed rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors">
@@ -344,8 +344,8 @@
   <script>
     lucide.createIcons();
 
-    // PENTING: Sila pastikan anda set URL GAS yang terkini (Deploy As New Version)
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbyhTlBxMFJAppq_VfXoiqThwCYnjHUV8ArR59aNZcULaLIgWl8zhHdOttJ4XbJ4k2RH/exec'; 
+    // PENTING: Sila pastikan anda set URL GAS yang terkini (Deploy As New Version -> Anyone)
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwhTGMpU1xmjB1t4zTcO0OTNrCuCORsoHp-3YztaLaKNr03NK7-E7kGXxP-vNii_Z6q/exec'; 
     
     let rawData = [];
     let rawHeaders = [];
@@ -424,7 +424,6 @@
       }
     }
 
-    // ADMIN FUNCTION: Memadam data dari Pangkalan Utama
     async function clearOldData() {
       if(!confirm('Anda pasti mahu memadam semua data pangkalan awam? Ini memadam data asal.')) return;
       rawData = [];
@@ -620,7 +619,6 @@
         });
         if(!response.ok) throw new Error("Ralat Rangkaian");
         
-        // Update cache selepas simpan berjaya
         const savedData = { headers: finalHeaders, rows: finalRows };
         localStorage.setItem('datapro_backup', JSON.stringify(savedData));
         
@@ -634,30 +632,39 @@
       }
     }
 
-    // PENAMBAHBAIKAN KRITIKAL: Caching & Fallback
+    // PENAMBAHBAIKAN KRITIKAL 1: Caching Bypassing untuk API
+    // Membuang `?t=timestamp` kerana boleh mengganggu '302 Redirect' pelayan Google.
+    // Penggunaan { cache: 'no-store' } lebih efisien dan stabil.
     async function fetchData(forceRefresh = false) {
       toggleLoader(true, "Memuat turun database pangkalan awam...");
       try {
-        // Tambah cache-buster untuk fetch baru, tetapi SW.js telah dibaiki 
-        // untuk mengabaikan parameter ini semasa memadankan cache.
-        const response = await fetch(GAS_URL + "?t=" + new Date().getTime());
-        if(!response.ok) throw new Error("Ralat Status Pelayan");
+        const response = await fetch(GAS_URL, { 
+           method: 'GET',
+           cache: 'no-store' 
+        });
+        
+        if(!response.ok) throw new Error("Ralat Status Pelayan API");
         
         const data = await response.json();
         if(data && data.headers) {
-           // Simpan salinan pendua di LocalStorage jika berjaya
            localStorage.setItem('datapro_backup', JSON.stringify(data));
            updateDashboard(data.headers, data.rows || []);
+        } else {
+           throw new Error("Format data JSON yang diterima rosak atau kosong.");
         }
       } catch (error) {
-        console.warn("API gagal dihubungi. Mencuba untuk memuatkan data dari salinan tempatan (LocalStorage).", error);
+        console.warn("API gagal dihubungi. Mencuba memuatkan data dari salinan tempatan (LocalStorage).", error);
         const backup = localStorage.getItem('datapro_backup');
         if (backup) {
-           const data = JSON.parse(backup);
-           updateDashboard(data.headers, data.rows || []);
-           if(forceRefresh) alert("Mod Luar Talian: Aplikasi memaparkan salinan data terakhir yang disimpan dalam peranti anda.");
+           try {
+             const data = JSON.parse(backup);
+             updateDashboard(data.headers, data.rows || []);
+             if(forceRefresh) alert("Mod Luar Talian: Aplikasi memaparkan salinan data terakhir yang disimpan dalam peranti anda kerana capaian ke pelayan gagal.");
+           } catch (e) {
+             if(forceRefresh) alert("Ralat memproses data backup tempatan.");
+           }
         } else {
-           if(forceRefresh) alert("Tiada data ditemui. Pastikan kod web app GAS adalah betul, di-deploy sebagai 'Anyone', dan peranti anda mempunyai capaian internet.");
+           if(forceRefresh) alert("Tiada data ditemui di pangkalan dan tiada backup tempatan. Pastikan kod web app GAS adalah betul, di-deploy sebagai 'Anyone', dan peranti mempunyai capaian internet.");
         }
       } finally { 
         toggleLoader(false); 
@@ -669,7 +676,6 @@
       resetData(); 
     }
 
-    // -- Local Filter/Modal Functions --
     function openFilterModal(colIndex) {
       currentFilterCol = colIndex;
       document.getElementById('filterModalTitle').innerText = `Tapis: ${window.appData.headers[colIndex]}`;
@@ -727,13 +733,10 @@
       closeFilterModal();
       applyFiltersAndSort();
     }
-    // -------------------------------------
 
-    // Penambahbaikan: Parsing Tarikh Lebih Kukuh
     function parseDate(cellVal) {
       if (!cellVal) return null;
       if (typeof cellVal === 'number') {
-         // Halang nombor biasa diproses sebagai tarikh. Excel dates biasanya > 20000 (Tahun > 1954)
          if (cellVal > 20000 && cellVal < 60000) {
              const utcDays = cellVal - 25569;
              const utcValue = utcDays * 86400;
@@ -757,14 +760,12 @@
              return new Date(y, m, d);
          }
       }
-      // Jangan fallback ke date jika input hanya nombor bulat
       if (/^\d+$/.test(ds)) return null;
       
       let fallback = new Date(ds);
       return isNaN(fallback.getTime()) ? null : fallback;
     }
 
-    // Fungsi Fuzzy Match untuk halang sistem kaku jika AI buat kesilapan ejaan lajur
     function findHeaderIndex(targetHeader) {
         if (!targetHeader) return -1;
         let t = targetHeader.trim().toLowerCase();
@@ -785,14 +786,12 @@
 
     function applyFiltersAndSort() {
       let tempRows = window.appData.rows.filter(row => {
-        // 1. Local Checkbox Filters
         for (const colStr in activeFilters) {
           const col = parseInt(colStr);
           let cellVal = row[col] !== undefined && row[col] !== null ? String(row[col]).trim() : '';
           if (!activeFilters[col].has(cellVal)) return false;
         }
 
-        // 2. AI Memory Filtering Rules
         if (window.aiRules) {
            if (window.aiRules.globalSearch) {
               let searchTerms = Array.isArray(window.aiRules.globalSearch) ? window.aiRules.globalSearch : [window.aiRules.globalSearch];
@@ -854,7 +853,6 @@
         return true;
       });
 
-      // Execute Sorting in Memory
       if (currentSortCol !== -1) {
         tempRows.sort((a, b) => {
           let valA = a[currentSortCol];
@@ -939,7 +937,7 @@
       
       if(headers.length === 0) {
         tHead.innerHTML = '';
-        tBody.innerHTML = '<tr><td class="px-4 py-4 text-center">Tiada data tersedia.</td></tr>';
+        tBody.innerHTML = '<tr><td class="px-4 py-4 text-center">Tiada data tersedia. Sila semak pautan database atau muat naik Excel.</td></tr>';
         return;
       }
 

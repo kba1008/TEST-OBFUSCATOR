@@ -330,7 +330,7 @@
   <script>
     lucide.createIcons();
 
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbzmeg49zoaAcWH4oYLaM1kBvZMgcv0MmVUBPETeXHueRCCUi8PqyhqRqz6OWBquWVjb/exec'; 
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwhTGMpU1xmjB1t4zTcO0OTNrCuCORsoHp-3YztaLaKNr03NK7-E7kGXxP-vNii_Z6q/exec'; 
     
     let rawData = [];
     let rawHeaders = [];
@@ -426,7 +426,11 @@
       const payload = { action: "save", headers: [], rows: [] };
       toggleLoader(true);
       try {
-        await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
+        await fetch(GAS_URL, { 
+          method: 'POST', 
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload) 
+        });
         alert('Data pangkalan dipadam sepenuhnya.');
         updateDashboard([], []);
       } catch (error) {
@@ -550,6 +554,7 @@
       try {
         const response = await fetch(GAS_URL, {
           method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify(payload)
         });
         const res = await response.json();
@@ -568,7 +573,7 @@
            alert('Ralat AI: ' + (res.message || 'Gagal memproses respons.'));
         }
       } catch(e) {
-        alert('Gagal menghubungi pelayan (GAS).');
+        alert('Gagal menghubungi pelayan (GAS). Pastikan URL GAS tepat dan skrip berfungsi.');
       } finally {
         toggleLoader(false);
       }
@@ -592,7 +597,11 @@
 
       toggleLoader(true, "Menyimpan Pangkalan Utama ke Database...");
       try {
-        await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: "save", headers: finalHeaders, rows: finalRows}) });
+        await fetch(GAS_URL, { 
+          method: 'POST', 
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: "save", headers: finalHeaders, rows: finalRows}) 
+        });
         alert('Konfigurasi database awam berjaya disimpan!');
         updateDashboard(finalHeaders, finalRows);
         showView('dashboard');
@@ -784,7 +793,7 @@
         return true;
       });
 
-      // AI Sort Override
+      // AI Sort Override (Menangkap Arahan Susunan Llama)
       if (window.aiRules && window.aiRules.sort) {
           let sortObj = Array.isArray(window.aiRules.sort) ? window.aiRules.sort[0] : window.aiRules.sort;
           if (sortObj && sortObj.header) {
@@ -796,7 +805,7 @@
           }
       }
 
-      // Execute Sorting in Memory
+      // Execute Sorting in Memory (Mesti berjalan jika currentSortCol bukan -1)
       if (currentSortCol !== -1) {
         tempRows.sort((a, b) => {
           let valA = a[currentSortCol] ?? '';
@@ -1038,6 +1047,9 @@
       try {
         const response = await fetch(GAS_URL, {
           method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8'
+          },
           body: JSON.stringify(payload)
         });
         const res = await response.json();
@@ -1045,7 +1057,8 @@
         
         if (res.status === 'success' && res.data) {
            window.aiRules = res.data;
-           applyFiltersAndSort();
+           applyFiltersAndSort(); // Akan memanggil logik menyusun yang telah dikemas kini
+           
            let aiResponse = "Selesai. AI telah menetapkan arahan **menapis dan menyusun** data baharu secara automatik. ";
            if(displayRows.length > 0) {
              aiResponse += `Sebanyak **${displayRows.length} rekod** ditemui padan.`;
@@ -1063,11 +1076,11 @@
 
            appendChatMessage('ai', aiResponse);
         } else {
-           appendChatMessage('ai', `Ralat: ${res.message || 'Gagal menterjemah arahan tapisan Pintar.'}`);
+           appendChatMessage('ai', `Ralat API/Backend: ${res.message || 'Sila semak konsol backend atau muat naik skrip baharu.'}`);
         }
       } catch (e) {
         removeChatMessage('ai-loading');
-        appendChatMessage('ai', 'Maaf, gagal berhubung dengan pelayan pusat AI (Ralat Rangkaian).');
+        appendChatMessage('ai', 'Maaf, gagal berhubung dengan pelayan pusat AI (Ralat Rangkaian). Pastikan URL GAS sah dan menerima text/plain.');
       }
     }
 

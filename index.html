@@ -18,6 +18,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- localForage for IndexedDB Storage (Fix Quota Exceeded) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
   <!-- SheetJS for Excel parsing -->
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
   <!-- SortableJS for Drag and Drop -->
@@ -345,7 +347,7 @@
     lucide.createIcons();
 
     // PENTING: Sila pastikan anda set URL GAS yang terkini (Deploy As New Version -> Anyone)
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbzHtVCXN_nkauB_-5ovsDodpR8PagDHdAvPV6ZVjvVlAFtWDZuQuWpnT1uIGReBDgrM/exec'; 
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwhTGMpU1xmjB1t4zTcO0OTNrCuCORsoHp-3YztaLaKNr03NK7-E7kGXxP-vNii_Z6q/exec'; 
     
     let rawData = [];
     let rawHeaders = [];
@@ -375,21 +377,22 @@
       document.getElementById('adminPassword').value = '';
     }
 
-    function verifyPassword() {
+    // REPAIRED: Using localForage instead of localStorage to fix QuotaExceededError
+    async function verifyPassword() {
       const pwd = document.getElementById('adminPassword').value;
       if(pwd === '101010') {
         toggleAdminModal();
         if(rawData.length === 0) {
           try {
-            const cachedHeaders = localStorage.getItem('adminRawHeaders');
-            const cachedData = localStorage.getItem('adminRawData');
+            const cachedHeaders = await localforage.getItem('adminRawHeaders');
+            const cachedData = await localforage.getItem('adminRawData');
             if(cachedHeaders && cachedData) {
-              rawHeaders = JSON.parse(cachedHeaders);
-              rawData = JSON.parse(cachedData);
+              rawHeaders = cachedHeaders;
+              rawData = cachedData;
               renderHeaderCheckboxes();
               document.getElementById('aiHeaderHelper').classList.remove('hidden');
             }
-          } catch (e) {}
+          } catch (e) { console.error("Error reading cache:", e); }
         } else {
           renderHeaderCheckboxes();
           document.getElementById('aiHeaderHelper').classList.remove('hidden');
@@ -429,8 +432,10 @@
       rawData = [];
       rawHeaders = [];
       window.uploadedWorkbook = null;
-      localStorage.removeItem('adminRawHeaders');
-      localStorage.removeItem('adminRawData');
+      
+      await localforage.removeItem('adminRawHeaders');
+      await localforage.removeItem('adminRawData');
+      await localforage.removeItem('datapro_backup');
       
       document.getElementById('headerSelection').innerHTML = '<p class="col-span-full text-slate-400 italic">Data telah dipadam.</p>';
       document.getElementById('sheetSelectionContainer').classList.add('hidden');
@@ -516,10 +521,11 @@
         }
       }
 
+      // REPAIRED: Using localForage instead of localStorage
       try {
-        localStorage.setItem('adminRawHeaders', JSON.stringify(rawHeaders));
-        localStorage.setItem('adminRawData', JSON.stringify(rawData));
-      } catch(e) {}
+        localforage.setItem('adminRawHeaders', rawHeaders);
+        localforage.setItem('adminRawData', rawData);
+      } catch(e) { console.error("Failed to save temporary data.", e); }
       renderHeaderCheckboxes();
     }
 
@@ -633,7 +639,8 @@
         }
         
         const savedData = { headers: finalHeaders, rows: finalRows };
-        localStorage.setItem('datapro_backup', JSON.stringify(savedData));
+        // REPAIRED: Store using localForage avoiding quota restrictions
+        await localforage.setItem('datapro_backup', savedData);
         
         alert('Konfigurasi database awam berjaya disimpan secara berperingkat!');
         updateDashboard(finalHeaders, finalRows);
@@ -657,24 +664,24 @@
         
         const data = await response.json();
         if(data && data.headers) {
-           localStorage.setItem('datapro_backup', JSON.stringify(data));
+           // REPAIRED: Store using localForage to support extremely large JSON arrays
+           await localforage.setItem('datapro_backup', data);
            updateDashboard(data.headers, data.rows || []);
         } else {
            throw new Error("Format data JSON yang diterima rosak atau kosong.");
         }
       } catch (error) {
-        console.warn("API gagal dihubungi. Mencuba memuatkan data dari salinan tempatan (LocalStorage).", error);
-        const backup = localStorage.getItem('datapro_backup');
-        if (backup) {
-           try {
-             const data = JSON.parse(backup);
-             updateDashboard(data.headers, data.rows || []);
-             if(forceRefresh) alert("Mod Luar Talian: Aplikasi memaparkan salinan data terakhir yang disimpan dalam peranti anda kerana capaian ke pelayan gagal.");
-           } catch (e) {
-             if(forceRefresh) alert("Ralat memproses data backup tempatan.");
+        console.warn("API gagal dihubungi. Mencuba memuatkan data dari salinan tempatan (IndexedDB/localForage).", error);
+        try {
+           const backup = await localforage.getItem('datapro_backup');
+           if (backup && backup.headers) {
+              updateDashboard(backup.headers, backup.rows || []);
+              if(forceRefresh) alert("Mod Luar Talian: Aplikasi memaparkan salinan data terakhir yang disimpan dalam peranti anda kerana capaian ke pelayan gagal.");
+           } else {
+              if(forceRefresh) alert("Tiada data ditemui di pangkalan dan tiada backup tempatan. Pastikan kod web app GAS adalah betul, di-deploy sebagai 'Anyone', dan peranti mempunyai capaian internet.");
            }
-        } else {
-           if(forceRefresh) alert("Tiada data ditemui di pangkalan dan tiada backup tempatan. Pastikan kod web app GAS adalah betul, di-deploy sebagai 'Anyone', dan peranti mempunyai capaian internet.");
+        } catch (e) {
+           if(forceRefresh) alert("Ralat memproses data backup tempatan.");
         }
       } finally { 
         toggleLoader(false); 
@@ -1132,7 +1139,6 @@
                       aiSortOrderStr = ` Data juga telah **disusun mengikut ${sortObj.header}** secara ${dirTxt}.`;
                   }
               }
-              // TIDAK LAGI DIBUANG (delete window.aiRules.sort) supaya status kekal wujud jika filter diaplikasikan semula
            }
 
            applyFiltersAndSort(); 

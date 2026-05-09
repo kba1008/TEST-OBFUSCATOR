@@ -134,7 +134,7 @@
         </div>
       </div>
 
-      <!-- AI Section (Full Width after Chart Removal) -->
+      <!-- AI Section -->
       <div class="glass-card p-6 rounded-2xl w-full flex flex-col h-[400px]">
         <h2 class="text-lg font-semibold mb-4 text-slate-800 flex items-center">
           <i data-lucide="bot" class="w-5 h-5 mr-2 text-blue-500"></i> Pembantu AI DataPro
@@ -145,7 +145,7 @@
               <i data-lucide="bot" class="w-4 h-4"></i>
             </div>
             <div class="bg-white p-3 rounded-xl rounded-tl-none border border-slate-100 shadow-sm text-slate-700">
-              Hai! Saya Pembantu AI anda. Beritahu saya untuk <strong class="text-blue-600">mencari</strong>, <strong class="text-blue-600">menapis</strong> atau <strong class="text-blue-600">menyusun</strong> jadual. <br><br>Ciri Baharu: Anda boleh menaip <em>"Cari pekerja lahir bulan ini"</em> untuk AI memproses, menapis, dan menyusun senarai secara automatik berdasarkan tarikh.<br><br>Anda boleh membatalkan arahan dengan menekan butang <strong>Reset</strong>.
+              Hai! Saya Pembantu AI anda. Beritahu saya untuk <strong class="text-blue-600">mencari</strong>, <strong class="text-blue-600">menapis</strong> atau <strong class="text-blue-600">menyusun</strong> jadual. <br><br>Ciri Baharu: Anda boleh menaip <em>"Cari pekerja lahir bulan ini"</em> untuk AI memproses, menapis, dan menyusun senarai secara automatik berdasarkan lajur TARIKH LAHIR.<br><br>Anda boleh membatalkan arahan dengan menekan butang <strong>Reset</strong>.
             </div>
           </div>
         </div>
@@ -282,7 +282,7 @@
     </div>
   </div>
 
-  <!-- Row Detail Modal (Visual Display) -->
+  <!-- Row Detail Modal -->
   <div id="rowDetailModal" class="hidden fixed inset-0 bg-slate-900 bg-opacity-60 backdrop-blur-sm z-50 flex justify-center items-center">
     <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-2xl w-full mx-4 transform transition-all max-h-[90vh] flex flex-col">
       <div class="flex justify-between items-center mb-4 border-b pb-4">
@@ -298,7 +298,6 @@
           </button>
         </div>
       </div>
-      <!-- Area to be converted to PDF -->
       <div class="overflow-y-auto flex-grow p-4" id="rowDetailContent">
         <!-- Content dynamically populated -->
       </div>
@@ -308,7 +307,7 @@
   <script>
     lucide.createIcons();
 
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbykAr16Qr-at_qvXkDxIAes1pP2eD5D6MeTNg4XXASJeLX_eKDuI4KJvf4Tcd0dgPSl/exec'; 
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwhTGMpU1xmjB1t4zTcO0OTNrCuCORsoHp-3YztaLaKNr03NK7-E7kGXxP-vNii_Z6q/exec'; 
     
     let rawData = [];
     let rawHeaders = [];
@@ -570,23 +569,33 @@
       document.getElementById('filterModal').classList.add('hidden');
     }
 
-    // Pembantu fungsi pengekstrakan tarikh untuk AI
+    // Pembantu fungsi pengekstrakan tarikh untuk AI yang lebih mantap
     function parseDate(cellVal) {
       if (!cellVal) return null;
-      let rowDate = null;
       if (typeof cellVal === 'number') {
-         rowDate = new Date((cellVal - (25567 + 2)) * 86400 * 1000);
-      } else {
-         let ds = String(cellVal);
-         rowDate = new Date(ds);
-         if (isNaN(rowDate.getTime())) {
-            let p = ds.split('/');
-            if(p.length === 3) rowDate = new Date(p[2], p[1]-1, p[0]);
-            else {
-                p = ds.split('-');
-                if(p.length === 3) rowDate = new Date(p[2], p[1]-1, p[0]);
-            }
-         }
+         // Excel serial date ke JS Date, membetulkan bug leap year 1900 Excel dan memastikan penggunaan UTC
+         const utcDays = cellVal - 25569;
+         const utcValue = utcDays * 86400;
+         const dateInfo = new Date(utcValue * 1000);
+         return new Date(dateInfo.getUTCFullYear(), dateInfo.getUTCMonth(), dateInfo.getUTCDate());
+      }
+      
+      let ds = String(cellVal).trim();
+      let rowDate = new Date(ds);
+      
+      if (isNaN(rowDate.getTime())) {
+          // Kesan format string dengan pemisah / atau -
+          let p = ds.split(/[\/\-]/);
+          if(p.length === 3) {
+             // Jika format adalah DD/MM/YYYY
+             if(p[0].length <= 2 && p[2].length === 4) {
+                rowDate = new Date(p[2], parseInt(p[1])-1, p[0]);
+             }
+             // Jika format adalah YYYY/MM/DD
+             else if(p[0].length === 4) {
+                rowDate = new Date(p[0], parseInt(p[1])-1, p[2]);
+             }
+          }
       }
       return (rowDate && !isNaN(rowDate.getTime())) ? rowDate : null;
     }
@@ -855,7 +864,7 @@
       input.value = '';
 
       setTimeout(() => {
-        if(!window.appData || window.appData.rows.length === 0) {
+        if(!window.appData || window.appData.headers.length === 0) {
           return appendChatMessage('ai', 'Maaf, sistem tiada data buat masa ini.');
         }
 
@@ -864,16 +873,28 @@
         let actionTaken = false;
 
         const isBulanIni = queryLower.includes('bulan ini');
-        const isBersara = queryLower.includes('bersara');
+        const isBersara = queryLower.includes('bersara') || queryLower.includes('pencen');
         const isLahir = queryLower.includes('lahir') || queryLower.includes('hari jadi') || queryLower.includes('birthday');
 
-        // Logik Tambahan AI - Cari pekerja lahir bulan ini
+        // Logik Khusus Carian Pekerja Lahir Bulan Ini
         if (isLahir && isBulanIni) {
            let dateColIndex = -1;
+           
+           // 1. Keutamaan tinggi kepada lajur 'TARIKH LAHIR' secara spesifik bagi mengelak silap faham
            for(let i=0; i<window.appData.headers.length; i++) {
-             let h = window.appData.headers[i].toLowerCase();
-             if(h.includes('lahir') || h.includes('dob') || h.includes('birth') || h.includes('tarikh')) {
+             let h = window.appData.headers[i].toLowerCase().trim();
+             if(h === 'tarikh lahir' || h === 'dob' || h === 'date of birth') {
                dateColIndex = i; break;
+             }
+           }
+
+           // 2. Jika tiada, baru fallback menggunakan .includes() sebagai sandaran
+           if (dateColIndex === -1) {
+             for(let i=0; i<window.appData.headers.length; i++) {
+               let h = window.appData.headers[i].toLowerCase().trim();
+               if(h.includes('lahir') || h.includes('birth')) {
+                 dateColIndex = i; break;
+               }
              }
            }
 
@@ -887,19 +908,32 @@
              currentSortCol = dateColIndex;
              currentSortAsc = true;
              actionTaken = true;
-             responseMsg = `Saya telah **mengira, menapis dan menyusun** senarai pekerja yang menyambut hari lahir pada **bulan ini** mengikut lajur **${window.appData.headers[dateColIndex]}**.`;
+             responseMsg = `Pencarian Pintar: Saya telah **menapis dan menyusun** senarai mengikut bulan ini untuk lajur **${window.appData.headers[dateColIndex]}**.`;
            } else {
-             responseMsg = `Saya faham arahan anda, tetapi saya tidak menemui lajur tarikh lahir dalam jadual ini (cth: Tarikh Lahir atau DOB).`;
+             responseMsg = `Saya faham arahan anda, tetapi lajur untuk Tarikh Lahir tidak ditemui dalam jadual ini.`;
              actionTaken = true;
            }
         }
-        // Logik Sedia ada AI - Bersara bulan ini
+        
+        // Logik Khusus Carian Pekerja Bersara Bulan Ini
         else if (isBersara && isBulanIni) {
            let dateColIndex = -1;
+
+           // Keutamaan tinggi carian spesifik
            for(let i=0; i<window.appData.headers.length; i++) {
-             let h = window.appData.headers[i].toLowerCase();
-             if(h.includes('tarikh') || h.includes('date') || h.includes('bersara') || h.includes('masa')) {
+             let h = window.appData.headers[i].toLowerCase().trim();
+             if(h === 'tarikh bersara' || h === 'opsyen bersara' || h === 'tarikh masuk pencen') {
                dateColIndex = i; break;
+             }
+           }
+
+           // Sandaran kepada perkataan berkaitan pencen/bersara
+           if(dateColIndex === -1) {
+             for(let i=0; i<window.appData.headers.length; i++) {
+               let h = window.appData.headers[i].toLowerCase().trim();
+               if(h.includes('bersara') || h.includes('pencen')) {
+                 dateColIndex = i; break;
+               }
              }
            }
 
@@ -911,9 +945,9 @@
                val: { month: now.getMonth(), year: now.getFullYear() } 
              };
              actionTaken = true;
-             responseMsg = `Saya telah menapis senarai pekerja yang berkaitan pada **bulan ini** mengikut lajur **${window.appData.headers[dateColIndex]}**.`;
+             responseMsg = `Saya telah menapis senarai bulan ini mengikut lajur **${window.appData.headers[dateColIndex]}**.`;
            } else {
-             responseMsg = `Saya faham arahan anda, tetapi saya tidak menemui lajur tarikh dalam jadual ini (cth: Tarikh Bersara).`;
+             responseMsg = `Saya faham arahan anda, tetapi lajur berkaitan tarikh bersara tidak ditemui.`;
              actionTaken = true;
            }
         }

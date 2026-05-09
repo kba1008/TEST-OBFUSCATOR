@@ -343,11 +343,21 @@
     </div>
   </div>
 
+  <!-- Custom Alert Modal (Modern UI replacement for default alert/confirm) -->
+  <div id="customAlertModal" class="hidden fixed inset-0 bg-slate-900 bg-opacity-60 backdrop-blur-sm z-[100] flex justify-center items-center">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4 transform transition-all flex flex-col items-center text-center">
+      <div id="customAlertIcon" class="mb-4"></div>
+      <h3 id="customAlertTitle" class="text-xl font-bold text-slate-800 mb-2">Notifikasi</h3>
+      <p id="customAlertMessage" class="text-sm text-slate-600 mb-6 w-full break-words whitespace-pre-line"></p>
+      <div id="customAlertActions" class="flex space-x-3 w-full">
+      </div>
+    </div>
+  </div>
+
   <script>
     // --- PRO ERROR DETECTOR INJECTION ---
     window.addEventListener('error', function(event) {
       console.error('%c[DataPro Frontend Error]', 'color: white; background: red; font-weight: bold; padding: 2px 4px;', event.message, '\nFile:', event.filename, '\nLine:', event.lineno);
-      // Log to backend if needed in future
     });
     window.addEventListener('unhandledrejection', function(event) {
       console.error('%c[DataPro Promise Rejection]', 'color: white; background: darkorange; font-weight: bold; padding: 2px 4px;', event.reason);
@@ -357,7 +367,7 @@
     lucide.createIcons();
 
     // PENTING: Sila pastikan anda set URL GAS yang terkini (Deploy As New Version -> Anyone)
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwNlk3fwmCfoSpluhAFJN-lk-4ioHCv5TydEzZP-kZgbcYc2kEYrrUG72J6_sG42aJc/exec'; 
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwhTGMpU1xmjB1t4zTcO0OTNrCuCORsoHp-3YztaLaKNr03NK7-E7kGXxP-vNii_Z6q/exec'; 
     
     let rawData = [];
     let rawHeaders = [];
@@ -373,6 +383,60 @@
 
     // AI Global State
     window.aiRules = null;
+
+    // === CUSTOM ALERT MODAL LOGIC ===
+    function showCustomAlert(message, type = 'info', isConfirm = false) {
+      return new Promise((resolve) => {
+         const modal = document.getElementById('customAlertModal');
+         const iconDiv = document.getElementById('customAlertIcon');
+         const titleEl = document.getElementById('customAlertTitle');
+         const msgEl = document.getElementById('customAlertMessage');
+         const actionsDiv = document.getElementById('customAlertActions');
+
+         msgEl.innerText = message;
+
+         let iconHtml = '';
+         if(type === 'success') {
+            iconHtml = `<div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner"><i data-lucide="check-circle-2" class="w-8 h-8"></i></div>`;
+            titleEl.innerText = "Berjaya";
+         } else if(type === 'error') {
+            iconHtml = `<div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto shadow-inner"><i data-lucide="x-octagon" class="w-8 h-8"></i></div>`;
+            titleEl.innerText = "Ralat";
+         } else if(type === 'warning') {
+            iconHtml = `<div class="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto shadow-inner"><i data-lucide="alert-triangle" class="w-8 h-8"></i></div>`;
+            titleEl.innerText = "Amaran Peringatan";
+         } else {
+            iconHtml = `<div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto shadow-inner"><i data-lucide="info" class="w-8 h-8"></i></div>`;
+            titleEl.innerText = "Maklumat";
+         }
+         iconDiv.innerHTML = iconHtml;
+
+         actionsDiv.innerHTML = '';
+         if (isConfirm) {
+            const btnCancel = document.createElement('button');
+            btnCancel.className = "flex-1 py-2.5 px-4 bg-slate-100 text-slate-700 hover:text-slate-900 rounded-xl font-semibold hover:bg-slate-200 transition-all";
+            btnCancel.innerText = "Batal";
+            btnCancel.onclick = () => { modal.classList.add('hidden'); resolve(false); };
+
+            const btnOk = document.createElement('button');
+            btnOk.className = `flex-1 py-2.5 px-4 text-white rounded-xl font-semibold shadow-md transition-all ${type === 'warning' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-red-600 hover:bg-red-700'}`;
+            btnOk.innerText = "Pasti";
+            btnOk.onclick = () => { modal.classList.add('hidden'); resolve(true); };
+
+            actionsDiv.appendChild(btnCancel);
+            actionsDiv.appendChild(btnOk);
+         } else {
+            const btnOk = document.createElement('button');
+            btnOk.className = `w-full py-2.5 px-4 text-white rounded-xl font-semibold shadow-md transition-all ${type === 'success' ? 'bg-emerald-600 hover:bg-emerald-700' : type === 'error' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`;
+            btnOk.innerText = "Tutup";
+            btnOk.onclick = () => { modal.classList.add('hidden'); resolve(true); };
+            actionsDiv.appendChild(btnOk);
+         }
+
+         modal.classList.remove('hidden');
+         lucide.createIcons();
+      });
+    }
 
     function showView(viewName) {
       try {
@@ -412,7 +476,7 @@
         }
         showView('admin');
       } else {
-        alert('Kata laluan salah!');
+        await showCustomAlert('Kata laluan salah!', 'error');
       }
     }
 
@@ -441,7 +505,9 @@
     }
 
     async function clearOldData() {
-      if(!confirm('Anda pasti mahu memadam semua data pangkalan awam? Ini memadam data asal.')) return;
+      const isConfirmed = await showCustomAlert('Anda pasti mahu memadam semua data pangkalan awam? Ini memadam data asal.', 'warning', true);
+      if(!isConfirmed) return;
+      
       rawData = [];
       rawHeaders = [];
       window.uploadedWorkbook = null;
@@ -471,10 +537,10 @@
         let data = await res.json();
         if (data.status !== 'success') throw new Error(data.message || "Gagal memadam");
         
-        alert('Data pangkalan dipadam sepenuhnya.');
+        await showCustomAlert('Data pangkalan dipadam sepenuhnya.', 'success');
         updateDashboard([], []);
       } catch (error) {
-        alert('Ralat semasa memadam data: ' + error.message);
+        await showCustomAlert('Ralat semasa memadam data: ' + error.message, 'error');
         console.error(error);
       } finally {
         toggleLoader(false);
@@ -486,7 +552,7 @@
       if (!file) return;
       toggleLoader(true, "Membaca fail pangkalan Excel...");
       const reader = new FileReader();
-      reader.onload = function(e) {
+      reader.onload = async function(e) {
         try {
           const data = new Uint8Array(e.target.result);
           window.uploadedWorkbook = XLSX.read(data, {type: 'array'});
@@ -505,7 +571,7 @@
           document.getElementById('aiHeaderHelper').classList.remove('hidden');
           processSelectedSheet();
         } catch(err) {
-          alert("Ralat memproses fail: " + err.message);
+          await showCustomAlert("Ralat memproses fail: " + err.message, 'error');
           console.error("FileUpload Error:", err);
         } finally {
           toggleLoader(false);
@@ -583,8 +649,8 @@
 
     async function askAiHeaders() {
       const prompt = document.getElementById('adminAiPrompt').value.trim();
-      if(!prompt) return alert('Sila masukkan arahan untuk AI memilih lajur utama.');
-      if(rawHeaders.length === 0) return alert('Sila muat naik fail terlebih dahulu.');
+      if(!prompt) return showCustomAlert('Sila masukkan arahan untuk AI memilih lajur utama.', 'warning');
+      if(rawHeaders.length === 0) return showCustomAlert('Sila muat naik fail terlebih dahulu.', 'warning');
 
       toggleLoader(true, "AI sedang memilih lajur utama...");
       const payload = {
@@ -610,19 +676,19 @@
                  count++;
               }
            });
-           alert(`Sistem AI berjaya memilih ${count} lajur pangkalan untuk anda.`);
+           await showCustomAlert(`Sistem AI berjaya memilih ${count} lajur pangkalan untuk anda.`, 'success');
         } else {
-           alert('Ralat AI: ' + (res.message || 'Gagal memproses respons.'));
+           await showCustomAlert('Ralat AI: ' + (res.message || 'Gagal memproses respons.'), 'error');
         }
       } catch(e) {
         console.error('askAiHeaders Error', e);
-        alert('Gagal menghubungi pelayan (GAS). Pastikan URL GAS tepat dan skrip berfungsi.');
+        await showCustomAlert('Gagal menghubungi pelayan (GAS). Pastikan URL GAS tepat dan skrip berfungsi.', 'error');
       } finally {
         toggleLoader(false);
       }
     }
 
-    // PEMBAIKAN KRITIKAL (Menyelesaikan isu TypeError undefined dalam 2D array di Google Apps Script)
+    // PEMBAIKAN KRITIKAL: Menyelesaikan isu TypeError undefined dalam 2D array di Google Apps Script
     async function saveConfiguration() {
       const itemDivs = document.querySelectorAll('#headerSelection > div');
       const finalHeaders = [];
@@ -636,7 +702,7 @@
         }
       });
 
-      if(finalHeaders.length === 0) return alert('Pilih minimum satu lajur.');
+      if(finalHeaders.length === 0) return showCustomAlert('Pilih minimum satu lajur.', 'warning');
       
       // Pastikan semua row diolah rapi agar tiada elemen 'undefined' untuk mengelak ralat array GAS
       const finalRows = [];
@@ -658,7 +724,7 @@
         let initData = await initRes.json();
         if(initData.status !== 'success') throw new Error("Ralat Skrip: " + initData.message);
 
-        const CHUNK_SIZE = 100; // Dikurangkan untuk mengelak JSON payload dari terpotong
+        const CHUNK_SIZE = 100;
         const totalChunks = Math.ceil(finalRows.length / CHUNK_SIZE);
         
         for(let i=0; i < totalChunks; i++) {
@@ -678,12 +744,12 @@
         const savedData = { headers: finalHeaders, rows: finalRows };
         await localforage.setItem('datapro_backup', savedData);
         
-        alert('Konfigurasi database awam berjaya disimpan sepenuhnya!');
+        await showCustomAlert('Konfigurasi database awam berjaya disimpan sepenuhnya!', 'success');
         updateDashboard(finalHeaders, finalRows);
         showView('dashboard');
       } catch (e) {
         console.error('saveConfiguration Critical Error', e);
-        alert('RALAT KRITIKAL: Gagal menyimpan data sepenuhnya. Sila cuba lagi.\n\nMaklumat: ' + e.message);
+        await showCustomAlert('RALAT KRITIKAL: Gagal menyimpan data sepenuhnya. Sila cuba lagi.\n\nMaklumat: ' + e.message, 'error');
       } finally {
         toggleLoader(false);
       }
@@ -713,13 +779,13 @@
            const backup = await localforage.getItem('datapro_backup');
            if (backup && backup.headers) {
               updateDashboard(backup.headers, backup.rows || []);
-              if(forceRefresh) alert("Mod Luar Talian: Aplikasi memaparkan salinan data terakhir yang disimpan dalam peranti anda kerana capaian ke pelayan gagal.");
+              if(forceRefresh) await showCustomAlert("Mod Luar Talian: Aplikasi memaparkan salinan data terakhir yang disimpan dalam peranti anda kerana capaian ke pelayan gagal.", 'info');
            } else {
-              if(forceRefresh) alert("Tiada data ditemui di pangkalan dan tiada backup tempatan.");
+              if(forceRefresh) await showCustomAlert("Tiada data ditemui di pangkalan dan tiada backup tempatan.", 'warning');
            }
         } catch (e) {
            console.error('Backup Error', e);
-           if(forceRefresh) alert("Ralat memproses data backup tempatan.");
+           if(forceRefresh) await showCustomAlert("Ralat memproses data backup tempatan.", 'error');
         }
       } finally {
         toggleLoader(false); 
@@ -1072,15 +1138,15 @@
       html2pdf().set(opt).from(element).save();
     }
 
-    function exportToExcel() {
-      if (!displayRows || displayRows.length === 0) return alert('Tiada data untuk dimuat turun.');
+    async function exportToExcel() {
+      if (!displayRows || displayRows.length === 0) return await showCustomAlert('Tiada data untuk dimuat turun.', 'warning');
       const ws = XLSX.utils.aoa_to_sheet([window.appData.headers, ...displayRows]);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Data Output");
       XLSX.writeFile(wb, "DataPro_Eksport_Tapisan_AI.xlsx");
     }
 
-    function shareData() {
+    async function shareData() {
       if (navigator.share) {
         navigator.share({
           title: 'DataPro AI Laporan Analitik',
@@ -1088,7 +1154,7 @@
           url: window.location.href
         }).catch(console.error);
       } else {
-        alert('Ciri perkongsian tidak disokong pada pelayar anda.');
+        await showCustomAlert('Ciri perkongsian tidak disokong pada pelayar anda.', 'warning');
       }
     }
 

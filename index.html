@@ -145,7 +145,7 @@
               <i data-lucide="bot" class="w-4 h-4"></i>
             </div>
             <div class="bg-white p-3 rounded-xl rounded-tl-none border border-slate-100 shadow-sm text-slate-700">
-              Hai! Saya Pembantu AI anda. Beritahu saya untuk <strong class="text-blue-600">mencari</strong>, <strong class="text-blue-600">menapis</strong> atau <strong class="text-blue-600">menyusun</strong> jadual. <br><br>Ciri Baharu: Anda boleh menaip <em>"Cari bersara bulan ini"</em> untuk senarai individu berkaitan pada bulan semasa.<br><br>Anda boleh membatalkan arahan dengan menekan butang <strong>Reset</strong>.
+              Hai! Saya Pembantu AI anda. Beritahu saya untuk <strong class="text-blue-600">mencari</strong>, <strong class="text-blue-600">menapis</strong> atau <strong class="text-blue-600">menyusun</strong> jadual. <br><br>Ciri Baharu: Anda boleh menaip <em>"Cari pekerja lahir bulan ini"</em> untuk AI memproses, menapis, dan menyusun senarai secara automatik berdasarkan tarikh.<br><br>Anda boleh membatalkan arahan dengan menekan butang <strong>Reset</strong>.
             </div>
           </div>
         </div>
@@ -153,7 +153,7 @@
           <button onclick="resetData()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 p-3 rounded-xl transition-colors shadow-sm flex-shrink-0" title="Set Semula Semua Data">
             <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
           </button>
-          <input type="text" id="aiInput" placeholder="Cth: Cari bersara bulan ini..." class="flex-grow px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50" onkeypress="if(event.key === 'Enter') processAIQuery()">
+          <input type="text" id="aiInput" placeholder="Cth: Cari yang lahir bulan ini..." class="flex-grow px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50" onkeypress="if(event.key === 'Enter') processAIQuery()">
           <button onclick="processAIQuery()" class="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-xl transition-colors shadow-md flex-shrink-0">
             <i data-lucide="send" class="w-5 h-5"></i>
           </button>
@@ -308,7 +308,7 @@
   <script>
     lucide.createIcons();
 
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbzw2j0WFLFBynaU5n41r70I9PUNguj60EB8k6wvOiC6DX6YcIv2rim2qwD7y0jfDjpT/exec'; 
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwhTGMpU1xmjB1t4zTcO0OTNrCuCORsoHp-3YztaLaKNr03NK7-E7kGXxP-vNii_Z6q/exec'; 
     
     let rawData = [];
     let rawHeaders = [];
@@ -570,6 +570,27 @@
       document.getElementById('filterModal').classList.add('hidden');
     }
 
+    // Pembantu fungsi pengekstrakan tarikh untuk AI
+    function parseDate(cellVal) {
+      if (!cellVal) return null;
+      let rowDate = null;
+      if (typeof cellVal === 'number') {
+         rowDate = new Date((cellVal - (25567 + 2)) * 86400 * 1000);
+      } else {
+         let ds = String(cellVal);
+         rowDate = new Date(ds);
+         if (isNaN(rowDate.getTime())) {
+            let p = ds.split('/');
+            if(p.length === 3) rowDate = new Date(p[2], p[1]-1, p[0]);
+            else {
+                p = ds.split('-');
+                if(p.length === 3) rowDate = new Date(p[2], p[1]-1, p[0]);
+            }
+         }
+      }
+      return (rowDate && !isNaN(rowDate.getTime())) ? rowDate : null;
+    }
+
     function applyCurrentFilter() {
       const selectedVals = new Set();
       let allChecked = true;
@@ -611,21 +632,15 @@
         if (window.aiCustomFilter) {
            let cellVal = row[window.aiCustomFilter.col];
            
-           if (window.aiCustomFilter.type === 'this_month') {
-              if (!cellVal) return false;
-              let rowDate = null;
-              if (typeof cellVal === 'number') {
-                 rowDate = new Date((cellVal - (25567 + 2)) * 86400 * 1000);
-              } else {
-                 let ds = String(cellVal);
-                 rowDate = new Date(ds);
-                 if (isNaN(rowDate.getTime())) {
-                    let p = ds.split('/');
-                    if(p.length === 3) rowDate = new Date(p[2], p[1]-1, p[0]);
-                 }
+           if (window.aiCustomFilter.type === 'this_month' || window.aiCustomFilter.type === 'birth_month') {
+              let rowDate = parseDate(cellVal);
+              if (!rowDate) return false;
+              
+              if (window.aiCustomFilter.type === 'this_month') {
+                  if (rowDate.getMonth() !== window.aiCustomFilter.val.month || rowDate.getFullYear() !== window.aiCustomFilter.val.year) return false;
+              } else if (window.aiCustomFilter.type === 'birth_month') {
+                  if (rowDate.getMonth() !== window.aiCustomFilter.val.month) return false;
               }
-              if(!rowDate || isNaN(rowDate.getTime())) return false;
-              if (rowDate.getMonth() !== window.aiCustomFilter.val.month || rowDate.getFullYear() !== window.aiCustomFilter.val.year) return false;
            } else {
               let numVal = parseFloat(cellVal);
               if (window.aiCustomFilter.type === 'less') {
@@ -845,13 +860,41 @@
         }
 
         const queryLower = query.toLowerCase();
-        let responseMsg = "Maaf, saya kurang jelas. Cuba nyatakan **nama lajur** dan operasi (cth: 'gaji bawah 1000') atau 'cari bersara bulan ini'.";
+        let responseMsg = "Maaf, saya kurang jelas. Cuba nyatakan **nama lajur** dan operasi (cth: 'gaji bawah 1000') atau 'cari lahir bulan ini'.";
         let actionTaken = false;
 
         const isBulanIni = queryLower.includes('bulan ini');
         const isBersara = queryLower.includes('bersara');
+        const isLahir = queryLower.includes('lahir') || queryLower.includes('hari jadi') || queryLower.includes('birthday');
 
-        if (isBersara && isBulanIni) {
+        // Logik Tambahan AI - Cari pekerja lahir bulan ini
+        if (isLahir && isBulanIni) {
+           let dateColIndex = -1;
+           for(let i=0; i<window.appData.headers.length; i++) {
+             let h = window.appData.headers[i].toLowerCase();
+             if(h.includes('lahir') || h.includes('dob') || h.includes('birth') || h.includes('tarikh')) {
+               dateColIndex = i; break;
+             }
+           }
+
+           if(dateColIndex !== -1) {
+             const now = new Date();
+             window.aiCustomFilter = { 
+               col: dateColIndex, 
+               type: 'birth_month', 
+               val: { month: now.getMonth() } 
+             };
+             currentSortCol = dateColIndex;
+             currentSortAsc = true;
+             actionTaken = true;
+             responseMsg = `Saya telah **mengira, menapis dan menyusun** senarai pekerja yang menyambut hari lahir pada **bulan ini** mengikut lajur **${window.appData.headers[dateColIndex]}**.`;
+           } else {
+             responseMsg = `Saya faham arahan anda, tetapi saya tidak menemui lajur tarikh lahir dalam jadual ini (cth: Tarikh Lahir atau DOB).`;
+             actionTaken = true;
+           }
+        }
+        // Logik Sedia ada AI - Bersara bulan ini
+        else if (isBersara && isBulanIni) {
            let dateColIndex = -1;
            for(let i=0; i<window.appData.headers.length; i++) {
              let h = window.appData.headers[i].toLowerCase();
